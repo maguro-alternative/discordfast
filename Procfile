@@ -1,0 +1,1 @@
+/bin/bash -c "cd app && python -u main.py"
