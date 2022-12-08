@@ -87,9 +87,6 @@ class mst_line(commands.Cog):
             imagelist = await image_checker(message.attachments)
             videolist = await video_checker(message.attachments)
 
-            #print(imagelist)
-            #print(videolist)
-
             messagetext+="が、"
 
             # 送信された動画と画像の数を格納

@@ -240,7 +240,6 @@ class LineMessageAPI(DaysGet):
                 f"https://api.line.me/v2/bot/profile/{user_id}",
                 self.line_bot_token,
             )
-        print(r)
         return await Profile.new_from_json_dict(data=r)
 
     # LINEから画像データを取得し、Gyazoにアップロード
