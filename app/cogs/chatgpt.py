@@ -22,6 +22,7 @@ class chatgpt(commands.Cog):
         ctx:discord.ApplicationContext,
         text: Option(str, required=True, description="AIに質問したいこと",)
     ):
+        await ctx.respond(f"質問事項:{text}")
         r = requests.post(
             url='https://api.openai.com/v1/completions',
             headers={
