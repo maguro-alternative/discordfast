@@ -192,7 +192,7 @@ async def read_root(response):
     return {"Hello": "World"}
 
 def run():
-    uvicorn.run("main:app",  host="0.0.0.0", port=os.getenv("PORT", default=5000), log_level="info")
+    uvicorn.run("server:app",  host="0.0.0.0", port=os.getenv("PORT", default=5000), log_level="info")
 
 def keep_alive():
     t = Thread(target=run)
