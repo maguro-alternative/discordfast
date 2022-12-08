@@ -277,8 +277,8 @@ class LineMessageAPI(DaysGet):
         ).iter_content()
 
         # mp4で保存
-        #with open(".\movies\a.mp4", 'wb') as fd:
-        with open("./movies/a.mp4", 'wb') as fd:
+        with open(".\movies\a.mp4", 'wb') as fd:
+        #with open("./movies/a.mp4", 'wb') as fd:
             for chunk in movies_bytes:
                 fd.write(chunk)
 
