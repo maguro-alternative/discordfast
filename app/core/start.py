@@ -19,7 +19,7 @@ class DBot(discord.AutoShardedBot):
     async def on_ready(self):
         print('起動しました')
         await self.change_presence(activity=discord.Game(name="senran kagura"))
-        self.signal.start()
+        #self.signal.start()
 
     def load_cogs(self):
         for file in os.listdir("./cogs"): 
