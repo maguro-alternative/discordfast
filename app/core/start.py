@@ -8,7 +8,6 @@ import requests,json
 from dotenv import load_dotenv
 load_dotenv()
 
-#from core.signal import day_signal
 
 class DBot(discord.AutoShardedBot):
     def __init__(self, token, intents):
@@ -46,7 +45,7 @@ class DBot(discord.AutoShardedBot):
             print("Discord Tokenが不正です")
         except KeyboardInterrupt:
             print("終了します")
-            self.loop.run_until_complete(self.logout())
+            self.loop.run_until_complete(self.close())
         except discord.HTTPException as e:
             traceback.print_exc()
             if e.status == 429:
