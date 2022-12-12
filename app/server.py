@@ -64,12 +64,16 @@ async def line_response(
         if response.destination == os.environ[f'{bot_name}_BOT_DESTINATION']:
             channel_secret = os.environ[f'{bot_name}_CHANNEL_SECRET']
             # Discordサーバーのクラスを宣言
-            discord_find_message = MessageFind(int(os.environ[f'{bot_name}_GUILD_ID']), 100, TOKEN)
+            discord_find_message = MessageFind(
+                guild_id = int(os.environ[f'{bot_name}_GUILD_ID']),
+                limit = int(os.environ["USER_LIMIT"]), 
+                token = TOKEN
+            )
             # LINEのクラスを宣言
             line_bot_api = Notify(
-                notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
-                line_bot_token=os.environ[f'{bot_name}_BOT_TOKEN'],
-                line_group_id=os.environ.get(f'{bot_name}_GROUP_ID')
+                notify_token = os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
+                line_bot_token = os.environ[f'{bot_name}_BOT_TOKEN'],
+                line_group_id = os.environ.get(f'{bot_name}_GROUP_ID')
             )
             # メッセージを送信するDiscordのテキストチャンネルのID
             channel_id = int(os.environ[f'{bot_name}_CHANNEL_ID'])
