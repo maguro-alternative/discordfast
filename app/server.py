@@ -1,9 +1,11 @@
-from fastapi import FastAPI,HTTPException,Request,Header,Response
+from fastapi import FastAPI,Depends,HTTPException,Request,Header,Response
 from fastapi.responses import HTMLResponse
+#from fastapi.security import OAuth2PasswordBearer
 from threading import Thread
 import uvicorn
 
-import json
+
+#from passlib.context import CryptContext
 
 import base64
 import hashlib
@@ -31,6 +33,8 @@ TOKEN = os.environ['TOKEN']
 
 app = FastAPI()
 
+#oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 # x_line_signature:str=Header(None)
 
 # LINE側のメッセージを受け取る
@@ -38,7 +42,8 @@ app = FastAPI()
 async def line_response(
     response:Line_Responses,
     byte_body:Request, 
-    x_line_signature=Header(None)
+    x_line_signature=Header(None),
+    #token: str = Depends(oauth2_scheme)
 ):
     """
     response:Line_Responses
@@ -56,14 +61,14 @@ async def line_response(
     
     # destination(BotのID)からbotの種類を判別する
     for bot_name in bots_name:
-        if response.destination == os.environ[f'{bot_name}_BOTS_DESTINATION']:
-            channel_secret = os.environ[f'{bot_name}_CHANNEL_SECLET']
+        if response.destination == os.environ[f'{bot_name}_BOT_DESTINATION']:
+            channel_secret = os.environ[f'{bot_name}_CHANNEL_SECRET']
             # Discordサーバーのクラスを宣言
             discord_find_message = MessageFind(int(os.environ[f'{bot_name}_GUILD_ID']), 100, TOKEN)
             # LINEのクラスを宣言
             line_bot_api = Notify(
                 notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
-                line_bot_token=os.environ[f'{bot_name}_BOTS_TOKEN'],
+                line_bot_token=os.environ[f'{bot_name}_BOT_TOKEN'],
                 line_group_id=os.environ.get(f'{bot_name}_GROUP_ID')
             )
             # メッセージを送信するDiscordのテキストチャンネルのID
@@ -169,7 +174,7 @@ async def read_root(response:Request, x_line_signature=Header(None)):
     body = boo.decode('utf-8')
     
     hash = hmac.new(
-        os.environ[f'6_CHANNEL_SECLET'].encode('utf-8'),
+        os.environ[f'6_CHANNEL_SECRET'].encode('utf-8'),
         body.encode('utf-8'), 
         hashlib.sha256
     ).digest()

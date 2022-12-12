@@ -50,7 +50,7 @@ class mst_line(commands.Cog):
         for bot_name in bots_name:
             # メッセージが送られたサーバーを探す
             if os.environ.get(f"{bot_name}_GUILD_ID") == str(message.guild.id):
-                line_bot_api = Notify(notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),line_bot_token=os.environ[f'{bot_name}_BOTS_TOKEN'],line_group_id=os.environ.get(f'{bot_name}_GROUP_ID'))
+                line_bot_api = Notify(notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),line_bot_token=os.environ[f'{bot_name}_BOT_TOKEN'],line_group_id=os.environ.get(f'{bot_name}_GROUP_ID'))
                 break
 
         # 送信NGのチャンネル名の場合、終了
