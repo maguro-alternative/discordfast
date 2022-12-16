@@ -19,6 +19,7 @@ except:
     from app.message_type.line_type.class_type import Profile,GyazoJson
 
 async def line_req(url: str, token: str) -> json:
+    """
     loop = asyncio.get_event_loop()
     r = (
         await loop.run_in_executor(
@@ -32,6 +33,8 @@ async def line_req(url: str, token: str) -> json:
             )
         )
     )
+    """
+    r = requests.get(url=url,headers={'Authorization': 'Bearer ' + token})
     return r.json()
 
 class DayInfo:
