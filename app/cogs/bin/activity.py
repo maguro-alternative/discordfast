@@ -14,8 +14,12 @@ async def activity(after:discord.VoiceState,member:discord.Member):
         # チャンネル名フィールド
         embed.add_field(name="チャンネル", value=after.channel.name)
 
-        detail = member.activities[0].details
-        state = member.activities[0].state
+        try:
+            detail = member.activities[0].details
+            state = member.activities[0].state
+        except AttributeError:
+            detail = None
+            state = None
 
         # ステータス名がない場合は記述なし
         if detail == None:
