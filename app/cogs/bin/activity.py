@@ -34,7 +34,7 @@ async def activity(after:discord.VoiceState,member:discord.Member):
         return f"@everyone <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
     # 存在しない場合
     except IndexError:
-        return f"@everyone <@{member.id}> が、{after.channel.name}で画面共有を始めました。",stream(after,member,title="画面共有")
+        return f"@everyone <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
 
 
 async def callemb(after:discord.VoiceState,member:discord.Member):
