@@ -15,8 +15,8 @@ async def activity(after:discord.VoiceState,member:discord.Member):
         embed.add_field(name="チャンネル", value=after.channel.name)
 
         
-        detail = None
-        state = None
+        detail = ''
+        state = ''
 
         # ステータス名がない場合は記述なし
         if hasattr(member.activities[0],'details'):
