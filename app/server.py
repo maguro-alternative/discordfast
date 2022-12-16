@@ -165,41 +165,6 @@ async def line_response(
 
     return HTMLResponse(content="OK")
 
-@app.post("/line_bot/success")
-async def read_root(response:Request, x_line_signature=Header(None)):
-    #r = response.json()
-    #res = await r
-    #print(res)
-    #body = await response.body()
-    #print(type(re))
-    #print(response.headers)
-    
-    boo = await response.body()
-    body = boo.decode('utf-8')
-    
-    hash = hmac.new(
-        os.environ[f'6_CHANNEL_SECRET'].encode('utf-8'),
-        body.encode('utf-8'), 
-        hashlib.sha256
-    ).digest()
-    signature = base64.b64encode(hash)
-
-    b = signature.decode('utf-8')
-    print(boo)
-
-    print(b)
-    
-
-    print(x_line_signature)
-
-    return {"Hello": "World"}
-
-@app.get("/")
-async def read_root(response):
-    r = response
-    print(r)
-    return {"Hello": "World"}
-
 def run():
     uvicorn.run("server:app",  host="0.0.0.0", port=int(os.getenv("PORT", default=5000)), log_level="info")
 
