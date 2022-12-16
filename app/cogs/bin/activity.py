@@ -14,24 +14,21 @@ async def activity(after:discord.VoiceState,member:discord.Member):
         # チャンネル名フィールド
         embed.add_field(name="チャンネル", value=after.channel.name)
 
-        try:
-            detail = member.activities[0].details
-            state = member.activities[0].state
-        except AttributeError:
-            detail = None
-            state = None
+        
+        detail = None
+        state = None
 
         # ステータス名がない場合は記述なし
-        if detail == None:
-            detail = ""
-        if state == None:
-            state = ""
+        if hasattr(member.activities[0],'details'):
+            detail = member.activities[0].details
+        if hasattr(member.activities[0],'state'):
+            state = member.activities[0].state
 
         # ステータスフィールド
         embed.add_field(name = detail,value = state)
 
         # ゲーム画像がある場合代入
-        if member.activities[0].large_image_url != None:
+        if hasattr(member.activities[0],'large_image_url'):
             embed.set_image(url=member.activities[0].large_image_url)
         
         return f"@everyone <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
