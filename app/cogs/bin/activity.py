@@ -1,5 +1,5 @@
 import discord
-def activity(after,member:discord.Member):
+async def activity(after:discord.VoiceState,member:discord.Member):
     try:
         embed = discord.Embed(
             title='配信タイトル', 
@@ -11,27 +11,32 @@ def activity(after,member:discord.Member):
             icon_url=member.display_avatar.url  # アイコンを設定
         )
 
+        # チャンネル名フィールド
         embed.add_field(name="チャンネル", value=after.channel.name)
 
-        try:
-            embed.add_field(name=member.activities[0].details,
-                            value=member.activities[0].state)
+        detail = member.activities[0].details
+        state = member.activities[0].state
+
+        # ステータス名がない場合は記述なし
+        if detail == None:
+            detail = ""
+        if state == None:
+            state = ""
+
+        # ステータスフィールド
+        embed.add_field(name = detail,value = state)
+
+        # ゲーム画像がある場合代入
+        if member.activities[0].large_image_url != None:
             embed.set_image(url=member.activities[0].large_image_url)
-        except IndexError:
-            print("IndexError....")
-        except AttributeError:
-            try:
-                embed.add_field(name=member.activities[0].details,
-                                value=member.activities[0].state)
-            except AttributeError:
-                print("AttributeError.....")
+        
         return f"@everyone <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
     # 存在しない場合
     except IndexError:
         return f"@everyone <@{member.id}> が、{after.channel.name}で画面共有を始めました。",stream(after,member,title="画面共有")
 
 
-def callemb(after,member:discord.Member):
+async def callemb(after:discord.VoiceState,member:discord.Member):
     embed=discord.Embed(
         title="通話開始",
         description=f"{member.guild.name}\n<#{after.channel.id}>"
@@ -43,7 +48,7 @@ def callemb(after,member:discord.Member):
     )
     return embed
 
-def stream(after,member:discord.Member,title):
+async def stream(after:discord.VoiceState,member:discord.Member,title:str):
     embed=discord.Embed(
         title=title,
         description=f"{member.guild.name}\n<#{after.channel.id}>"
