@@ -134,7 +134,9 @@ class LineBotAPI:
             headers={
                 'Authorization': 'Bearer ' + self.line_bot_token
             }
-        ).content
+        )#.content
+        print(image_bytes.text)
+        image_bytes=image_bytes.content
         # Gyazoにアップロードする
         gyazo_image = requests.post(
             "https://upload.gyazo.com/api/upload",
