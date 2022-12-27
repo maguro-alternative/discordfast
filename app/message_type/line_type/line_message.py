@@ -28,8 +28,8 @@ async def line_req(url: str, token: str) -> json:
 class LineBotAPI:
     def __init__(self, notify_token: str, line_bot_token: str, line_group_id: str) -> None:
         self.notify_token = notify_token
-        self.line_group_id = line_group_id
         self.line_bot_token = line_bot_token
+        self.line_group_id = line_group_id
 
     # LINE Notifyでテキストメッセージを送信
     async def push_message_notify(self, message: str):
@@ -145,7 +145,9 @@ class LineBotAPI:
             files={
                 'imagedata': image_bytes
             }
-        ).json()
+        )#.json()
+        print(gyazo_image.text)
+        print(gyazo_image.headers)
 
         return await GyazoJson.new_from_json_dict(gyazo_image)
         # 受け取ったjsonから画像のURLを生成
