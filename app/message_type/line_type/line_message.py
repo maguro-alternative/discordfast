@@ -140,7 +140,8 @@ class LineBotAPI:
             "https://upload.gyazo.com/api/upload",
             headers={
                 'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data',
+                'Content-Disposition': 'attachment; filename=data.jpg'
             },
             files={
                 'imagedata': image_bytes
