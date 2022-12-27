@@ -6,7 +6,7 @@ import os
 import math
 import asyncio
 import time
-from functools import partial
+import aiofiles
 
 import subprocess
 from typing import List
@@ -135,17 +135,21 @@ class LineBotAPI:
                 'Authorization': 'Bearer ' + self.line_bot_token
             }
         ).content
-        # Gyazoにアップロードする
-        gyazo_image = requests.post(
-            "https://upload.gyazo.com/api/upload",
-            headers={
-                'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                'imagedata': image_bytes
-            },
-            #files={
-                #'imagedata': image_bytes
-            #}
-        )#.json()
+        async with aiofiles.open(".\a.png",mode='wb') as f:
+            await f.write(image_bytes)
+
+        async with aiofiles.open(".\a.png", "rb") as f: 
+            # Gyazoにアップロードする
+            gyazo_image = requests.post(
+                "https://upload.gyazo.com/api/upload",
+                headers={
+                    'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
+                    'imagedata': f.read()
+                },
+                #files={
+                    #'imagedata': image_bytes
+                #}
+            )#.json()
         print(gyazo_image.text)
         print(gyazo_image.headers)
 
