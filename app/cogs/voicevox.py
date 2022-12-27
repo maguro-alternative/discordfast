@@ -2,6 +2,8 @@ import discord
 
 from discord.ext import commands
 from discord import Option
+import aiofiles
+
 import os
 
 import requests
@@ -76,8 +78,8 @@ class voicevox(commands.Cog):
         r=requests.post(
                 f'https://api.su-shiki.com/v2/voicevox/audio/?key={key}&speaker={id}&pitch={pitch}&intonationScale={intonation}&speed={speed}&text={text}',
                 ).content
-        with open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
-            f.write(r)
+        async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
+            await f.write(r)
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
