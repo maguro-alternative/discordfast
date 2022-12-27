@@ -144,11 +144,11 @@ class LineBotAPI:
                 "https://upload.gyazo.com/api/upload",
                 headers={
                     'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                    'imagedata': await f.read()
+                    #'imagedata': await f.read()
                 },
-                #files={
-                    #'imagedata': image_bytes
-                #}
+                files={
+                    'imagedata': await f.read()
+                }
             )#.json()
         print(gyazo_image.text)
         print(gyazo_image.headers)
