@@ -132,8 +132,7 @@ class LineBotAPI:
         image_bytes = requests.get(
             LINE_BOT_URL + f'/message/{message_id}/content',
             headers={
-                'Authorization': 'Bearer ' + self.line_bot_token,
-                'Content-Type': 'application/json'
+                'Authorization': 'Bearer ' + self.line_bot_token
             }
         ).content
         # Gyazoにアップロードする
@@ -141,7 +140,7 @@ class LineBotAPI:
             "https://upload.gyazo.com/api/upload",
             headers={
                 'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                'Content-Type': 'application/json'
+                'Content-Type': 'multipart/form-data'
             },
             files={
                 'imagedata': image_bytes
