@@ -27,13 +27,10 @@ class vc_count(commands.Cog):
             i=len(list(channel.voice_states.keys()))
             await client.send(f"現在{i}人 <@{member.id}>が{before.channel.name}から退出しました。")
 
-            try:
-                if i==1 and before.channel.guild.voice_client.is_connected():
-                    await before.channel.guild.voice_client.disconnect()
-                    i=0
-            except:
-                print()
-
+            if i==1 and hasattr(before.channel.guild.voice_client,'is_connected'):
+                await before.channel.guild.voice_client.disconnect()
+                await client.send("@everyone 通話が終了しました。",embed=discord.Embed(title="通話終了",description=""))
+           
             if i==0:
                 isum=0
                 for channels in member.guild.voice_channels:
