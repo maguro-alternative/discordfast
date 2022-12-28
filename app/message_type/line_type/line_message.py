@@ -20,6 +20,7 @@ except:
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
+LINE_CONTENT_URL = 'https://api-data.line.me/v2/bot'
 
 async def line_req(url: str, token: str) -> json:
     r = requests.get(url=url,headers={'Authorization': 'Bearer ' + token})
@@ -130,26 +131,23 @@ class LineBotAPI:
     async def get_image_byte(self, message_id: int):
         # 画像のバイナリデータを取得
         image_bytes = requests.get(
-            LINE_BOT_URL + f'/message/{message_id}/content',
+            LINE_CONTENT_URL + f'/message/{message_id}/content',
             headers={
                 'Authorization': 'Bearer ' + self.line_bot_token
             }
         ).content
-        async with aiofiles.open(".\a.png",mode='wb') as f:
-            await f.write(image_bytes)
-
-        async with aiofiles.open(".\a.png", "rb") as f: 
-            # Gyazoにアップロードする
-            gyazo_image = requests.post(
-                "https://upload.gyazo.com/api/upload",
-                headers={
-                    'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                    #'imagedata': await f.read()
-                },
-                files={
-                    'imagedata': await f.read()
-                }
-            )#.json()
+        
+        # Gyazoにアップロードする
+        gyazo_image = requests.post(
+            "https://upload.gyazo.com/api/upload",
+            headers={
+                'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
+                #'imagedata': await f.read()
+            },
+            files={
+                'imagedata': image_bytes
+            }
+        )#.json()
         print(gyazo_image.text)
         print(gyazo_image.headers)
 
@@ -161,7 +159,7 @@ class LineBotAPI:
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
         movies_bytes = requests.get(
-            LINE_BOT_URL + f'/message/{message_id}/content',
+            LINE_CONTENT_URL + f'/message/{message_id}/content',
             headers={
                 'Authorization': 'Bearer ' + self.line_bot_token
             }
