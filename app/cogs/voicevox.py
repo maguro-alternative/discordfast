@@ -87,9 +87,10 @@ class voicevox(commands.Cog):
 
         loop = asyncio.new_event_loop()
         executor = ThreadPoolExecutor()
-        base_sound = loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
+        base_sound = await loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
         #base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
 
+        print(base_sound)
         print(base_sound.duration_seconds)
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
