@@ -4,7 +4,6 @@ from discord.ext import commands
 from discord import Option
 import aiofiles
 from pydub import AudioSegment
-from concurrent.futures import ThreadPoolExecutor
 
 import os
 
@@ -85,9 +84,6 @@ class voicevox(commands.Cog):
         async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
             await f.write(r)
 
-        #loop = asyncio.new_event_loop()
-        #executor = ThreadPoolExecutor()
-        #base_sound = await loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
         base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
 
         print(base_sound)
@@ -95,6 +91,8 @@ class voicevox(commands.Cog):
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
+        if hasattr(ctx.guild.voice_client,'is_playing'):
+            await asyncio.sleep(int(base_sound.duration_seconds))
         try:
             ctx.guild.voice_client.play(trans)  #音源再生
         except :#discord.ApplicationCommandInvokeError:
