@@ -95,6 +95,7 @@ class voicevox(commands.Cog):
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
 
+        # 再生中なら終了まで待つ
         if hasattr(ctx.guild.voice_client,'is_playing'):
             while ctx.guild.voice_client.is_playing():
                 await asyncio.sleep(1)
@@ -103,9 +104,7 @@ class voicevox(commands.Cog):
             ctx.guild.voice_client.play(trans)  #音源再生
         except discord.errors.ClientException:
             await ctx.respond(f"<@{ctx.author.id}> 同時に音声は流せません。")
-        except Exception as e:
-            await ctx.respond(f"<@{ctx.author.id}> 同時に音声は流せません。\n{e}\n{type(e)}")
-
+        
     @commands.slash_command(description="ずんだもんとおさらばなのだ")
     async def stop_zunda(self,ctx:discord.ApplicationContext):
         await ctx.respond("切断しました。")
