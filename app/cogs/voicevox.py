@@ -90,7 +90,7 @@ class voicevox(commands.Cog):
         base_sound = loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
         #base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
 
-        print(base_sound)
+        print(base_sound.duration_seconds)
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
