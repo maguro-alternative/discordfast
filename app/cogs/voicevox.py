@@ -8,6 +8,9 @@ from pydub import AudioSegment
 import os
 
 import requests
+from collections import defaultdict, deque
+
+queue_dict = defaultdict(deque)
 import asyncio
 try:
     from app.core.start import DBot
@@ -76,6 +79,7 @@ class voicevox(commands.Cog):
         # 3がずんだもんの数字
         id=3
         key=os.environ["VOICEVOX_KEY"]
+        queue = queue_dict
 
         for sp,sp_id in zip(Speaker,Speaker_id):
             if sp==speaker:
@@ -90,10 +94,16 @@ class voicevox(commands.Cog):
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
+
+        if hasattr(ctx.guild.voice_client,'is_playing'):
+            while ctx.guild.voice_client.is_playing():
+                await asyncio.sleep(1)
         
         try:
             ctx.guild.voice_client.play(trans)  #音源再生
-        except Exception as e:#discord.ApplicationCommandInvokeError:
+        except discord.errors.ClientException:
+            await ctx.respond(f"<@{ctx.author.id}> 同時に音声は流せません。")
+        except Exception as e:
             await ctx.respond(f"<@{ctx.author.id}> 同時に音声は流せません。\n{e}\n{type(e)}")
 
     @commands.slash_command(description="ずんだもんとおさらばなのだ")
