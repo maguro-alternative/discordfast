@@ -92,7 +92,7 @@ class voicevox(commands.Cog):
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
         if hasattr(ctx.guild.voice_client,'is_playing'):
-            await asyncio.sleep(int(base_sound.duration_seconds))
+            await asyncio.sleep(int(base_sound.duration_seconds)+5)
         try:
             ctx.guild.voice_client.play(trans)  #音源再生
         except :#discord.ApplicationCommandInvokeError:
