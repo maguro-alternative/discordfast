@@ -7,10 +7,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from message_type.line_type.line_message import Notify
+    from message_type.line_type.line_message import LineBotAPI
     from core.start import DBot
 except:
-    from app.message_type.line_type.line_message import Notify
+    from app.message_type.line_type.line_message import LineBotAPI
     from app.core.start import DBot
 
 class mst_line(commands.Cog):
@@ -50,8 +50,13 @@ class mst_line(commands.Cog):
         for bot_name in bots_name:
             # メッセージが送られたサーバーを探す
             if os.environ.get(f"{bot_name}_GUILD_ID") == str(message.guild.id):
-                line_bot_api = Notify(notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),line_bot_token=os.environ[f'{bot_name}_BOT_TOKEN'],line_group_id=os.environ.get(f'{bot_name}_GROUP_ID'))
+                line_bot_api = LineBotAPI(notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),line_bot_token=os.environ[f'{bot_name}_BOT_TOKEN'],line_group_id=os.environ.get(f'{bot_name}_GROUP_ID'))
                 break
+
+        # line_bot_apiが定義されなかった場合、終了
+        # 主な原因はLINEグループを作成していないサーバーからのメッセージ
+        if not bool('line_bot_api' in locals()):
+            return
 
         # 送信NGのチャンネル名の場合、終了
         ng_channel = os.environ.get(f"{bot_name}_NG_CHANNEL").split(",")
@@ -113,7 +118,7 @@ class mst_line(commands.Cog):
                 return
             # 画像として送信
             else:
-                imagelist = image_checker(message.stickers)
+                imagelist = await image_checker(message.stickers)
                 messagetext = f'{messagetext} スタンプ:{message.stickers[0].name}'
 
         if len(imagelist) > 0:
@@ -121,7 +126,11 @@ class mst_line(commands.Cog):
                 await line_bot_api.push_image_notify(message=messagetext,image_url=image)
 
         if len(videolist) > 0:
-            await line_bot_api.push_movie(preview_image=message.guild.icon.url,movie_urls=videolist)
+            if hasattr(message.guild.icon,'url'):
+                icon_url = message.guild.icon.url
+            else:
+                icon_url = message.author.display_avatar.url
+            await line_bot_api.push_movie(preview_image=icon_url,movie_urls=videolist)
 
         if len(imagelist) + len(videolist) == 0:
             await line_bot_api.push_message_notify(message=messagetext)

@@ -15,15 +15,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from message_type.line_type.class_type import Profile,EventResponse
     from message_type.line_type.line_event import Line_Responses
     from message_type.discord_type.message_creater import MessageFind
-    from message_type.line_type.line_message import Notify
+    from message_type.line_type.line_message import LineBotAPI
 except:
-    from app.message_type.line_type.class_type import Profile,EventResponse
     from app.message_type.line_type.line_event import Line_Responses
     from app.message_type.discord_type.message_creater import MessageFind
-    from app.message_type.line_type.line_message import Notify
+    from app.message_type.line_type.line_message import LineBotAPI
 # ./venv/Scripts/activate.bat
 
 import os
@@ -70,7 +68,7 @@ async def line_response(
                 token = TOKEN
             )
             # LINEのクラスを宣言
-            line_bot_api = Notify(
+            line_bot_api = LineBotAPI(
                 notify_token = os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
                 line_bot_token = os.environ[f'{bot_name}_BOT_TOKEN'],
                 line_group_id = os.environ.get(f'{bot_name}_GROUP_ID')
