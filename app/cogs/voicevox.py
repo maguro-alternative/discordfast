@@ -88,11 +88,10 @@ class voicevox(commands.Cog):
         async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
             await f.write(r)
 
-
-
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
-        while hasattr(ctx.guild.voice_client,'is_playing'):
+        if hasattr(ctx.guild.voice_client,'is_playing'):
+            await ctx.respond(hasattr(ctx.guild.voice_client,'is_playing'))
             await asyncio.sleep(1)
         try:
             ctx.guild.voice_client.play(trans)  #音源再生
