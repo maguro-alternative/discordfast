@@ -3,10 +3,13 @@ import discord
 from discord.ext import commands
 from discord import Option
 import aiofiles
+from pydub import AudioSegment
+from concurrent.futures import ThreadPoolExecutor
 
 import os
 
 import requests
+import asyncio
 try:
     from app.core.start import DBot
 except:
@@ -67,6 +70,7 @@ class voicevox(commands.Cog):
         except discord.ClientException:
             await ctx.respond(f"{speaker}「 {text} 」")
 
+        # 3がずんだもんの数字
         id=3
         key=os.environ["VOICEVOX_KEY"]
 
@@ -80,6 +84,13 @@ class voicevox(commands.Cog):
                 ).content
         async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
             await f.write(r)
+
+        loop = asyncio.new_event_loop()
+        executor = ThreadPoolExecutor()
+        base_sound = loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
+        #base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
+
+        print(base_sound)
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
