@@ -85,10 +85,10 @@ class voicevox(commands.Cog):
         async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
             await f.write(r)
 
-        loop = asyncio.new_event_loop()
-        executor = ThreadPoolExecutor()
-        base_sound = await loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
-        #base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
+        #loop = asyncio.new_event_loop()
+        #executor = ThreadPoolExecutor()
+        #base_sound = await loop.run_in_executor(executor, AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav"))
+        base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
 
         print(base_sound)
         print(base_sound.duration_seconds)
