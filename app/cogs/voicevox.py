@@ -45,6 +45,10 @@ Speaker_id = [  2,0,6,4,
 async def get_speaker(ctx:discord.ApplicationContext):
     return [speaker for speaker in Speaker if speaker.startswith(ctx.value)]
 
+async def get_wav_second(wav_file_path) -> int:
+    base_sound = AudioSegment.from_file(wav_file_path, format="wav")
+    return base_sound.duration_seconds
+
 class voicevox(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot 
@@ -84,15 +88,13 @@ class voicevox(commands.Cog):
         async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
             await f.write(r)
 
-        base_sound = AudioSegment.from_file(f".\wave\zunda_{ctx.guild.id}.wav", format="wav")
+        base_sound_second = await get_wav_second(f".\wave\zunda_{ctx.guild.id}.wav")
 
-        print(base_sound)
-        print(base_sound.duration_seconds)
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume=volume)
         if hasattr(ctx.guild.voice_client,'is_playing'):
-            await asyncio.sleep(int(base_sound.duration_seconds)+5)
+            await asyncio.sleep(base_sound_second+5)
         try:
             ctx.guild.voice_client.play(trans)  #音源再生
         except :#discord.ApplicationCommandInvokeError:
