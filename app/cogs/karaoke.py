@@ -6,6 +6,8 @@ import asyncio
 from pydub import AudioSegment
 import os
 
+import urllib.error
+
 try:
     from app.cogs.bin.rank import Wav_Karaoke
     from app.core.start import DBot
@@ -45,8 +47,8 @@ class karaoke(commands.Cog):
         # youtube-dlでダウンロード
         try:
             await karaoke_ongen.song_dl(url)
-        except discord.HTTPException as e:
-            if e.status == 403:
+        except urllib.error.HTTPError as e:
+            if e.code == 403:
                 await ctx.channel.send('403エラー もう一度ダウンロードし直してください。')
         # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
         # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
