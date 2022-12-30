@@ -164,6 +164,8 @@ class karaoke(commands.Cog):
 
         await ctx.respond("採点中,,,")
         karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        
+        await karaoke.limit_wav_duration()
         wavRatio = await karaoke.voice_wav_second() / await karaoke.music_wav_second()
         
         if wavRatio>=0.5:
