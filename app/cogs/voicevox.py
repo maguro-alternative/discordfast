@@ -8,9 +8,7 @@ from pydub import AudioSegment
 import os
 
 import requests
-from collections import defaultdict, deque
 
-queue_dict = defaultdict(deque)
 import asyncio
 try:
     from app.core.start import DBot
@@ -79,7 +77,6 @@ class voicevox(commands.Cog):
         # 3がずんだもんの数字
         id=3
         key=os.environ["VOICEVOX_KEY"]
-        queue = queue_dict
 
         for sp,sp_id in zip(Speaker,Speaker_id):
             if sp==speaker:

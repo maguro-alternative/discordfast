@@ -1,7 +1,7 @@
 import youtube_dl
 
 # youtube-dlでダウンロード
-def you(test_video:str,id:int):
+async def song_dl(test_video:str,id:int):
   # test_video = 'https://www.youtube.com/watch?v=smhoJzDiiwE'
   filename = f"./wave/{id}_music"
 

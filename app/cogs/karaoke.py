@@ -4,14 +4,13 @@ from discord.ext import commands
 from discord import Option
 import asyncio
 from pydub import AudioSegment
+import os
 
 try:
-    from app.cogs.bin import youdl
-    from app.cogs.bin import rank
+    from app.cogs.bin.rank import Wav_Karaoke
     from app.core.start import DBot
 except:
-    from cogs.bin import youdl
-    from cogs.bin import rank
+    from cogs.bin.rank import Wav_Karaoke
     from core.start import DBot
 
 class karaoke(commands.Cog):
@@ -21,43 +20,50 @@ class karaoke(commands.Cog):
 
     @commands.slash_command()
     async def start_record(self,ctx:discord.ApplicationContext):
-        try :   # 再生中かどうか判断
-            print(ctx.guild.voice_client.is_playing())
-            await ctx.respond("再生中です。")
+
+        if not bool(os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')):
+            await ctx.respond('音源が見つかりません')
             return
-        except AttributeError:
-            print("record")
+
+        if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
+            if ctx.guild.voice_client.is_playing():
+                await ctx.respond("再生中です。")
+                return
+
+        if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
+            if ctx.guild.voice_client.is_connected():
+                await ctx.respond("ボイスチャンネルに接続中です。")
+                return
 
         # コマンドを使用したユーザーのボイスチャンネルに接続
-        try:
+        if hasattr(ctx.author.voice,'channel'):
             vc = await ctx.author.voice.channel.connect()
             await ctx.respond("Recording...")
-            # コマンドを使用したユーザーのIDを書き込む
-            file = open('singid.txt', 'w')
-            file.write(str(ctx.author.id))
-            file.close()
-        except AttributeError:
+        else:
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
+
+        karaoke = Wav_Karaoke(user_id = ctx.author.id)
         
+        #source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav") 
+        source = discord.FFmpegPCMAudio(f".\wave\{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
+        trans = discord.PCMVolumeTransformer(source,volume=0.3)
+
         # 録音開始。mp3で帰ってくる。wavだとなぜか壊れる。
         ctx.voice_client.start_recording(discord.sinks.MP3Sink(), finished_callback, ctx)
 
-        source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
-        trans = discord.PCMVolumeTransformer(source,volume=0.3)
         vc.play(trans, after=check_error)  #音源再生
         
         # 再生終了まで待つ
-        second_wait=int(rank.wavsecond(f"./wave/{ctx.author.id}_music.wav"))
+        #second_wait=int(await karaoke.wav_second(f"./wave/{ctx.author.id}_music.wav"))
+        second_wait = await karaoke.music_wav_second()
         for i in range(0,second_wait):
-            try:
+            if hasattr(ctx.guild.voice_client,'is_playing'):
                 # print(f"\r{i}second play:{ctx.guild.voice_client.is_playing()}", end='')
-                print(f"\r{i}second", end='')
+                # print(f"\r{i}second", end='')
                 await asyncio.sleep(1)
-            except:
-                return
 
-        ctx.voice_client.stop_recording() # Stop the recording, finished_callback will shortly after be called
+        ctx.voice_client.stop_recording() # 録音を停止し、直後にfinished_callbackが呼び出されます。
         # await ctx.respond("Stopped! 採点中,,,")
         await ctx.respond("Stopped! /rank_Scoring で採点します")
         await ctx.voice_client.disconnect()
@@ -76,25 +82,29 @@ class karaoke(commands.Cog):
         ctx: discord.ApplicationContext,
         url: Option(str, required=True, description="urlをいれて", )
     ):
-        try :   # 再生中か判断
-            print(ctx.guild.voice_client.is_playing())
-            await ctx.respond("再生中です。")
-            return
-        except AttributeError:
-            print("download")
+
+        if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
+            if ctx.guild.voice_client.is_playing():
+                await ctx.respond("再生中です。")
+                return
+
+        if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
+            if ctx.guild.voice_client.is_connected():
+                await ctx.respond("ボイスチャンネルに接続中です。")
+                return
+
+        karaoke = Wav_Karaoke(user_id = ctx.author.id)
 
         await ctx.respond("downloading...\n"+url) 
         # youtube-dlでダウンロード
-        youdl.you(url,ctx.author.id)
-        song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
-        song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
-        await ctx.channel.send(f"<@{ctx.author.id}> ダウンロード完了! /start_record で採点します。")
+        await karaoke.song_dl(url)
+        # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
+        # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
 
-    @commands.slash_command()
-    async def test(self,ctx:discord.ApplicationContext):
-        ctx.voice_client.start_recording(discord.sinks.MP3Sink(), finished_callback, ctx)
-        await ctx.respond("test")
-        print(ctx.author.voice.channel)
+        song = AudioSegment.from_file(f".\wave\{ctx.author.id}_music.wav", format="wav")
+        song.export(f".\wave\{ctx.author.id}_music.wav", format='wav')
+
+        await ctx.channel.send(f"<@{ctx.author.id}> ダウンロード完了! /start_record で採点します。")
 
     @commands.slash_command()
     async def test_record(
@@ -112,7 +122,6 @@ class karaoke(commands.Cog):
             await ctx.respond("入室中です。録音を開始します。")
             ctx.voice_client.start_recording(discord.sinks.MP3Sink(), finished_callback, ctx)
         for i in range(0,wait_second):
-            print(f"\r{i}second", end='')
             await asyncio.sleep(1)
         ctx.voice_client.stop_recording()
 
@@ -121,10 +130,6 @@ class karaoke(commands.Cog):
         try:
             vc = await ctx.author.voice.channel.connect()
             await ctx.respond("Recording...")
-            # コマンドを使用したユーザーのIDを書き込む
-            file = open('singid.txt', 'w')
-            file.write(str(ctx.author.id))
-            file.close()
         except AttributeError:
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
@@ -132,26 +137,43 @@ class karaoke(commands.Cog):
             await ctx.respond("入室中です。再生を開始します。")
 
 
-        source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
+        # source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
+        source = discord.FFmpegPCMAudio(f".\wave\{ctx.author.id}_music.wav")
         trans = discord.PCMVolumeTransformer(source,volume=0.3)
         vc.play(trans)  #音源再生
+
+        karaoke = Wav_Karaoke(user_id = ctx.author.id)
         
         # 再生終了まで待つ
-        second_wait=int(rank.wavsecond(f"./wave/{ctx.author.id}_music.wav"))
+        second_wait = await karaoke.music_wav_second()
         for i in range(0,second_wait):
-            print(f"\r{i}second", end='')
             await asyncio.sleep(1)
 
         await ctx.voice_client.disconnect()
 
     @commands.slash_command()
     async def rank_scoring(self,ctx:discord.ApplicationContext):
+        if not bool(os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')):
+            await ctx.respond('音源が見つかりません')
+            return
+
+        if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
+            if ctx.guild.voice_client.is_playing():
+                await ctx.respond("再生中です。")
+                return
+
+        if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
+            if ctx.guild.voice_client.is_connected():
+                await ctx.respond("ボイスチャンネルに接続中です。")
+                return
+
         await ctx.respond("採点中,,,")
-        wavRatio=rank.wavsecond("./wave/sample_voice.wav")/rank.wavsecond(f"./wave/{ctx.author.id}_music.wav")
-        print(wavRatio)
+        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        wavRatio = await karaoke.voice_wav_second() / await karaoke.music_wav_second()
+        
         if wavRatio>=0.5:
             # 採点結果を表示
-            await ctx.channel.send(f"<@{ctx.author.id}> 点数 "+str(rank.wavmain(ctx))+"点です！")
+            await ctx.channel.send(f'<@{ctx.author.id}> 点数 {karaoke.calculate_wav_similarity()}点です！')
         else:
             await ctx.channel.send(f"<@{ctx.author.id}> 歌っている時間が短く、正常に採点出来ませんでした。")
 
@@ -181,5 +203,5 @@ async def finished_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationC
 def check_error(er):
     print(f'Error check: {er}')
 
-def setup(bot):
+def setup(bot:DBot):
     return bot.add_cog(karaoke(bot))
