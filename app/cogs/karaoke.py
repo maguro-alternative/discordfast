@@ -16,6 +16,7 @@ except:
 class karaoke(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot 
+        self.sing_user_id = 0
 
     # 音源ダウンロード
     @commands.slash_command(description = 'YouTubeから音源をダウンロード')
@@ -26,7 +27,7 @@ class karaoke(commands.Cog):
     ):
 
         if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
-            if ctx.guild.voice_client.is_playing():
+            if ctx.guild.voice_client.is_playing() and self.sing_user_id == ctx.author.id:
                 await ctx.respond("再生中です。")
                 return
 
@@ -52,29 +53,33 @@ class karaoke(commands.Cog):
         volume: Option(float, required=False, description="音量", default=0.3),
     ):
 
-        if not bool(os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')):
+        file_path_bool = os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')
+        playing_bool = hasattr(ctx.guild.voice_client,'is_playing')
+        connected_bool = hasattr(ctx.guild.voice_client,'is_connected')
+
+        if not bool(file_path_bool):
             await ctx.respond('音源が見つかりません')
             return
 
-        if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
+        if playing_bool:   # 再生中かどうか判断
             if ctx.guild.voice_client.is_playing():
                 await ctx.respond("再生中です。")
                 return
 
-        if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
-            if ctx.guild.voice_client.is_connected():
-                await ctx.respond("ボイスチャンネルに接続中です。")
-                return
-
         # コマンドを使用したユーザーのボイスチャンネルに接続
         if hasattr(ctx.author.voice,'channel'):
-            vc = await ctx.author.voice.channel.connect()
-            await ctx.respond("録音中...")
+            if connected_bool:
+                if ctx.author.voice.channel.is_connected():
+                    await ctx.respond("ボイスチャンネルに接続中です。録音中...")
+            else:
+                vc = await ctx.author.voice.channel.connect()
+                await ctx.respond("録音中...")
         else:
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
 
         karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        self.sing_user_id = ctx.author.id
         
         #source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav") 
         source = discord.FFmpegPCMAudio(f".\wave\{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
@@ -106,13 +111,8 @@ class karaoke(commands.Cog):
             return
 
         if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
-            if ctx.guild.voice_client.is_playing():
+            if ctx.guild.voice_client.is_playing() and self.sing_user_id == ctx.author.id:
                 await ctx.respond("再生中です。")
-                return
-
-        if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
-            if ctx.guild.voice_client.is_connected():
-                await ctx.respond("ボイスチャンネルに接続中です。")
                 return
 
         await ctx.respond("採点中,,,")
@@ -172,7 +172,7 @@ class karaoke(commands.Cog):
             if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
                 if ctx.guild.voice_client.is_connected():
                     await ctx.respond("入室中です。再生を開始します。")
-                    vc = await ctx.guild.voice_client
+                    vc = ctx.guild.voice_client
             else:
                 vc = await ctx.author.voice.channel.connect()
                 await ctx.respond("再生中...")
