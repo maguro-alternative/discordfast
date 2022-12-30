@@ -107,11 +107,12 @@ class karaoke(commands.Cog):
         wait_second: Option(int, required=True, description="録音する秒数", )
     ):
         if hasattr(ctx.author.voice,'channel'):
-            if ctx.author.voice.channel.is_connected():
-                await ctx.respond("入室中です。録音を開始します。")
-            else:
-                await ctx.author.voice.channel.connect()
-                await ctx.respond("録音中...")
+            if hasattr(ctx.author.voice.channel,'is_connected'):
+                if ctx.author.voice.channel.is_connected():
+                    await ctx.respond("入室中です。録音を開始します。")
+                else:
+                    await ctx.author.voice.channel.connect()
+                    await ctx.respond("録音中...")
         else:
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
