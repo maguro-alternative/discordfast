@@ -26,7 +26,7 @@ class mst_line(commands.Cog):
         server_list=servers_name.split(",")
         for server_name in server_list:
             # コマンドを打ったサーバーと環境変数にあるサーバーが一致した場合、利用状況を送信
-            if int(os.environ[f"{server_name}_GUILD_ID"])==ctx.guild.id:
+            if int(os.environ[f"{server_name}_GUILD_ID"]) == ctx.guild.id:
                 await ctx.respond("LINE連携の利用状況です。")
                 #day_signal([server_name],f"<@{ctx.author.id}>\nテストコマンド 現在の上限です")
                 #angry_signal(PushLimit(server_name),f"<@{ctx.author.id}>\n",server_name)
