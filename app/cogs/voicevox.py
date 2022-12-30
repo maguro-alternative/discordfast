@@ -65,32 +65,34 @@ class voicevox(commands.Cog):
         intonation: Option(int, required=False, description="イントネーション",default=1),
         speed: Option(int, required=False, description="話すスピード",default=1),
     ):
-        try:
-            await ctx.author.voice.channel.connect()
-            await ctx.respond(f"{speaker}「 {text} 」")
-        except AttributeError:
+        if hasattr(ctx.author.voice,'channel'):
+            if ctx.author.voice.channel.is_connected():
+                await ctx.respond(f"{speaker}「 {text} 」")
+            else:
+                await ctx.author.voice.channel.connect()
+                await ctx.respond(f"{speaker}「 {text} 」")
+        else:
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
-        except discord.ClientException:
-            await ctx.respond(f"{speaker}「 {text} 」")
+        
 
         # 3がずんだもんの数字
-        id=3
-        key=os.environ["VOICEVOX_KEY"]
+        id = 3
+        key = os.environ["VOICEVOX_KEY"]
 
         for sp,sp_id in zip(Speaker,Speaker_id):
-            if sp==speaker:
-                id=sp_id
+            if sp == speaker:
+                id = sp_id
                 break
 
-        r=requests.post(
+        r = requests.post(
                 f'https://api.su-shiki.com/v2/voicevox/audio/?key={key}&speaker={id}&pitch={pitch}&intonationScale={intonation}&speed={speed}&text={text}',
-                ).content
+            ).content
         async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
             await f.write(r)
 
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
-        trans = discord.PCMVolumeTransformer(source,volume=volume)
+        trans = discord.PCMVolumeTransformer(source,volume = volume)
 
         # 再生中なら終了まで待つ
         if hasattr(ctx.guild.voice_client,'is_playing'):
