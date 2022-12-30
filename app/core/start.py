@@ -17,7 +17,10 @@ class DBot(discord.AutoShardedBot):
 
     async def on_ready(self):
         print('起動しました')
-        await self.change_presence(activity=discord.Game(name="senran kagura"))
+        game_name = os.environ.get('GAME_NAME')
+        if game_name == None:
+            game_name = 'senran kagura'
+        await self.change_presence(activity = discord.Game(name = game_name))
         #self.signal.start()
 
     def load_cogs(self):

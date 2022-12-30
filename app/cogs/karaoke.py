@@ -49,7 +49,7 @@ class karaoke(commands.Cog):
             await karaoke_ongen.song_dl(url)
         except urllib.error.HTTPError as e:
             if e.code == 403:
-                await ctx.channel.send('403エラー もう一度ダウンロードし直してください。')
+                await ctx.channel.send(f'<@{ctx.author.id}> 403エラー もう一度ダウンロードし直してください。')
         # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
         # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
 
@@ -116,6 +116,11 @@ class karaoke(commands.Cog):
         await ctx.respond("録音終了! /rank_Scoring で採点します")
         await ctx.voice_client.disconnect()
 
+        game_name = os.environ.get('GAME_NAME')
+        if game_name == None:
+            game_name = 'senran kagura'
+
+        await self.bot.change_presence(activity = discord.Game(name = game_name))
 
 
     @commands.slash_command(description = '音源と音声を比較し、100点満点で採点します。')
