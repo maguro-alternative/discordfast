@@ -65,9 +65,10 @@ class voicevox(commands.Cog):
         intonation: Option(int, required=False, description="イントネーション",default=1),
         speed: Option(int, required=False, description="話すスピード",default=1),
     ):
-        if hasattr(ctx.author.voice.channel,'is_connected'):
-            if ctx.author.voice.channel.is_connected():
-                await ctx.respond(f"{speaker}「 {text} 」")
+        if hasattr(ctx.author.voice,'channel'):
+            if hasattr(ctx.author.voice.channel,'is_connected'):
+                if ctx.author.voice.channel.is_connected():
+                    await ctx.respond(f"{speaker}「 {text} 」")
             else:
                 await ctx.author.voice.channel.connect()
                 await ctx.respond(f"{speaker}「 {text} 」")
