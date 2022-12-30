@@ -31,11 +31,11 @@ class karaoke(commands.Cog):
                 await ctx.respond("再生中です。")
                 return
 
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
 
         await ctx.respond("downloading...\n"+url) 
         # youtube-dlでダウンロード
-        await karaoke.song_dl(url)
+        await karaoke_ongen.song_dl(url)
         # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
         # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
 
