@@ -66,8 +66,8 @@ class voicevox(commands.Cog):
         speed: Option(int, required=False, description="話すスピード",default=1),
     ):
         if hasattr(ctx.author.voice,'channel'):
-            if hasattr(ctx.author.voice.channel,'is_connected'):
-                if ctx.author.voice.channel.is_connected():
+            if hasattr(ctx.guild.voice_client,'is_connected'):
+                if ctx.guild.voice_client.is_connected():
                     await ctx.respond(f"{speaker}「 {text} 」")
             else:
                 await ctx.author.voice.channel.connect()
