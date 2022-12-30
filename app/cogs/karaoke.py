@@ -18,7 +18,7 @@ class karaoke(commands.Cog):
         self.bot = bot 
         # super().__init__()
 
-    @commands.slash_command(description='カラオケスタート(事前に/downloadで音源をダウンロードすること)')
+    @commands.slash_command(description = 'カラオケスタート(事前に/downloadで音源をダウンロードすること)')
     async def start_record(self,ctx:discord.ApplicationContext):
 
         if not bool(os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')):
@@ -76,7 +76,7 @@ class karaoke(commands.Cog):
         await ctx.voice_client.disconnect()
 
     # 音源ダウンロード
-    @commands.slash_command(description='YouTubeから音源をダウンロード')
+    @commands.slash_command(description = 'YouTubeから音源をダウンロード')
     async def download(
         self,
         ctx: discord.ApplicationContext,
@@ -168,7 +168,7 @@ class karaoke(commands.Cog):
         
         if wavRatio>=0.5:
             # 採点結果を表示
-            await ctx.channel.send(f'<@{ctx.author.id}> 点数 {karaoke.calculate_wav_similarity()}点です！')
+            await ctx.channel.send(f'<@{ctx.author.id}> 点数 {await karaoke.calculate_wav_similarity()}点です！')
         else:
             await ctx.channel.send(f"<@{ctx.author.id}> 歌っている時間が短く、正常に採点出来ませんでした。")
 
@@ -180,8 +180,8 @@ async def finished_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationC
 
     # 録音したユーザーの音声を取り出す
     for user_id, audio in sink.audio_data.items():
-        if user_id==int(ctx.author.id):     # 歌ったユーザーIDと一致した場合
-            print(type(audio.file))
+        if user_id == ctx.author.id:     # 歌ったユーザーIDと一致した場合
+            # print(type(audio.file))
             # mp3ファイルとして書き込み。その後wavファイルに変換。
             song = AudioSegment.from_file(audio.file, format="mp3")
             song.export("./wave/sample_voice.wav", format='wav')
