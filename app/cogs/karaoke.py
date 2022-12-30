@@ -33,8 +33,11 @@ class karaoke(commands.Cog):
                     return
                 else:
                     await ctx.respond('再生終了後、ダウンロードをはじめます。')
-                    while ctx.guild.voice_client.is_playing():
-                        await asyncio.sleep(1)
+                    try:
+                        while ctx.guild.voice_client.is_playing():
+                            await asyncio.sleep(1)
+                    except AttributeError:
+                        await ctx.channel.send('再生終了!')
 
         karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
 
