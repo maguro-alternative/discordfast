@@ -19,7 +19,7 @@ class Wav_Karaoke:
         base_sound = AudioSegment.from_file(self.music_file_path, format="wav")
         return base_sound
 
-    async def music_wav_second(self) -> int:   #wavファイルを開く
+    async def music_wav_second(self) -> float:   #wavファイルを開く
         base_sound = AudioSegment.from_file(self.music_file_path, format="wav")
         return base_sound.duration_seconds
 
@@ -27,7 +27,7 @@ class Wav_Karaoke:
         base_sound = AudioSegment.from_file(self.voice_file_path, format="wav")
         return base_sound
 
-    async def voice_wav_second(self) -> int:   #wavファイルを開く
+    async def voice_wav_second(self) -> float:   #wavファイルを開く
         base_sound = AudioSegment.from_file(self.voice_file_path, format="wav")
         return base_sound.duration_seconds
 

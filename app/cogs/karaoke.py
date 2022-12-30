@@ -18,7 +18,7 @@ class karaoke(commands.Cog):
         self.bot = bot 
         # super().__init__()
 
-    @commands.slash_command()
+    @commands.slash_command(description='カラオケスタート(事前に/downloadで音源をダウンロードすること)')
     async def start_record(self,ctx:discord.ApplicationContext):
 
         if not bool(os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')):
@@ -57,7 +57,7 @@ class karaoke(commands.Cog):
         # 再生終了まで待つ
         #second_wait=int(await karaoke.wav_second(f"./wave/{ctx.author.id}_music.wav"))
         second_wait = await karaoke.music_wav_second()
-        for i in range(0,second_wait):
+        for i in range(0,int(second_wait)):
             if hasattr(ctx.guild.voice_client,'is_playing'):
                 # print(f"\r{i}second play:{ctx.guild.voice_client.is_playing()}", end='')
                 # print(f"\r{i}second", end='')
@@ -76,7 +76,7 @@ class karaoke(commands.Cog):
         await ctx.voice_client.disconnect()
 
     # 音源ダウンロード
-    @commands.slash_command()
+    @commands.slash_command(description='YouTubeから音源をダウンロード')
     async def download(
         self,
         ctx: discord.ApplicationContext,
@@ -86,11 +86,6 @@ class karaoke(commands.Cog):
         if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
             if ctx.guild.voice_client.is_playing():
                 await ctx.respond("再生中です。")
-                return
-
-        if hasattr(ctx.guild.voice_client,'is_connected'):   # ボイスチャンネルに接続中かどうか判断
-            if ctx.guild.voice_client.is_connected():
-                await ctx.respond("ボイスチャンネルに接続中です。")
                 return
 
         karaoke = Wav_Karaoke(user_id = ctx.author.id)
@@ -146,7 +141,7 @@ class karaoke(commands.Cog):
         
         # 再生終了まで待つ
         second_wait = await karaoke.music_wav_second()
-        for i in range(0,second_wait):
+        for i in range(0,int(second_wait)):
             await asyncio.sleep(1)
 
         await ctx.voice_client.disconnect()
