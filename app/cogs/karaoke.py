@@ -184,7 +184,7 @@ async def finished_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationC
             # print(type(audio.file))
             # mp3ファイルとして書き込み。その後wavファイルに変換。
             song = AudioSegment.from_file(audio.file, format="mp3")
-            song.export("./wave/sample_voice.wav", format='wav')
+            song.export(f'.\wave\{ctx.author.id}_voice.wav', format='wav')
 
             """# 歌っているか判断。時間が原曲の半分以下の場合採点しない。
             wavRatio=rank.wavsecond("./wave/sample_voice.wav")/rank.wavsecond(f"./wave/{ctx.author.id}_music.wav")
