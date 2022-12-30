@@ -27,15 +27,24 @@ class karaoke(commands.Cog):
     ):
 
         if hasattr(ctx.guild.voice_client,'is_playing'):   # 再生中かどうか判断
-            if ctx.guild.voice_client.is_playing() and self.sing_user_id == ctx.author.id:
-                await ctx.respond("再生中です。")
-                return
+            if ctx.guild.voice_client.is_playing():
+                if self.sing_user_id == ctx.author.id:
+                    await ctx.respond("再生中です。")
+                    return
+                else:
+                    await ctx.respond('再生終了後、ダウンロードをはじめます。')
+                    while ctx.guild.voice_client.is_playing():
+                        await asyncio.sleep(1)
 
         karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
 
         await ctx.respond("downloading...\n"+url) 
         # youtube-dlでダウンロード
-        await karaoke_ongen.song_dl(url)
+        try:
+            await karaoke_ongen.song_dl(url)
+        except discord.HTTPException as e:
+            if e.status == 403:
+                await ctx.channel.send('403エラー もう一度ダウンロードし直してください。')
         # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
         # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
 
