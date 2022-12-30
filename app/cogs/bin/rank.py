@@ -81,7 +81,7 @@ class Wav_Karaoke:
         eval = 1 - (ac[-1][-1] / np.array(ac).max())
         #print("Score : {}".format(round(eval,4)))
 
-        return eval*100
+        return round(eval*100,4)
 
     # youtube-dlでダウンロード
     async def song_dl(self,video_url:str):
