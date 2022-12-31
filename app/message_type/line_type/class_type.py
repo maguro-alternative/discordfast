@@ -91,7 +91,7 @@ async def to_snake_case(text:str):
     return s3.lower()
 
 async def to_camel_case(text:str):
-    """Convert to camel case.
+    """キャメルケースに変換する。
 
     :param str text:
     :rtype: str
