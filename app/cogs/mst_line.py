@@ -155,11 +155,11 @@ class mst_line(commands.Cog):
                     1時間当たりのメッセージ送信上限(1000):
                         **{await line_signal.rate_limit()}**\n
                     1時間当たりの残りメッセージ送信数:
-                        **{await line_signal.rate_image_remaining()}**\n
+                        **{await line_signal.rate_remaining()}**\n
                     1時間当たりの画像送信上限数(50):
                         **{await line_signal.rate_image_limit()}**\n
                     1時間当たりの残り画像送信数:
-                        **{await line_signal.rate_image_limit()}**
+                        **{await line_signal.rate_image_remaining()}**
                     """
                 )
 
