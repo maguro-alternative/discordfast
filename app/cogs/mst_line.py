@@ -164,9 +164,9 @@ class mst_line(commands.Cog):
                 )
 
                 await ctx.channel.send(embed = embed)
-                #day_signal([server_name],f"<@{ctx.author.id}>\nテストコマンド 現在の上限です")
-                #angry_signal(PushLimit(server_name),f"<@{ctx.author.id}>\n",server_name)
-
+                return
+                
+        await ctx.respond('LINEが登録されていません。')
 
 
 async def image_checker(attachments:List[discord.Attachment]) -> List[str]:
