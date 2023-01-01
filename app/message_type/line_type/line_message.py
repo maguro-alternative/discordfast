@@ -110,10 +110,11 @@ class LineBotAPI:
 
     # 送ったメッセージ数を取得
     async def totalpush(self) -> int:
-        return await line_get_request(
+        r = await line_get_request(
             LINE_BOT_URL + "/message/quota/consumption",
             self.line_bot_token
-        )["totalUsage"]
+        )
+        return r["totalUsage"]
 
     # LINE Notifyのステータスを取得
     async def notify_status(self) -> Response:
