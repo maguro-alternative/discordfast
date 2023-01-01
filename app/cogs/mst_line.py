@@ -17,21 +17,6 @@ class mst_line(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot
 
-    # テストコマンド
-    @commands.slash_command(description="LINEの利用状況を確認します")
-    async def test_signal(self,ctx:discord.ApplicationContext):
-
-        # 環境変数から所属しているサーバー名一覧を取得し、配列に格納
-        servers_name=os.environ['SERVER_NAME']
-        server_list=servers_name.split(",")
-        for server_name in server_list:
-            # コマンドを打ったサーバーと環境変数にあるサーバーが一致した場合、利用状況を送信
-            if int(os.environ[f"{server_name}_GUILD_ID"]) == ctx.guild.id:
-                await ctx.respond("LINE連携の利用状況です。")
-                #day_signal([server_name],f"<@{ctx.author.id}>\nテストコマンド 現在の上限です")
-                #angry_signal(PushLimit(server_name),f"<@{ctx.author.id}>\n",server_name)
-
-
     # DiscordからLINEへ
     @commands.Cog.listener(name='on_message')
     async def on_message(self, message:discord.Message):
@@ -50,7 +35,11 @@ class mst_line(commands.Cog):
         for bot_name in bots_name:
             # メッセージが送られたサーバーを探す
             if os.environ.get(f"{bot_name}_GUILD_ID") == str(message.guild.id):
-                line_bot_api = LineBotAPI(notify_token=os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),line_bot_token=os.environ[f'{bot_name}_BOT_TOKEN'],line_group_id=os.environ.get(f'{bot_name}_GROUP_ID'))
+                line_bot_api = LineBotAPI(
+                    notify_token = os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
+                    line_bot_token = os.environ[f'{bot_name}_BOT_TOKEN'],
+                    line_group_id = os.environ.get(f'{bot_name}_GROUP_ID')
+                )
                 break
 
         # line_bot_apiが定義されなかった場合、終了
@@ -134,6 +123,43 @@ class mst_line(commands.Cog):
 
         if len(imagelist) + len(videolist) == 0:
             await line_bot_api.push_message_notify(message=messagetext)
+
+
+    # テストコマンド
+    @commands.slash_command(description="LINEの利用状況を確認します")
+    async def test_signal(self,ctx:discord.ApplicationContext):
+
+        # 環境変数から所属しているサーバー名一覧を取得し、配列に格納
+        servers_name = os.environ['BOTS_NAME']
+        server_list = servers_name.split(",")
+        for server_name in server_list:
+            # コマンドを打ったサーバーと環境変数にあるサーバーが一致した場合、利用状況を送信
+            if int(os.environ[f"{server_name}_GUILD_ID"]) == ctx.guild.id:
+                await ctx.respond("LINE連携の利用状況です。")
+
+                line_signal = LineBotAPI(
+                    notify_token = os.environ.get(f'{server_name}_NOTIFY_TOKEN'),
+                    line_bot_token = os.environ[f'{server_name}_BOT_TOKEN'],
+                    line_group_id = os.environ.get(f'{server_name}_GROUP_ID')
+                )
+
+                embed = discord.Embed(
+                    title = ctx.guild.name,
+                    description = f"""
+                    一か月のメッセージ送信上限(基本1000,23年6月以降は200):{await line_signal.pushlimit()}\n
+                    今月の送信数:{await line_signal.totalpush()}\n
+                    友達、グループ人数:{await line_signal.friend()}\n
+                    1時間当たりのメッセージ送信上限(1000):{await line_signal.rate_limit()}\n
+                    1時間当たりの残りメッセージ送信数:{await line_signal.rate_image_remaining()}\n
+                    1時間当たりの画像送信上限数(50):{await line_signal.rate_image_limit()}\n
+                    1時間当たりの残り画像送信数:{await line_signal.rate_image_limit()}
+                    """
+                )
+
+                await ctx.channel.send(embed = embed)
+                #day_signal([server_name],f"<@{ctx.author.id}>\nテストコマンド 現在の上限です")
+                #angry_signal(PushLimit(server_name),f"<@{ctx.author.id}>\n",server_name)
+
 
 
 async def image_checker(attachments:List[discord.Attachment]) -> List[str]:

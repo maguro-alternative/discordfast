@@ -1,5 +1,7 @@
 import json
 import requests
+from requests import Response
+
 import datetime
 import calendar
 import os
@@ -56,6 +58,7 @@ class LineBotAPI:
         self.notify_token = notify_token
         self.line_bot_token = line_bot_token
         self.line_group_id = line_group_id
+        self.loop = asyncio.get_event_loop()
 
     # LINE Notifyでテキストメッセージを送信
     async def push_message_notify(self, message: str):
@@ -86,8 +89,6 @@ class LineBotAPI:
     # 動画の送信(動画のみ)
     async def push_movie(self, preview_image: str, movie_urls: List[str]):
         data = []
-        #if len(preview_image) == 0:
-            #preview_image = ""
         for movie_url in movie_urls:
             data.append({
                 "type": "video",
@@ -106,26 +107,17 @@ class LineBotAPI:
             },
             data = json.dumps(datas)
         )
-        """
-        return requests.post(
-            url = LINE_BOT_URL + "/message/push",
-            headers = {
-                'Authorization': 'Bearer ' + self.line_bot_token,
-                'Content-Type': 'application/json'
-            },
-            data=json.dumps(datas)
-        )
-        """
 
+    # 送ったメッセージ数を取得
     async def totalpush(self) -> int:
         return await line_get_request(
             LINE_BOT_URL + "/message/quota/consumption",
             self.line_bot_token
         )["totalUsage"]
 
-    async def rate_limit(self) -> int:
-        loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(
+    # LINE Notifyのステータスを取得
+    async def notify_status(self) -> Response:
+        resp = await self.loop.run_in_executor(
                 None,
                 partial(
                     requests.get,
@@ -133,7 +125,30 @@ class LineBotAPI:
                     headers = {'Authorization': 'Bearer ' + self.notify_token}
                 )
         )
+        return resp
+
+    # LINE Notifyの1時間当たりの上限を取得
+    async def rate_limit(self) -> int:
+        resp = await self.notify_status()
         ratelimit = resp.headers.get('X-RateLimit-Limit')
+        return int(ratelimit)
+
+    # LINE Notifyの1時間当たりの残りの回数を取得
+    async def rate_remaining(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-Remaining')
+        return int(ratelimit)
+
+    # LINE Notifyの1時間当たりの画像送信上限を取得
+    async def rate_image_limit(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-ImageLimit')
+        return int(ratelimit)
+
+    # LINE Notifyの1時間当たりの残り画像送信上限を取得
+    async def rate_image_remaining(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-ImageRemaining')
         return int(ratelimit)
 
     # 友達数、グループ人数をカウント
@@ -187,16 +202,7 @@ class LineBotAPI:
     # LINEから画像データを取得し、Gyazoにアップロード
     async def get_image_byte(self, message_id: int):
         # 画像のバイナリデータを取得
-        """
-        image_bytes = requests.get(
-            LINE_CONTENT_URL + f'/message/{message_id}/content',
-            headers={
-                'Authorization': 'Bearer ' + self.line_bot_token
-            }
-        ).content
-        """
-        loop = asyncio.get_event_loop()
-        bytes = await loop.run_in_executor(
+        bytes = await self.loop.run_in_executor(
                 None,
                 partial(
                     requests.get,
@@ -209,19 +215,7 @@ class LineBotAPI:
         image_bytes = bytes.content
         
         # Gyazoにアップロードする
-        """
-        gyazo_image = requests.post(
-            "https://upload.gyazo.com/api/upload",
-            headers={
-                'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-            },
-            files={
-                'imagedata': image_bytes
-            }
-        )#.json()
-        """
-
-        gyazo_image = await loop.run_in_executor(
+        gyazo_image = await self.loop.run_in_executor(
                 None,
                 partial(
                     requests.post,
@@ -242,16 +236,7 @@ class LineBotAPI:
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
-        """
-        movies_bytes = requests.get(
-            LINE_CONTENT_URL + f'/message/{message_id}/content',
-            headers={
-                'Authorization': 'Bearer ' + self.line_bot_token
-            }
-        ).iter_content()
-        """
-        loop = asyncio.get_event_loop()
-        bytes = await loop.run_in_executor(
+        bytes = await self.loop.run_in_executor(
                 None,
                 partial(
                     requests.get,
