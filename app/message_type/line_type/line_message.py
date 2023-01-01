@@ -1,5 +1,7 @@
 import json
 import requests
+from requests import Response
+
 import datetime
 import calendar
 import os
@@ -13,17 +15,42 @@ from typing import List
 
 from dotenv import load_dotenv
 load_dotenv()
+
+from functools import partial
+
 try:
     from message_type.line_type.class_type import Profile,GyazoJson
 except:
     from app.message_type.line_type.class_type import Profile,GyazoJson
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
+NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
 LINE_CONTENT_URL = 'https://api-data.line.me/v2/bot'
 
-async def line_req(url: str, token: str) -> json:
-    r = requests.get(url=url,headers={'Authorization': 'Bearer ' + token})
+async def line_get_request(url: str, token: str) -> json:
+    loop = asyncio.get_event_loop()
+    r = await loop.run_in_executor(
+            None,
+            partial(
+                requests.get,
+                url = url,
+                headers = {'Authorization': 'Bearer ' + token}
+            )
+    )
+    return r.json()
+
+async def line_post_request(url: str, headers: dict, data: dict) -> json:
+    loop = asyncio.get_event_loop()
+    r = await loop.run_in_executor(
+            None,
+            partial(
+                requests.post,
+                url = url,
+                headers = headers,
+                data = data
+            )
+    )
     return r.json()
 
 class LineBotAPI:
@@ -31,11 +58,17 @@ class LineBotAPI:
         self.notify_token = notify_token
         self.line_bot_token = line_bot_token
         self.line_group_id = line_group_id
+        self.loop = asyncio.get_event_loop()
 
     # LINE Notifyでテキストメッセージを送信
     async def push_message_notify(self, message: str):
         data = {'message': f'message: {message}'}
-        return requests.post(url=NOTIFY_URL, headers={'Authorization': f'Bearer {self.notify_token}'}, data=data)
+        return await line_post_request(
+            url = NOTIFY_URL, 
+            headers = {'Authorization': f'Bearer {self.notify_token}'}, 
+            data = data
+        )
+        #return requests.post(url=NOTIFY_URL, headers={'Authorization': f'Bearer {self.notify_token}'}, data=data)
 
     # LINE Notifyで画像を送信
     async def push_image_notify(self, message: str, image_url: str):
@@ -46,14 +79,16 @@ class LineBotAPI:
             'imageFullsize': f'{image_url}',
             'message': f'{message}',
         }
-        # print(self.header)
-        return requests.post(url=NOTIFY_URL, headers={'Authorization': f'Bearer {self.notify_token}'}, data=data)
+        return await line_post_request(
+            url = NOTIFY_URL, 
+            headers = {'Authorization': f'Bearer {self.notify_token}'}, 
+            data = data
+        )
+        #return requests.post(url=NOTIFY_URL, headers={'Authorization': f'Bearer {self.notify_token}'}, data=data)
 
     # 動画の送信(動画のみ)
     async def push_movie(self, preview_image: str, movie_urls: List[str]):
         data = []
-        #if len(preview_image) == 0:
-            #preview_image = ""
         for movie_url in movie_urls:
             data.append({
                 "type": "video",
@@ -64,26 +99,64 @@ class LineBotAPI:
             "to": self.line_group_id,
             "messages": data
         }
-        return requests.post(
+        return await line_post_request(
             url = LINE_BOT_URL + "/message/push",
             headers = {
                 'Authorization': 'Bearer ' + self.line_bot_token,
                 'Content-Type': 'application/json'
             },
-            data=json.dumps(datas)
+            data = json.dumps(datas)
         )
 
+    # 送ったメッセージ数を取得
     async def totalpush(self) -> int:
-        return await line_req(
+        r = await line_get_request(
             LINE_BOT_URL + "/message/quota/consumption",
             self.line_bot_token
-        )["totalUsage"]
+        )
+        return int(r["totalUsage"])
+
+    # LINE Notifyのステータスを取得
+    async def notify_status(self) -> Response:
+        resp = await self.loop.run_in_executor(
+                None,
+                partial(
+                    requests.get,
+                    url = NOTIFY_STATUS_URL,
+                    headers = {'Authorization': 'Bearer ' + self.notify_token}
+                )
+        )
+        return resp
+
+    # LINE Notifyの1時間当たりの上限を取得
+    async def rate_limit(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-Limit')
+        return int(ratelimit)
+
+    # LINE Notifyの1時間当たりの残りの回数を取得
+    async def rate_remaining(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-Remaining')
+        return int(ratelimit)
+
+    # LINE Notifyの1時間当たりの画像送信上限を取得
+    async def rate_image_limit(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-ImageLimit')
+        return int(ratelimit)
+
+    # LINE Notifyの1時間当たりの残り画像送信上限を取得
+    async def rate_image_remaining(self) -> int:
+        resp = await self.notify_status()
+        ratelimit = resp.headers.get('X-RateLimit-ImageRemaining')
+        return int(ratelimit)
 
     # 友達数、グループ人数をカウント
     async def friend(self):
         # グループIDが有効かどうか判断
         try:
-            r = await line_req(
+            r = await line_get_request(
                 LINE_BOT_URL + "/group/" + self.line_group_id + "/members/count",
                 self.line_bot_token,
             )
@@ -96,7 +169,7 @@ class LineBotAPI:
                 url = LINE_BOT_URL + "/insight/followers?date=" + before_day.strftime('%Y%m%d')
             else:
                 url = LINE_BOT_URL + "/insight/followers?date=" + datetime.date.today().strftime('%Y%m%d')
-            r = await line_req(
+            r = await line_get_request(
                 url,
                 self.line_bot_token,
             )
@@ -104,7 +177,7 @@ class LineBotAPI:
 
     # 当月に送信できるメッセージ数の上限目安を取得(基本1000,23年6月以降は200)
     async def pushlimit(self):
-        r = await line_req(
+        r = await line_get_request(
             LINE_BOT_URL + "/message/quota",
             self.line_bot_token
         )
@@ -115,13 +188,13 @@ class LineBotAPI:
     async def get_proflie(self, user_id: str):# -> Profile:
         # グループIDが有効かどうか判断
         try:
-            r = await line_req(
+            r = await line_get_request(
                 LINE_BOT_URL + f"/group/{self.line_group_id}/member/{user_id}",
                 self.line_bot_token,
             )
         # グループIDが無効の場合、友達から判断
         except KeyError:
-            r = await line_req(
+            r = await line_get_request(
                 LINE_BOT_URL + f"/profile/{user_id}",
                 self.line_bot_token,
             )
@@ -130,26 +203,32 @@ class LineBotAPI:
     # LINEから画像データを取得し、Gyazoにアップロード
     async def get_image_byte(self, message_id: int):
         # 画像のバイナリデータを取得
-        image_bytes = requests.get(
-            LINE_CONTENT_URL + f'/message/{message_id}/content',
-            headers={
-                'Authorization': 'Bearer ' + self.line_bot_token
-            }
-        ).content
+        bytes = await self.loop.run_in_executor(
+                None,
+                partial(
+                    requests.get,
+                    url = LINE_CONTENT_URL + f'/message/{message_id}/content',
+                    headers={
+                        'Authorization': 'Bearer ' + self.line_bot_token
+                    }
+                )
+        )
+        image_bytes = bytes.content
         
         # Gyazoにアップロードする
-        gyazo_image = requests.post(
-            "https://upload.gyazo.com/api/upload",
-            headers={
-                'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                #'imagedata': await f.read()
-            },
-            files={
-                'imagedata': image_bytes
-            }
-        )#.json()
-        print(gyazo_image.text)
-        print(gyazo_image.headers)
+        gyazo_image = await self.loop.run_in_executor(
+                None,
+                partial(
+                    requests.post,
+                    url = 'https://upload.gyazo.com/api/upload',
+                    headers={
+                        'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
+                    },
+                    files={
+                        'imagedata': image_bytes
+                    }
+                )
+        )
 
         return await GyazoJson.new_from_json_dict(gyazo_image.json())
         # 受け取ったjsonから画像のURLを生成
@@ -158,12 +237,17 @@ class LineBotAPI:
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
-        movies_bytes = requests.get(
-            LINE_CONTENT_URL + f'/message/{message_id}/content',
-            headers={
-                'Authorization': 'Bearer ' + self.line_bot_token
-            }
-        ).iter_content()
+        bytes = await self.loop.run_in_executor(
+                None,
+                partial(
+                    requests.get,
+                    url = LINE_CONTENT_URL + f'/message/{message_id}/content',
+                    headers={
+                        'Authorization': 'Bearer ' + self.line_bot_token
+                    }
+                )
+        )
+        movies_bytes = bytes.iter_content()
 
         # mp4で保存
         with open(".\movies\a.mp4", 'wb') as fd:
@@ -186,4 +270,8 @@ if __name__ == "__main__":
 
     #line = Notify(notify_token, line_bot_api, line_group_id)
 
-    start = time.time()
+    #start = time.time()
+    token = os.environ['6_NOTIFY_TOKEN']
+    resp = requests.get('https://notify-api.line.me/api/status', headers={'Authorization': f'Bearer {token}'})
+    ratelimit = resp.headers.get("X-RateLimit-Limit")
+    print(ratelimit)

@@ -45,7 +45,7 @@ class Base(object):
         return json.dumps(self.as_json_dict(), sort_keys=True)
 
     async def as_json_dict(self):
-        """Return dictionary from this object.
+        """このオブジェクトから辞書型を返します。
 
         :return: dict
         """
@@ -90,8 +90,8 @@ async def to_snake_case(text:str):
     s3 = re.sub('([0-9])([a-z])', r'\1_\2', s2)
     return s3.lower()
 
-async def to_camel_case(text):
-    """Convert to camel case.
+async def to_camel_case(text:str):
+    """キャメルケースに変換する。
 
     :param str text:
     :rtype: str
