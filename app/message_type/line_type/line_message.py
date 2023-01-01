@@ -114,7 +114,7 @@ class LineBotAPI:
             LINE_BOT_URL + "/message/quota/consumption",
             self.line_bot_token
         )
-        return r["totalUsage"]
+        return int(r["totalUsage"])
 
     # LINE Notifyのステータスを取得
     async def notify_status(self) -> Response:

@@ -146,13 +146,20 @@ class mst_line(commands.Cog):
                 embed = discord.Embed(
                     title = ctx.guild.name,
                     description = f"""
-                    一か月のメッセージ送信上限(基本1000,23年6月以降は200):{await line_signal.pushlimit()}\n
-                    今月の送信数:{await line_signal.totalpush()}\n
-                    友達、グループ人数:{await line_signal.friend()}\n
-                    1時間当たりのメッセージ送信上限(1000):{await line_signal.rate_limit()}\n
-                    1時間当たりの残りメッセージ送信数:{await line_signal.rate_image_remaining()}\n
-                    1時間当たりの画像送信上限数(50):{await line_signal.rate_image_limit()}\n
-                    1時間当たりの残り画像送信数:{await line_signal.rate_image_limit()}
+                    一か月のメッセージ送信上限(基本1000,23年6月以降は200):
+                        **{await line_signal.pushlimit()}**\n
+                    今月の送信数:
+                        **{await line_signal.totalpush()}**\n
+                    友達、グループ人数:
+                        **{await line_signal.friend()}**\n
+                    1時間当たりのメッセージ送信上限(1000):
+                        **{await line_signal.rate_limit()}**\n
+                    1時間当たりの残りメッセージ送信数:
+                        **{await line_signal.rate_image_remaining()}**\n
+                    1時間当たりの画像送信上限数(50):
+                        **{await line_signal.rate_image_limit()}**\n
+                    1時間当たりの残り画像送信数:
+                        **{await line_signal.rate_image_limit()}**
                     """
                 )
 
