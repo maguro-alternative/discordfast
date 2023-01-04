@@ -11,7 +11,7 @@ import time
 import aiofiles
 
 import aiohttp
-from aiohttp import web
+from aiohttp import web,FormData
 import subprocess
 from typing import List
 
@@ -205,17 +205,19 @@ class LineBotAPI:
             ) as bytes:
                 image_bytes = await bytes.read()
 
+                #data = FormData()
+                #data.add_field('files',image_bytes, content_type='multipart/form-data')
+
                 # Gyazoにアップロードする
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         url = 'https://upload.gyazo.com/api/upload',
                         headers={
                             'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                            'imagedata': image_bytes
                         },
-                        #files={
-                            #'imagedata': image_bytes
-                        #}
+                        data={
+                            'imagedata': image_bytes
+                        }
                     ) as gyazo_image:
                         return await GyazoJson.new_from_json_dict(gyazo_image.json())
         # 受け取ったjsonから画像のURLを生成
