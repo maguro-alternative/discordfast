@@ -219,7 +219,7 @@ class LineBotAPI:
                             'imagedata': image_bytes
                         }
                     ) as gyazo_image:
-                        return await GyazoJson.new_from_json_dict(gyazo_image.json())
+                        return await GyazoJson.new_from_json_dict(await gyazo_image.json())
         # 受け取ったjsonから画像のURLを生成
         # return f"https://i.gyazo.com/{gyazo_image['image_id']}.{gyazo_image['type']}"
 
