@@ -203,7 +203,7 @@ class LineBotAPI:
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
             ) as bytes:
-                image_bytes = bytes.content
+                image_bytes = await bytes.read()
 
                 # Gyazoにアップロードする
                 async with aiohttp.ClientSession() as session:
@@ -217,7 +217,7 @@ class LineBotAPI:
                             #'imagedata': image_bytes
                         #}
                     ) as gyazo_image:
-                        return await GyazoJson.new_from_json_dict(await gyazo_image.json())
+                        return await GyazoJson.new_from_json_dict(gyazo_image.json())
         # 受け取ったjsonから画像のURLを生成
         # return f"https://i.gyazo.com/{gyazo_image['image_id']}.{gyazo_image['type']}"
 
@@ -225,6 +225,7 @@ class LineBotAPI:
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
         #r=requests.get(url = LINE_CONTENT_URL + f'/message/{message_id}/content',headers={'Authorization': 'Bearer ' + self.line_bot_token})
+        #r.content
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     url = LINE_CONTENT_URL + f'/message/{message_id}/content',
