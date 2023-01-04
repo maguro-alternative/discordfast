@@ -106,8 +106,8 @@ class mst_line(commands.Cog):
                 return
             # 画像として送信
             else:
-                imagelist, message.stickers = await image_checker(message.stickers)
                 messagetext = f'{messagetext} スタンプ:{message.stickers[0].name}'
+                imagelist, message.stickers = await image_checker(message.stickers)
 
         # 画像を一個ずつNotifyで送信
         if len(imagelist) > 0:
