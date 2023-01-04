@@ -184,7 +184,7 @@ async def image_checker(attachments:List[discord.Attachment]) -> Tuple[List[str]
     """
     image = (".jpg", ".png", ".JPG", ".PNG", ".jpeg", ".gif", ".GIF")
     image_urls = []
-    for attachment in attachments:
+    for attachment in attachments[:]:
         # 画像があった場合、urlを画像のリストに追加し、送付ファイルのリストから削除
         if attachment.url.endswith(image):
             image_urls.append(attachment.url)
@@ -202,7 +202,7 @@ async def video_checker(attachments:List[discord.Attachment]) -> Tuple[List[str]
     """
     video = (".mp4", ".MP4", ".MOV", ".mov", ".mpg", ".avi", ".wmv")
     video_urls = []
-    for attachment in attachments:
+    for attachment in attachments[:]:
         # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
         if attachment.url.endswith(video):
             video_urls.append(attachment.url)
