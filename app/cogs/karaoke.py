@@ -33,22 +33,17 @@ class karaoke(commands.Cog):
                 if self.sing_user_id == ctx.author.id:
                     await ctx.respond("再生中です。")
                     return
-                #else:
-                    await ctx.respond('再生終了後、ダウンロードをはじめます。')
-                    try:
-                        while ctx.guild.voice_client.is_playing():
-                            await asyncio.sleep(1)
-                    except AttributeError:
-                        await ctx.channel.send('再生終了!')
-
+                
         karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
 
         await ctx.respond("downloading...\n"+url) 
         # youtube-dlでダウンロード
         try:
             await karaoke_ongen.song_dl(url)
-        except urllib.error.HTTPError as e:
-            if e.code == 403:
+        except Exception as e:#discord.ApplicationCommandInvokeError as e:
+            print(e)
+            print(type(e))
+            if e == 403:
                 await ctx.channel.send(f'<@{ctx.author.id}> 403エラー もう一度ダウンロードし直してください。')
         # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
         # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
