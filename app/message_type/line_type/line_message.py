@@ -203,7 +203,7 @@ class LineBotAPI:
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
             ) as bytes:
-                image_bytes = bytes.content
+                image_bytes = await bytes.content
 
                 # Gyazoにアップロードする
                 async with aiohttp.ClientSession() as session:
@@ -232,12 +232,12 @@ class LineBotAPI:
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
             ) as bytes:
-                #movies_bytes = bytes.content.iter_chunks()
+                #movies_bytes = await bytes.content
 
                 # mp4で保存
                 async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
                 #with open("./movies/a.mp4", 'wb') as fd:
-                    async for chunk in bytes.content.iter_chunked(1024):
+                    async for chunk in await bytes.content.iter_chunked(1024):
                     #for chunk in movies_bytes:
                         fd.write(chunk)
 
