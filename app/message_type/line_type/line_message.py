@@ -11,6 +11,7 @@ import time
 import aiofiles
 
 import aiohttp
+from aiohttp import web
 import subprocess
 from typing import List
 
@@ -210,10 +211,11 @@ class LineBotAPI:
                         url = 'https://upload.gyazo.com/api/upload',
                         headers={
                             'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                        },
-                        files={
                             'imagedata': image_bytes
-                        }
+                        },
+                        #files={
+                            #'imagedata': image_bytes
+                        #}
                     ) as gyazo_image:
                         return await GyazoJson.new_from_json_dict(gyazo_image.json())
         # 受け取ったjsonから画像のURLを生成
@@ -222,6 +224,7 @@ class LineBotAPI:
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
+        #r=requests.get(url = LINE_CONTENT_URL + f'/message/{message_id}/content',headers={'Authorization': 'Bearer ' + self.line_bot_token})
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     url = LINE_CONTENT_URL + f'/message/{message_id}/content',
@@ -229,12 +232,13 @@ class LineBotAPI:
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
             ) as bytes:
-                movies_bytes = bytes.iter_content()
+                #movies_bytes = bytes.content.iter_chunks()
 
                 # mp4で保存
                 async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
                 #with open("./movies/a.mp4", 'wb') as fd:
-                    for chunk in movies_bytes:
+                    async for chunk in bytes.content.iter_chunked(1024):
+                    #for chunk in movies_bytes:
                         fd.write(chunk)
 
                 # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
