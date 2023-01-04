@@ -3,22 +3,17 @@ import requests
 from requests import Response
 
 import datetime
-import calendar
+
 import os
-import math
 import asyncio
-import time
 import aiofiles
 
 import aiohttp
-from aiohttp import web,FormData
 import subprocess
 from typing import List
 
 from dotenv import load_dotenv
 load_dotenv()
-
-from functools import partial
 
 try:
     from message_type.line_type.class_type import Profile,GyazoJson
@@ -204,9 +199,6 @@ class LineBotAPI:
                     }
             ) as bytes:
                 image_bytes = await bytes.read()
-
-                #data = FormData()
-                #data.add_field('files',image_bytes, content_type='multipart/form-data')
 
                 # Gyazoにアップロードする
                 async with aiohttp.ClientSession() as session:
