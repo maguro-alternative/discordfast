@@ -21,7 +21,6 @@ class DBot(discord.AutoShardedBot):
         if game_name == None:
             game_name = 'senran kagura'
         await self.change_presence(activity = discord.Game(name = game_name))
-        #self.signal.start()
 
     def load_cogs(self):
         for file in os.listdir("./cogs"): 
@@ -29,16 +28,6 @@ class DBot(discord.AutoShardedBot):
                 cog = file[:-3] 
                 self.load_extension(f"cogs.{cog}")
                 print(cog + "をロードしました")
-
-    @tasks.loop(seconds=60)
-    async def signal(self):
-        now = datetime.datetime.now().strftime('%H:%M')
-        if now == '00:00':
-            servers_name=os.environ['SERVER_NAME']
-            server_list=servers_name.split(",")
-
-            text="@here 日付が変更されました。本日の上限をお伝えいたします。"
-            #day_signal(server_list,text)
 
     # 起動用の補助関数です
     def run(self):

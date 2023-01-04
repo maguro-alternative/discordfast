@@ -5,6 +5,7 @@ from discord import Option
 import aiofiles
 from pydub import AudioSegment
 
+import aiohttp
 import os
 
 import requests
@@ -46,7 +47,7 @@ Speaker_id = [  2,0,6,4,
 async def get_speaker(ctx:discord.ApplicationContext):
     return [speaker for speaker in Speaker if speaker.startswith(ctx.value)]
 
-async def get_wav_second(wav_file_path) -> int:
+async def get_wav_second(wav_file_path) -> float:
     base_sound = AudioSegment.from_file(wav_file_path, format="wav")
     return base_sound.duration_seconds
 
@@ -81,17 +82,19 @@ class voicevox(commands.Cog):
         id = 3
         key = os.environ["VOICEVOX_KEY"]
 
-        for sp,sp_id in zip(Speaker,Speaker_id):
-            if sp == speaker:
-                id = sp_id
-                break
+        # ずんだもん以外が指定された場合、idを変更
+        if speaker != "ずんだもん":
+            for sp,sp_id in zip(Speaker,Speaker_id):
+                if sp == speaker:
+                    id = sp_id
+                    break
 
-        r = requests.post(
-                f'https://api.su-shiki.com/v2/voicevox/audio/?key={key}&speaker={id}&pitch={pitch}&intonationScale={intonation}&speed={speed}&text={text}',
-            ).content
-        async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
-            await f.write(r)
-
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f'https://api.su-shiki.com/v2/voicevox/audio/?key={key}&speaker={id}&pitch={pitch}&intonationScale={intonation}&speed={speed}&text={text}') as resp:
+                r = await resp.content
+                async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
+                    await f.write(r)
+        
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume = volume)
 

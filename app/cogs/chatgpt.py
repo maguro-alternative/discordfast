@@ -1,5 +1,6 @@
 import requests
 import json
+import aiohttp
 
 import discord
 
@@ -23,21 +24,22 @@ class chatgpt(commands.Cog):
         text: Option(str, required=True, description="AIに質問したいこと",)
     ):
         await ctx.respond(f"質問事項:{text}")
-        r = requests.post(
-            url='https://api.openai.com/v1/completions',
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + os.environ["CHATGPT"]
-            },
-            data=json.dumps({
-                "model": "text-davinci-003",
-                "prompt": text,
-                "max_tokens": 4000,
-                "temperature":0
-            })
-        )
-        
-        await ctx.respond(r.json()['choices'][0]['text'])
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url='https://api.openai.com/v1/completions',
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + os.environ["CHATGPT"]
+                },
+                data=json.dumps({
+                    "model": "text-davinci-003",
+                    "prompt": text,
+                    "max_tokens": 4000,
+                    "temperature":0
+                })
+            ) as resp:
+                r = await resp.json()
+                await ctx.respond(r['choices'][0]['text'])
 
 def setup(bot:DBot):
     return bot.add_cog(chatgpt(bot))
