@@ -10,6 +10,7 @@ import asyncio
 import time
 import aiofiles
 
+import aiohttp
 import subprocess
 from typing import List
 
@@ -28,30 +29,24 @@ NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
 LINE_CONTENT_URL = 'https://api-data.line.me/v2/bot'
 
+# LINEのgetリクエストを行う
 async def line_get_request(url: str, token: str) -> json:
-    loop = asyncio.get_event_loop()
-    r = await loop.run_in_executor(
-            None,
-            partial(
-                requests.get,
-                url = url,
-                headers = {'Authorization': 'Bearer ' + token}
-            )
-    )
-    return r.json()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url = url,
+            headers = {'Authorization': 'Bearer ' + token}
+        ) as resp:
+            return await resp.json()
 
+# LINEのpostリクエストを行う
 async def line_post_request(url: str, headers: dict, data: dict) -> json:
-    loop = asyncio.get_event_loop()
-    r = await loop.run_in_executor(
-            None,
-            partial(
-                requests.post,
-                url = url,
-                headers = headers,
-                data = data
-            )
-    )
-    return r.json()
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            url = url,
+            headers = headers,
+            data = data
+        ) as resp:
+            return await resp.json()
 
 class LineBotAPI:
     def __init__(self, notify_token: str, line_bot_token: str, line_group_id: str) -> None:
@@ -118,15 +113,12 @@ class LineBotAPI:
 
     # LINE Notifyのステータスを取得
     async def notify_status(self) -> Response:
-        resp = await self.loop.run_in_executor(
-                None,
-                partial(
-                    requests.get,
-                    url = NOTIFY_STATUS_URL,
-                    headers = {'Authorization': 'Bearer ' + self.notify_token}
-                )
-        )
-        return resp
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url = NOTIFY_STATUS_URL,
+                headers = {'Authorization': 'Bearer ' + self.notify_token}
+            ) as resp:
+                return await resp
 
     # LINE Notifyの1時間当たりの上限を取得
     async def rate_limit(self) -> int:
@@ -203,65 +195,56 @@ class LineBotAPI:
     # LINEから画像データを取得し、Gyazoにアップロード
     async def get_image_byte(self, message_id: int):
         # 画像のバイナリデータを取得
-        bytes = await self.loop.run_in_executor(
-                None,
-                partial(
-                    requests.get,
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
                     url = LINE_CONTENT_URL + f'/message/{message_id}/content',
                     headers={
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
-                )
-        )
-        image_bytes = bytes.content
-        
-        # Gyazoにアップロードする
-        gyazo_image = await self.loop.run_in_executor(
-                None,
-                partial(
-                    requests.post,
-                    url = 'https://upload.gyazo.com/api/upload',
-                    headers={
-                        'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
-                    },
-                    files={
-                        'imagedata': image_bytes
-                    }
-                )
-        )
+            ) as bytes:
+                image_bytes = bytes.content
 
-        return await GyazoJson.new_from_json_dict(gyazo_image.json())
+                # Gyazoにアップロードする
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        url = 'https://upload.gyazo.com/api/upload',
+                        headers={
+                            'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
+                        },
+                        files={
+                            'imagedata': image_bytes
+                        }
+                    ) as gyazo_image:
+                        return await GyazoJson.new_from_json_dict(gyazo_image.json())
         # 受け取ったjsonから画像のURLを生成
         # return f"https://i.gyazo.com/{gyazo_image['image_id']}.{gyazo_image['type']}"
 
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
-        bytes = await self.loop.run_in_executor(
-                None,
-                partial(
-                    requests.get,
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
                     url = LINE_CONTENT_URL + f'/message/{message_id}/content',
                     headers={
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
+            ) as bytes:
+                movies_bytes = bytes.iter_content()
+
+                # mp4で保存
+                async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
+                #with open("./movies/a.mp4", 'wb') as fd:
+                    for chunk in movies_bytes:
+                        fd.write(chunk)
+
+                # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
+                youtube_id = subprocess.run(
+                    ['python', 'upload_video.py', f'--title="{display_name}の動画"', '--description="LINEからの動画"'],
+                    capture_output=True
                 )
-        )
-        movies_bytes = bytes.iter_content()
 
-        # mp4で保存
-        with open(".\movies\a.mp4", 'wb') as fd:
-        #with open("./movies/a.mp4", 'wb') as fd:
-            for chunk in movies_bytes:
-                fd.write(chunk)
-
-        # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
-        youtube_id = subprocess.run(
-            ['python', 'upload_video.py', f'--title="{display_name}の動画"', '--description="LINEからの動画"'],
-            capture_output=True)
-
-        # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
-        return f"https://youtu.be/{youtube_id.stdout.decode()}"
+                # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
+                return f"https://youtu.be/{youtube_id.stdout.decode()}"
 
 
 

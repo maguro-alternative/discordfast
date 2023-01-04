@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import os
-from typing import List
+from typing import List,Tuple,Union
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -52,9 +52,9 @@ class mst_line(commands.Cog):
         if message.channel.name in ng_channel:
             return
 
-        # LINEに送信するメッセージのリスト
-        imagelist=[]
-        videolist=[]
+        # LINEに送信する動画、画像ファイルのリスト
+        imagelist = []
+        videolist = []
 
         # テキストメッセージ
         messagetext=f"{message.channel.name}にて、{message.author.name}"
@@ -77,23 +77,22 @@ class mst_line(commands.Cog):
         # 送付ファイルがあった場合
         if message.attachments:
             # 画像か動画であるかをチェック
-
-            imagelist = await image_checker(message.attachments)
-            videolist = await video_checker(message.attachments)
+            imagelist, message.attachments = await image_checker(message.attachments)
+            videolist, message.attachments = await video_checker(message.attachments)
 
             messagetext+="が、"
 
             # 送信された動画と画像の数を格納
             if len(imagelist)>0:
-                messagetext+=f"画像を{len(imagelist)}枚、"
+                messagetext += f"画像を{len(imagelist)}枚、"
 
             if len(videolist)>0:
-                messagetext+=f"動画を{len(videolist)}個"
+                messagetext += f"動画を{len(videolist)}個"
 
             # 画像と動画以外のファイルがある場合、urlを直接書き込む
-            if len(imagelist) + len(videolist) < len(message.attachments):
+            if message.attachments:
                 for attachment in message.attachments:
-                    messagetext+=f"\n{attachment.url} "
+                    messagetext += f"\n{attachment.url} "
 
             messagetext+="送信しました。"
 
@@ -107,9 +106,10 @@ class mst_line(commands.Cog):
                 return
             # 画像として送信
             else:
-                imagelist = await image_checker(message.stickers)
+                imagelist, message.stickers = await image_checker(message.stickers)
                 messagetext = f'{messagetext} スタンプ:{message.stickers[0].name}'
 
+        # 画像を一個ずつNotifyで送信
         if len(imagelist) > 0:
             for image in imagelist:
                 await line_bot_api.push_image_notify(message=messagetext,image_url=image)
@@ -121,6 +121,7 @@ class mst_line(commands.Cog):
                 icon_url = message.author.display_avatar.url
             await line_bot_api.push_movie(preview_image=icon_url,movie_urls=videolist)
 
+        # ファイルなしの場合、テキストを送信
         if len(imagelist) + len(videolist) == 0:
             await line_bot_api.push_message_notify(message=messagetext)
 
@@ -135,6 +136,11 @@ class mst_line(commands.Cog):
         for server_name in server_list:
             # コマンドを打ったサーバーと環境変数にあるサーバーが一致した場合、利用状況を送信
             if int(os.environ[f"{server_name}_GUILD_ID"]) == ctx.guild.id:
+
+                if os.environ.get(f'{server_name}_NOTIFY_TOKEN') == None:
+                    await ctx.respond('LINE Notfiyが登録されていません。')
+                    return
+
                 await ctx.respond("LINE連携の利用状況です。")
 
                 line_signal = LineBotAPI(
@@ -168,26 +174,41 @@ class mst_line(commands.Cog):
                 
         await ctx.respond('LINEが登録されていません。')
 
-
-async def image_checker(attachments:List[discord.Attachment]) -> List[str]:
-    # 画像を識別
+# 画像を識別
+async def image_checker(attachments:List[discord.Attachment]) -> Tuple[List[str],Union[List[discord.Attachment],List[discord.StickerItem]]]:
+    """
+    Discordの送付ファイルから、画像を抜き出す。
+    引数:      attachments:    Discordの送付ファイル
+    戻り値:    image_urls:     画像かスタンプのurlリスト
+               attachments:    画像を抜き出したDiscordの送付ファイル
+    """
     image = (".jpg", ".png", ".JPG", ".PNG", ".jpeg", ".gif", ".GIF")
     image_urls = []
     for attachment in attachments:
+        # 画像があった場合、urlを画像のリストに追加し、送付ファイルのリストから削除
         if attachment.url.endswith(image):
             image_urls.append(attachment.url)
+            attachments.remove(attachment)
 
-    return image_urls
+    return image_urls, attachments
 
-async def video_checker(attachments:List[discord.Attachment]) -> List[str]:
-    # 動画を識別
+# 動画を識別
+async def video_checker(attachments:List[discord.Attachment]) -> Tuple[List[str],List[discord.Attachment]]:
+    """
+    Discordの送付ファイルから、動画を抜き出す。
+    引数:      attachments:    Discordの送付ファイル
+    戻り値:    video_urls:     動画のurlリスト
+               attachments:    動画を抜き出したDiscordの送付ファイル
+    """
     video = (".mp4", ".MP4", ".MOV", ".mov", ".mpg", ".avi", ".wmv")
     video_urls = []
     for attachment in attachments:
+        # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
         if attachment.url.endswith(video):
             video_urls.append(attachment.url)
+            attachments.remove(attachment)
 
-    return video_urls
+    return video_urls, attachments
 
 
 def setup(bot:DBot):

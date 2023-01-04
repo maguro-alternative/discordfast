@@ -37,19 +37,25 @@ async def activity(after:discord.VoiceState,member:discord.Member):
     except IndexError:
         return f"@everyone <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
 
-
+# 通話開始時の埋め込み作成
 async def callemb(after:discord.VoiceState,member:discord.Member):
     embed=discord.Embed(
         title="通話開始",
         description=f"{member.guild.name}\n<#{after.channel.id}>"
     )
-    embed.set_image(url=member.guild.icon.url)
+    # サーバーのアイコンが設定されているかどうか
+    if hasattr(member.guild.icon,'url'):
+        embed.set_image(url=member.guild.icon.url)
+    # ない場合はユーザーのアイコンを設定
+    else:
+        embed.set_image(url=member.display_avatar.url)
     embed.set_author(
         name=member.name,  # ユーザー名
         icon_url=member.display_avatar.url  # アイコンを設定
     )
     return embed
 
+# 配信開始時の埋め込み作成
 async def stream(after:discord.VoiceState,member:discord.Member,title:str):
     embed=discord.Embed(
         title=title,

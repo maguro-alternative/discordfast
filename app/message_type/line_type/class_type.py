@@ -38,7 +38,7 @@ class Base(object):
         return not self.__eq__(other)
 
     async def as_json_string(self):
-        """Return JSON string from this object.
+        """jsonの文字列を返します。 
 
         :rtype: str
         """
@@ -99,9 +99,15 @@ async def to_camel_case(text:str):
     split = text.split('_')
     return split[0] + "".join(x.title() for x in split[1:])
 
+# 
 class Profile(Base):
     """
-    LINE Message APIのProfile
+    LINE Message APIのProfileクラス
+
+    user_id         :LINEユーザーのid
+    display_name    :LINEのユーザー名
+    picture_url     :LINEのアイコンurl
+    status_message  :LINEのプロフィール文
     """
     def __init__(self,
         user_id:str = None,
@@ -118,6 +124,15 @@ class Profile(Base):
 
 
 class GyazoJson(Base):
+    """
+    Gyazoの画像クラス
+
+    image_id        :画像id
+    permalink_url   :画像のパーマリンク
+    thumb_url       :サムネイル画像url
+    url             :画像url
+    type            :拡張子のタイプ
+    """
     def __init__(self,
                  image_id:str=None,
                  permalink_url:str=None,
@@ -134,6 +149,14 @@ class GyazoJson(Base):
         super(GyazoJson,self).__init__(**kwargs)
 
 class EventResponse(Base):
+    """
+    LINEのイベントクラス
+
+    destination :LINEBotのID
+    event       :イベントの内容
+
+    super(クラス, インスタンス自身).__init__(引数を辞書として受け取る)
+    """
     def __init__(self, 
         destination:str=None,
         events:List[Line_Events]=None,
