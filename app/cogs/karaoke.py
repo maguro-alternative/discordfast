@@ -33,7 +33,7 @@ class karaoke(commands.Cog):
                 if self.sing_user_id == ctx.author.id:
                     await ctx.respond("再生中です。")
                     return
-                else:
+                #else:
                     await ctx.respond('再生終了後、ダウンロードをはじめます。')
                     try:
                         while ctx.guild.voice_client.is_playing():
