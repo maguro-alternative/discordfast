@@ -232,6 +232,7 @@ class LineBotAPI:
                 # mp4で保存
                 #async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
                 # aiofileでは動画が書き込めない
+                # 参考 https://docs.aiohttp.org/en/stable/client_quickstart.html?highlight=file
                 with open(".\movies\a.mp4", 'wb') as fd:
                     async for chunk in bytes.content.iter_chunked(1024):
                     #for chunk in movies_bytes:
