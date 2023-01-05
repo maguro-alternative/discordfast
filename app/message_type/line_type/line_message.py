@@ -5,6 +5,7 @@ from requests import Response
 import datetime
 
 import os
+import io
 import asyncio
 import aiofiles
 
@@ -219,7 +220,7 @@ class LineBotAPI:
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
         #r=requests.get(url = LINE_CONTENT_URL + f'/message/{message_id}/content',headers={'Authorization': 'Bearer ' + self.line_bot_token})
-        #r.content
+        
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     url = LINE_CONTENT_URL + f'/message/{message_id}/content',
@@ -227,11 +228,11 @@ class LineBotAPI:
                         'Authorization': 'Bearer ' + self.line_bot_token
                     }
             ) as bytes:
-                #movies_bytes = await bytes.content
 
                 # mp4で保存
-                async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
-                #with open("./movies/a.mp4", 'wb') as fd:
+                #async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
+                # aiofileでは動画が書き込めない
+                with open(".\movies\a.mp4", 'wb') as fd:
                     async for chunk in bytes.content.iter_chunked(1024):
                     #for chunk in movies_bytes:
                         fd.write(chunk)
