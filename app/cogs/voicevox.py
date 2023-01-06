@@ -91,7 +91,7 @@ class voicevox(commands.Cog):
 
         async with aiohttp.ClientSession() as session:
             async with session.post(f'https://api.su-shiki.com/v2/voicevox/audio/?key={key}&speaker={id}&pitch={pitch}&intonationScale={intonation}&speed={speed}&text={text}') as resp:
-                r = await resp.content
+                r = await resp.read()
                 async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
                     await f.write(r)
         
