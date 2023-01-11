@@ -114,11 +114,14 @@ class mst_line(commands.Cog):
             for image in imagelist:
                 await line_bot_api.push_image_notify(message=messagetext,image_url=image)
 
+        # 動画を送信
         if len(videolist) > 0:
             if hasattr(message.guild.icon,'url'):
                 icon_url = message.guild.icon.url
             else:
                 icon_url = message.author.display_avatar.url
+
+            await line_bot_api.push_message_notify(message=messagetext)
             await line_bot_api.push_movie(preview_image=icon_url,movie_urls=videolist)
 
         # ファイルなしの場合、テキストを送信

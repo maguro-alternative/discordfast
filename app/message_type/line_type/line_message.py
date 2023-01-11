@@ -8,6 +8,7 @@ import os
 import io
 import asyncio
 import aiofiles
+from functools import partial
 
 import aiohttp
 import subprocess
@@ -60,8 +61,7 @@ class LineBotAPI:
             headers = {'Authorization': f'Bearer {self.notify_token}'}, 
             data = data
         )
-        #return requests.post(url=NOTIFY_URL, headers={'Authorization': f'Bearer {self.notify_token}'}, data=data)
-
+        
     # LINE Notifyで画像を送信
     async def push_image_notify(self, message: str, image_url: str):
         if len(message) == 0:
@@ -76,11 +76,11 @@ class LineBotAPI:
             headers = {'Authorization': f'Bearer {self.notify_token}'}, 
             data = data
         )
-        #return requests.post(url=NOTIFY_URL, headers={'Authorization': f'Bearer {self.notify_token}'}, data=data)
 
     # 動画の送信(動画のみ)
     async def push_movie(self, preview_image: str, movie_urls: List[str]):
         data = []
+        # 動画を1個ずつ格納
         for movie_url in movie_urls:
             data.append({
                 "type": "video",
@@ -115,7 +115,7 @@ class LineBotAPI:
                 url = NOTIFY_STATUS_URL,
                 headers = {'Authorization': 'Bearer ' + self.notify_token}
             ) as resp:
-                return await resp
+                return resp
 
     # LINE Notifyの1時間当たりの上限を取得
     async def rate_limit(self) -> int:
@@ -190,7 +190,7 @@ class LineBotAPI:
         return await Profile.new_from_json_dict(data=r)
 
     # LINEから画像データを取得し、Gyazoにアップロード
-    async def get_image_byte(self, message_id: int):
+    async def image_upload(self, message_id: int):
         # 画像のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -213,14 +213,10 @@ class LineBotAPI:
                         }
                     ) as gyazo_image:
                         return await GyazoJson.new_from_json_dict(await gyazo_image.json())
-        # 受け取ったjsonから画像のURLを生成
-        # return f"https://i.gyazo.com/{gyazo_image['image_id']}.{gyazo_image['type']}"
-
+        
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(self, message_id: int, display_name: str):
         # 動画のバイナリデータを取得
-        #r=requests.get(url = LINE_CONTENT_URL + f'/message/{message_id}/content',headers={'Authorization': 'Bearer ' + self.line_bot_token})
-        
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     url = LINE_CONTENT_URL + f'/message/{message_id}/content',
@@ -233,16 +229,26 @@ class LineBotAPI:
                 #async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
                 # aiofileでは動画が書き込めない
                 # 参考 https://docs.aiohttp.org/en/stable/client_quickstart.html?highlight=file
-                with open(".\movies\a.mp4", 'wb') as fd:
+                with open(f'.\movies\{message_id}.mp4', 'wb') as fd:
                     async for chunk in bytes.content.iter_chunked(1024):
-                    #for chunk in movies_bytes:
                         fd.write(chunk)
 
-                # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
-                youtube_id = subprocess.run(
-                    ['python', 'upload_video.py', f'--title="{display_name}の動画"', '--description="LINEからの動画"'],
-                    capture_output=True
+                youtube_id = await self.loop.run_in_executor(
+                    None,
+                    partial(
+                        subprocess.run,
+                        ['python', 'upload_video.py', f'--file={message_id}', f'--title={display_name}の動画', '--description=LINEからの動画'],
+                        capture_output=True
+                    )    
                 )
+
+                #youtube_id = upload_run.stdout.decode()
+                
+                # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
+                #youtube_id = subprocess.run(
+                #    ['python', 'upload_video.py', f'--file={message_id}', f'--title="{display_name}の動画"', '--description="LINEからの動画"'],
+                #    capture_output=True
+                #)
 
                 # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
                 return f"https://youtu.be/{youtube_id.stdout.decode()}"
