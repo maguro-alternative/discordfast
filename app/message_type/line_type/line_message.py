@@ -233,15 +233,15 @@ class LineBotAPI:
                     async for chunk in bytes.content.iter_chunked(1024):
                         fd.write(chunk)
 
-                #youtube_id = await self.loop.run_in_executor(None,partial(subprocess.run,['python', 'upload_video.py', f'--file={message_id}', f'--title={display_name}の動画', '--description=LINEからの動画'],capture_output=True))
+                youtube_id = await self.loop.run_in_executor(None,partial(subprocess.run,['python', 'upload_video.py', f'--file=.\movies\{message_id}.mp4', f'--title={display_name}の動画', '--description=LINEからの動画'],capture_output=True))
 
                 #youtube_id = upload_run.stdout.decode()
                 
                 # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
-                youtube_id = subprocess.run(
-                    ['python', 'upload_video.py', f'--file={message_id}', f'--title="{display_name}の動画"', '--description="LINEからの動画"'],
-                    capture_output=True
-                )
+                #youtube_id = subprocess.run(
+                #    ['python', 'upload_video.py', f'--file=.\movies\{message_id}.mp4', f'--title="{display_name}の動画"', '--description="LINEからの動画"'],
+                #    capture_output=True
+                #)
 
                 # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
                 return f"https://youtu.be/{youtube_id.stdout.decode()}"
