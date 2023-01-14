@@ -28,8 +28,6 @@ class vc_count(commands.Cog):
         # 退出した場合
         if (after.channel is None or check):
             # ボイスチャンネルの残り人数を取得
-            #channel = discord.utils.get(member.guild.voice_channels, id=before.channel.id)
-            #i=len(list(channel.voice_states.keys()))
             await client.send(f"現在{len(before.channel.members)}人 <@{member.id}>が{before.channel.name}から退出しました。")
 
             # Botがボイスチャンネルに接続していて、それ以外の全員が退出した場合
@@ -40,7 +38,7 @@ class vc_count(commands.Cog):
                         return
                 # 退出
                 await before.channel.guild.voice_client.disconnect()
-                await client.send("@everyone 通話が終了しました。",embed=discord.Embed(title="通話終了",description=""))
+                #await client.send("@everyone 通話が終了しました。",embed=discord.Embed(title="通話終了",description=""))
 
             # 全員が退出した場合
             if len(before.channel.members)==0:
@@ -55,8 +53,6 @@ class vc_count(commands.Cog):
         # 入室の場合
         if (before.channel is None or check):
             # ボイスチャンネルの残り人数を取得
-            #channel = discord.utils.get(member.guild.voice_channels, id=after.channel.id)
-            #i=len(list(channel.voice_states.keys()))
             
             embed=None
             # 一人目の入室(通話開始)の場合、サーバーアイコンの埋め込みを作成
