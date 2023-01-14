@@ -38,7 +38,8 @@ class vc_count(commands.Cog):
                         return
                 # 退出
                 await before.channel.guild.voice_client.disconnect()
-                #await client.send("@everyone 通話が終了しました。",embed=discord.Embed(title="通話終了",description=""))
+                await client.send("@everyone 通話が終了しました。",embed=discord.Embed(title="通話終了",description=""))
+                return
 
             # 全員が退出した場合
             if len(before.channel.members)==0:
