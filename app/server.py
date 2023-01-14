@@ -29,7 +29,7 @@ import os
 bots_name = os.environ['BOTS_NAME'].split(",")
 TOKEN = os.environ['TOKEN']
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 #oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
