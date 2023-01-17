@@ -5,9 +5,7 @@ from requests import Response
 import datetime
 
 import os
-import io
 import asyncio
-import aiofiles
 from functools import partial
 
 import aiohttp
@@ -54,7 +52,7 @@ class LineBotAPI:
         self.loop = asyncio.get_event_loop()
 
     # LINE Notifyでテキストメッセージを送信
-    async def push_message_notify(self, message: str):
+    async def push_message_notify(self, message: str) -> json:
         data = {'message': f'message: {message}'}
         return await line_post_request(
             url = NOTIFY_URL, 
@@ -63,7 +61,7 @@ class LineBotAPI:
         )
         
     # LINE Notifyで画像を送信
-    async def push_image_notify(self, message: str, image_url: str):
+    async def push_image_notify(self, message: str, image_url: str) -> json:
         if len(message) == 0:
             message = "画像を送信しました。"
         data = {
@@ -77,8 +75,58 @@ class LineBotAPI:
             data = data
         )
 
+    # LINE Messageing APIでテキストメッセージを送信
+    async def push_message(self,message_text:str) -> json:
+        data = {
+            'to':self.line_group_id,
+            'messages':[
+                {
+                    'type':'text',
+                    'text':message_text
+                }
+            ]
+        }
+        return await line_post_request(
+            url = LINE_BOT_URL + "/message/push",
+            headers = {
+                'Authorization': 'Bearer ' + self.line_bot_token,
+                'Content-Type': 'application/json'
+            },
+            data = json.dumps(data)
+        )
+
+    # LINE Messageing APIで画像を送信
+    async def push_image(self,message_text:str,image_urls:List[str]) -> json:
+        data = [
+            {
+                'type':'text',
+                'text':message_text
+            }
+        ]
+
+        for image_url in image_urls:
+            data.append({
+                'type':'image',
+                'imageThumbnail': f'{image_url}',
+                'imageFullsize': f'{image_url}',
+            })
+
+        datas = {
+            'to':self.line_group_id,
+            'messages':data
+        }
+
+        return await line_post_request(
+            url = LINE_BOT_URL + "/message/push",
+            headers = {
+                'Authorization': 'Bearer ' + self.line_bot_token,
+                'Content-Type': 'application/json'
+            },
+            data = json.dumps(datas)
+        )
+
     # 動画の送信(動画のみ)
-    async def push_movie(self, preview_image: str, movie_urls: List[str]):
+    async def push_movie(self, preview_image: str, movie_urls: List[str]) -> json:
         data = []
         # 動画を1個ずつ格納
         for movie_url in movie_urls:
@@ -142,7 +190,7 @@ class LineBotAPI:
         return int(ratelimit)
 
     # 友達数、グループ人数をカウント
-    async def friend(self):
+    async def friend(self) -> str:
         # グループIDが有効かどうか判断
         try:
             r = await line_get_request(
@@ -165,7 +213,7 @@ class LineBotAPI:
             return r["followers"] 
 
     # 当月に送信できるメッセージ数の上限目安を取得(基本1000,23年6月以降は200)
-    async def pushlimit(self):
+    async def pushlimit(self) -> str:
         r = await line_get_request(
             LINE_BOT_URL + "/message/quota",
             self.line_bot_token
@@ -174,7 +222,7 @@ class LineBotAPI:
 
 
     # LINEのユーザプロフィールから名前を取得
-    async def get_proflie(self, user_id: str):# -> Profile:
+    async def get_proflie(self, user_id: str) -> Profile:
         # グループIDが有効かどうか判断
         try:
             r = await line_get_request(
@@ -190,7 +238,7 @@ class LineBotAPI:
         return await Profile.new_from_json_dict(data=r)
 
     # LINEから画像データを取得し、Gyazoにアップロード
-    async def image_upload(self, message_id: int):
+    async def image_upload(self, message_id: int) -> GyazoJson:
         # 画像のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -215,7 +263,7 @@ class LineBotAPI:
                         return await GyazoJson.new_from_json_dict(await gyazo_image.json())
         
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
-    async def movie_upload(self, message_id: int, display_name: str):
+    async def movie_upload(self, message_id: int, display_name: str) -> str:
         # 動画のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -226,7 +274,6 @@ class LineBotAPI:
             ) as bytes:
 
                 # mp4で保存
-                #async with aiofiles.open(".\movies\a.mp4", 'wb') as fd:
                 # aiofileでは動画が書き込めない
                 # 参考 https://docs.aiohttp.org/en/stable/client_quickstart.html?highlight=file
                 with open(f'.\movies\{message_id}.mp4', 'wb') as fd:

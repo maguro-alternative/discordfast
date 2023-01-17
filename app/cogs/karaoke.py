@@ -15,10 +15,11 @@ except:
     from cogs.bin.rank import Wav_Karaoke
     from core.start import DBot
 
+# カラオケ機能
 class karaoke(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot 
-        self.sing_user_id = 0
+        self.sing_user_id = 0   # 歌っているユーザーのid
 
     # 音源ダウンロード
     @commands.slash_command(description = 'YouTubeから音源をダウンロード')
@@ -40,11 +41,9 @@ class karaoke(commands.Cog):
         # youtube-dlでダウンロード
         try:
             await karaoke_ongen.song_dl(url)
-        except youtube_dl.utils.DownloadError:#Exception as e:
+        except youtube_dl.utils.DownloadError:
             await ctx.channel.send(f'<@{ctx.author.id}> 403エラー もう一度ダウンロードし直してください。')
-        # song = AudioSegment.from_file(f"./wave/{ctx.author.id}_music.wav", format="wav")
-        # song.export(f"./wave/{ctx.author.id}_music.wav", format='wav')
-
+        
         song = AudioSegment.from_file(f".\wave\{ctx.author.id}_music.wav", format="wav")
         song.export(f".\wave\{ctx.author.id}_music.wav", format='wav')
 
@@ -97,14 +96,13 @@ class karaoke(commands.Cog):
         vc.play(trans, after=check_error)  #音源再生
         
         # 再生終了まで待つ
-        #second_wait=int(await karaoke.wav_second(f"./wave/{ctx.author.id}_music.wav"))
         second_wait = await karaoke.music_wav_second()
         for i in range(0,int(second_wait)):
             if hasattr(ctx.guild.voice_client,'is_playing'):
                 await asyncio.sleep(1)
 
         ctx.voice_client.stop_recording() # 録音を停止し、直後にfinished_callbackが呼び出されます。
-        # await ctx.respond("Stopped! 採点中,,,")
+        
         await ctx.respond("録音終了! /rank_Scoring で採点します")
         await ctx.voice_client.disconnect()
 
@@ -130,8 +128,10 @@ class karaoke(commands.Cog):
         karaoke = Wav_Karaoke(user_id = ctx.author.id)
 
         await karaoke.limit_wav_duration()
+        # 原曲と音声の長さを除算し、歌っているか判断
         wavRatio = await karaoke.voice_wav_second() / await karaoke.music_wav_second()
         
+        # 5割以下の場合は採点しない
         if wavRatio>=0.5:
             # 採点結果を表示
             await ctx.channel.send(f'<@{ctx.author.id}> 点数 {await karaoke.calculate_wav_similarity()}点です！')

@@ -44,13 +44,15 @@ Speaker_id = [  2,0,6,4,
                 21
             ]
 
+# スラッシュコマンドのオートコンプリート機能
 async def get_speaker(ctx:discord.ApplicationContext):
     return [speaker for speaker in Speaker if speaker.startswith(ctx.value)]
 
+# wavファイルの長さを測る
 async def get_wav_second(wav_file_path) -> float:
     base_sound = AudioSegment.from_file(wav_file_path, format="wav")
     return base_sound.duration_seconds
-
+# Voicevoxの読み上げ
 class voicevox(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot 
@@ -68,12 +70,15 @@ class voicevox(commands.Cog):
     ):
         if hasattr(ctx.author.voice,'channel'):
             if hasattr(ctx.guild.voice_client,'is_connected'):
+                # ボイスチャンネルに接続している場合
                 if ctx.guild.voice_client.is_connected():
                     await ctx.respond(f"{speaker}「 {text} 」")
             else:
+                # 接続していない場合、接続
                 await ctx.author.voice.channel.connect()
                 await ctx.respond(f"{speaker}「 {text} 」")
         else:
+            # コマンドを打ったユーザーがボイスチャンネルに入っていない場合、終了
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
         
@@ -89,9 +94,11 @@ class voicevox(commands.Cog):
                     id = sp_id
                     break
 
+        # Web版Voicevoxにリクエストを送信
         async with aiohttp.ClientSession() as session:
             async with session.post(f'https://api.su-shiki.com/v2/voicevox/audio/?key={key}&speaker={id}&pitch={pitch}&intonationScale={intonation}&speed={speed}&text={text}') as resp:
                 r = await resp.read()
+                # 音声をwavファイルで保存
                 async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
                     await f.write(r)
         
