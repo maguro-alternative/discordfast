@@ -58,7 +58,7 @@ AIに質問できます。
 # 使い方
 本botはrailwayというサービスでのホストを想定しています。  
 Dockerを使用しているので、簡単にホストできます。  
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template)  
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/JXslR5?referralCode=yFsnKR)
 railway側でLINEとDiscordBotをホストできるようにしています。  
 
 ## 使用するサービス  
