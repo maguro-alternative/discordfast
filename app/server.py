@@ -131,6 +131,9 @@ async def line_response(
         role_list = re.findall("@.*?#role",message,re.S)
         channel_list = re.findall("\A/.*?#channel",message,re.S)
 
+        print(member_mention_list)
+        print(role_list)
+
         if member_mention_list:
             get_member_list = await discord_find_message.member_get()
 
