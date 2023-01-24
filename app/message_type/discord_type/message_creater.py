@@ -14,8 +14,8 @@ from typing import List,Tuple
 
 import asyncio
 
-from discord_type import Discord_Member,Discord_Role,Discord_Channel
-# from message_type.discord_type.discord_type import Discord_Member
+#from discord_type import Discord_Member,Discord_Role,Discord_Channel
+from message_type.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
