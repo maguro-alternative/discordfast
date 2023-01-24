@@ -10,6 +10,7 @@ import uvicorn
 import base64
 import hashlib
 import hmac
+import re
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -139,10 +140,46 @@ async def line_response(
         channel_id:int
         message:str
         """
+
+        member_mention_list = re.findall("@.*?#\d*?#member",message,re.S)
+        role_list = re.findall("@.*?#role",message,re.S)
+        channel_list = re.findall("\A/.*?#channel",message,re.S)
+
+        if member_mention_list:
+            get_member_list = await discord_find_message.member_get()
+
+            for member in get_member_list:
+            # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
+                if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
+                    message = message.replace(f'@{member.user.username}#{member.user.discreminator}#member',f'<@{member.user.id}>')
+                    member_mention_list.remove(f'@{member.user.username}#{member.user.discreminator}#member')
+                if not member_mention_list:
+                    break
+
+        if role_list:
+            get_role_list = await discord_find_message.role_get()
+
+            for role in get_role_list:
+                # メッセージに「@{ロール名}#role」が含まれていた場合
+                if f'@{role.name}#role' in role_list:
+                    message = message.replace(f'@{role.name}#role',f'<@&{role.id}>')
+                    role_list.remove(f'@{role.name}#role')
+                if not role_list:
+                    break
+
+        if channel_list and message.find('/') == 0:
+            get_channel_list = await discord_find_message.channel_get()
+
+            for channel in get_channel_list:
+                # メッセージの先頭に「/{チャンネル名}#channel」が含まれていた場合
+                if message.find(f'/{channel.name}#channel') == 0 and channel.type == 0:
+                    message = message.lstrip(f'/{channel.name}#channel')
+                    channel_id = channel.id
+                    break
         
-        message = await discord_find_message.members_find(message=message)
-        message = await discord_find_message.roles_find(message=message)
-        channel_id ,message = await discord_find_message.channel_select(channel_id=channel_id,message=message)
+        #message = await discord_find_message.members_find(message=message)
+        #message = await discord_find_message.roles_find(message=message)
+        #channel_id ,message = await discord_find_message.channel_select(channel_id=channel_id,message=message)
 
     # スタンプが送信された場合
     if event.message.type == 'sticker':

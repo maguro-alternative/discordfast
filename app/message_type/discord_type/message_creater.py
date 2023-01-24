@@ -391,11 +391,11 @@ if __name__=="__main__":
     loop = asyncio.get_event_loop()
     res = ReqestDiscord(int(os.environ['PRO_GUILD_ID']),100,os.environ['PRO_TOKEN'])
     r=loop.run_until_complete(
-        res.channel_get()
+        res.role_get()
         #asyncio.gather(
         #    r.member_get(),
         #    r.role_get(),
         #    r.channel_get()
         #)
     )
-    print(r[-4].permission_overwrites)
+    print(r[0].name)
