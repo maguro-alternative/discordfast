@@ -116,34 +116,20 @@ async def line_response(
         members_find
         テキストメッセージからユーザーのメンションを検出し、変換する。
         @ユーザー#0000#member → <@00000000000>
-        引数
-        message:str
-        戻り値
-        message:str
 
         roles_find
         テキストメッセージからロールのメンションを検出し、変換する。
         @ロール#role → <@&0000000000>
-        引数
-        message:str
-        戻り値
-        message:str
 
         channel_select
         テキストメッセージから送信場所を検出し、送信先のチャンネルidを返す。
         テキストチャンネルのみ送信可能。ただし、メッセージの先頭に書かれていなければ適用されない。
         /チャンネル名#channel → 削除
-        引数
-        channel_id:int
-        message:str
-        戻り値
-        channel_id:int
-        message:str
         """
 
-        member_mention_list = re.findall("@.*?#\d*?#member",message,re.S)
-        role_list = re.findall("@.*?#role",message,re.S)
-        channel_list = re.findall("\A/.*?#channel",message,re.S)
+        member_mention_list = re.findall("@.*?#\d*#member",message,re.S)
+        role_list = re.findall("@.*#role",message,re.S)
+        channel_list = re.findall("\A/.*#channel",message,re.S)
 
         if member_mention_list:
             get_member_list = await discord_find_message.member_get()
