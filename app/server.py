@@ -127,15 +127,15 @@ async def line_response(
         /チャンネル名#channel → 削除
         """
 
-        member_mention_list = re.findall("@.*?#\d*#member",message,re.S)
+        member_mention_list = re.findall("@.*#\d*#member",message,re.S)
         role_list = re.findall("@.*#role",message,re.S)
-        channel_list = re.findall("\A/.*#channel",message,re.S)
+        channel_list = re.findall("\A/.*?#channel",message,re.S)
 
         if member_mention_list:
             get_member_list = await discord_find_message.member_get()
 
             for member in get_member_list:
-            # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
+                # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
                 if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
                     message = message.replace(f'@{member.user.username}#{member.user.discreminator}#member',f'<@{member.user.id}>')
                     member_mention_list.remove(f'@{member.user.username}#{member.user.discreminator}#member')
