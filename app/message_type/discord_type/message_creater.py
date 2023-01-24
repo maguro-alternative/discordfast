@@ -217,7 +217,7 @@ class ReqestDiscord:
         channel_list = re.findall("\A/.*?#channel",message,re.S)
 
         if not channel_list or message.find('/') != 0:
-            return channel, message
+            return channel_id, message
         
         get_channel_list = await self.channel_get()
 
