@@ -106,7 +106,6 @@ class ReqestDiscord:
                 for member in res:
                     r = Discord_Member.new_from_json_dict(member)
                     member_list.append(r)
-                    print(r)
         
         return member_list
             
@@ -177,6 +176,8 @@ class ReqestDiscord:
             if not member_mention_list:
                 return message
 
+        return message
+
 
     async def roles_find(self, message: str) -> str:
         """
@@ -202,6 +203,8 @@ class ReqestDiscord:
                 role_list.remove(f'@{role.name}#role')
             if not role_list:
                 return message
+
+        return message
                 
         
     async def channel_select(self, channel_id: int, message: str) -> Tuple[int,str]:
@@ -229,6 +232,7 @@ class ReqestDiscord:
                 channel_id = channel.id
                 return channel_id, message
 
+        return channel_id, message
 
     async def send_discord(self, channel_id: int, message: str):
         """
