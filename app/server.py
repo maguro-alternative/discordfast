@@ -128,11 +128,6 @@ async def line_response(
         """
 
         member_mention_list = re.findall("@.*?#\d*?#member",message,re.S)
-        role_list = re.findall("@.*?#role",message,re.S)
-        channel_list = re.findall("\A/.*?#channel",message,re.S)
-
-        print(member_mention_list)
-        print(role_list)
 
         if member_mention_list:
             get_member_list = await discord_find_message.member_get()
@@ -145,6 +140,8 @@ async def line_response(
                 if not member_mention_list:
                     break
 
+        role_list = re.findall("@.*?#role",message,re.S)
+
         if role_list:
             get_role_list = await discord_find_message.role_get()
 
@@ -155,6 +152,8 @@ async def line_response(
                     role_list.remove(f'@{role.name}#role')
                 if not role_list:
                     break
+
+        channel_list = re.findall("\A/.*?#channel",message,re.S)
 
         if channel_list and message.find('/') == 0:
             get_channel_list = await discord_find_message.channel_get()
