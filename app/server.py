@@ -127,8 +127,8 @@ async def line_response(
         /チャンネル名#channel → 削除
         """
 
-        member_mention_list = re.findall("@.*#\d*#member",message,re.S)
-        role_list = re.findall("@.*#role",message,re.S)
+        member_mention_list = re.findall("@.*?#\d*?#member",message,re.S)
+        role_list = re.findall("@.*?#role",message,re.S)
         channel_list = re.findall("\A/.*?#channel",message,re.S)
 
         if member_mention_list:
