@@ -161,7 +161,8 @@ class ReqestDiscord:
         message      変更後の文字列: str
         """
         
-        member_mention_list = re.findall("@.*?#\d*?#member",message,re.S)
+        # @{空白以外の0文字以上}#{0以上の数字}#member
+        member_mention_list = re.findall("@\S*?#\d*?#member",message,re.S)
 
         if not member_mention_list:
             return message
@@ -169,10 +170,17 @@ class ReqestDiscord:
         get_member_list = await self.member_get()
 
         for member in get_member_list:
+            # ユーザー名の空白文字を削除
+            member.user.username = member.user.username.replace(' ', '')
+            member.user.username = member.user.username.replace('　', '')
+
             # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
             if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
                 message = message.replace(f'@{member.user.username}#{member.user.discreminator}#member',f'<@{member.user.id}>')
-                member_mention_list.remove(f'@{member.user.username}#{member.user.discreminator}#member')
+                member_mention_list = [
+                    user for user in member_mention_list 
+                    if user != f'@{member.user.username}#{member.user.discreminator}#member'
+                ]
             if not member_mention_list:
                 return message
 
@@ -188,7 +196,7 @@ class ReqestDiscord:
         message      変更後の文字列: str
         """
         
-        role_list = re.findall("@.*?#role",message,re.S)
+        role_list = re.findall("@\S*?#role",message,re.S)
 
         if not role_list:
             return message
@@ -196,11 +204,17 @@ class ReqestDiscord:
         get_role_list = await self.role_get()
 
         for role in get_role_list:
+            # ロール名の空白文字を削除
+            role.name = role.name.replace(' ', '')
+            role.name = role.name.replace('　', '')
+
             # メッセージに「@{ロール名}#role」が含まれていた場合
-            
             if f'@{role.name}#role' in role_list:
                 message = message.replace(f'@{role.name}#role',f'<@&{role.id}>')
-                role_list.remove(f'@{role.name}#role')
+                role_list = [
+                    rolename for rolename in role_list 
+                    if rolename != f'@{role.name}#role'
+                ]
             if not role_list:
                 return message
 
@@ -214,10 +228,11 @@ class ReqestDiscord:
         /チャンネル名#channel → 削除
 
         戻り値
-        message      指定したチャンネル名: str
+        channel_id      送信先のチャンネル      :id
+        message         指定したチャンネル名    :str
         """
         
-        channel_list = re.findall("\A/.*?#channel",message,re.S)
+        channel_list = re.findall("\A/\S*?#channel",message,re.S)
 
         if not channel_list or message.find('/') != 0:
             return channel_id, message
@@ -225,8 +240,11 @@ class ReqestDiscord:
         get_channel_list = await self.channel_get()
 
         for channel in get_channel_list:
+            # チャンネル名の空白文字を削除
+            channel.name = channel.name.replace(' ', '')
+            channel.name = channel.name.replace('　', '')
+
             # メッセージの先頭に「/{チャンネル名}#channel」が含まれていた場合
-            
             if message.find(f'/{channel.name}#channel') == 0 and channel.type == 0:
                 message = message.lstrip(f'/{channel.name}#channel')
                 channel_id = channel.id
