@@ -270,112 +270,10 @@ class ReqestDiscord:
                 return await resp.json()
 
 
-class MessageFind(ReqestDiscord):
-    """
-    Discordへメッセージを送信するクラス
-
-    guild_id    :int
-        Discordのサーバーid
-    limit       :int
-        1度のcallで呼び出す情報の上限
-    token       :str
-        DiscordBotのトークン
-    """
-    def __init__(self, guild_id: int, limit: int, token: str) -> None:
-        super().__init__(guild_id, limit, token)
-
-    async def member_find(self, message: str):
-        """
-        テキストメッセージのメンションを変換する。
-        @ユーザ名#member → @ユーザ名
-
-        戻り値
-        @ユーザ名#member 変更前の文字列: str
-        <@ユーザid>      変更後の文字列: str 変更がない場合: None
-        """
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',
-                headers = self.headers
-            ) as resp:
-                # 取得したユーザー情報を展開
-                res = await resp.json()
-                for rs in res:
-                    # メッセージに「@{ユーザー名}#member」が含まれていた場合
-                    if message.find(f'@{rs["user"]["username"]}#member') >= 0:
-                        return f'@{rs["user"]["username"]}#member', f'<@{rs["user"]["id"]}>'
-        
-
-    async def role_find(self, message: str):
-        """
-        テキストメッセージのロールを変換する。
-        @ロール名#role → @ロール名
-
-        戻り値
-        @ロール名#role   変更前の文字列: str
-        <@ロールid>      変更後の文字列: str 変更がない場合: None
-        """
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/roles',
-                headers = self.headers
-            ) as resp:
-                # 取得したロール情報を取得
-                res = await resp.json()
-                for rs in res:
-                    # メッセージに「@{ロール名}#role」が含まれていた場合
-                    if message.find(f'@{rs["name"]}#role') >= 0:
-                        return f'@{rs["name"]}#role', f'<@&{rs["id"]}>'
-        
-
-    async def channel_find(self, message: str):
-        """
-        テキストメッセージから送信場所を読み取り変更する。
-        テキストチャンネルのみ可能。
-        @チャンネル名#channel → 削除
-
-        戻り値
-        @チャンネル名#channel 指定したチャンネル名: str
-        チャンネルid          指定したチャンネルid: int 変更がない場合: None
-        """
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/channels',
-                headers = self.headers
-            ) as resp:
-                # 取得したチャンネルを展開
-                res = await resp.json()
-                for rs in res:
-                    # チャンネルのタイプが0(テキストチャンネル)の場合
-                    if rs['type'] == 0:
-                        # テキストの先頭が「/{チャンネル名}#channel」の場合
-                        if message.find(f'/{rs["name"]}#channel') == 0:
-                            return f'/{rs["name"]}#channel', int(rs["id"])
-
-    async def send_discord(self, channel_id: int, message: str):
-        """
-        Discordへメッセージを送信する。
-
-        channel_id  :int
-            Discordのテキストチャンネルのid
-        message     :str
-            テキストメッセージ
-        """
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url = f'https://discordapp.com/api/channels/{channel_id}/messages',
-                headers = self.headers,data = {'content': f'{message}'}
-            ) as resp:
-                return await resp.json()
-
 
 if __name__=="_main__":
     loop = asyncio.get_event_loop()
-    r = MessageFind(int(os.environ['6_GUILD_ID']),100,os.environ['TOKEN'])
+    r = ReqestDiscord(int(os.environ['6_GUILD_ID']),100,os.environ['TOKEN'])
 
     message = "/test#channel @マグロ・オルタ#member @マグロ#member"
     channel_id = int(os.environ['6_CHANNEL_ID'])
@@ -384,9 +282,9 @@ if __name__=="_main__":
 
     discord_request = loop.run_until_complete(
         asyncio.gather(
-            r.member_find(message),
-            r.role_find(message),
-            r.channel_find(message)
+            r.members_find(message),
+            r.roles_find(message),
+            r.channel_select(message)
         )
     )
 
