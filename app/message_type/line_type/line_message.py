@@ -16,9 +16,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from message_type.line_type.class_type import Profile,GyazoJson
+    from message_type.line_type.line_type import Profile,GyazoJson
 except:
-    from app.message_type.line_type.class_type import Profile,GyazoJson
+    from app.message_type.line_type.line_type import Profile,GyazoJson
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'

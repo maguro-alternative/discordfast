@@ -56,6 +56,10 @@ class mst_line(commands.Cog):
         imagelist = []
         videolist = []
 
+        # ユーザーネームの空白文字を削除
+        message.author.name = message.author.name.replace(' ', '')
+        message.author.name = message.author.name.replace('　', '')
+
         # テキストメッセージ
         messagetext=f"{message.channel.name}にて、{message.author.name}"
 

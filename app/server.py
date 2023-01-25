@@ -10,17 +10,18 @@ import uvicorn
 import base64
 import hashlib
 import hmac
+import re
 
 from dotenv import load_dotenv
 load_dotenv()
 
 try:
     from message_type.line_type.line_event import Line_Responses
-    from message_type.discord_type.message_creater import MessageFind
+    from message_type.discord_type.message_creater import ReqestDiscord
     from message_type.line_type.line_message import LineBotAPI
 except:
     from app.message_type.line_type.line_event import Line_Responses
-    from app.message_type.discord_type.message_creater import MessageFind
+    from app.message_type.discord_type.message_creater import ReqestDiscord
     from app.message_type.line_type.line_message import LineBotAPI
 # ./venv/Scripts/activate.bat
 
@@ -78,7 +79,7 @@ async def line_response(
         if decode_signature == x_line_signature:
             channel_secret = os.environ[f'{bot_name}_CHANNEL_SECRET']
             # Discordサーバーのクラスを宣言
-            discord_find_message = MessageFind(
+            discord_find_message = ReqestDiscord(
                 guild_id = int(os.environ[f'{bot_name}_GUILD_ID']),
                 limit = int(os.environ["USER_LIMIT"]), 
                 token = TOKEN
@@ -110,35 +111,25 @@ async def line_response(
     # テキストメッセージの場合
     if event.message.type == 'text':
         message = event.message.text
-        # Disocrdのメンバー、ロール、チャンネルの指定があるか取得する
+        # Discordのメンバー、ロール、チャンネルの指定があるか取得する
         """
-        以下の文字がメッセージに含まれていた場合、変換を行う
-        @メンバー名#member
-        @ロール名#role
-        /テキストチャンネル名#channel(テキストの先頭にあった場合)
-        diecord_request:List[tuple] = [
-            (@メンバー名#member,                   <@メンバーid>),
-            (@ロール名#role,                       <@&ロールid>),
-            (/テキストチャンネル名#channel,         テキストチャンネルid)
-        ]
-        該当するものがない場合、Noneを返す。
-        """
-        discord_request = [await discord_find_message.member_find(message),
-                            await discord_find_message.role_find(message),
-                            await discord_find_message.channel_find(message)]
+        members_find
+        テキストメッセージからユーザーのメンションを検出し、変換する。
+        @ユーザー#0000#member → <@00000000000>
 
-        # Discordへリクエストした内容を展開
-        for req_find in discord_request:
-            # 該当するものがあった場合
-            if req_find != None:
-                # テキストチャンネルidの場合
-                if type(req_find[1]) is int:
-                    # /テキストチャンネル名#channelを削除し、テキストチャンネルidを代入
-                    message = message.lstrip(req_find[0])
-                    channel_id = req_find[1]
-                else:
-                    # メンション形式に変換
-                    message = message.replace(req_find[0], req_find[1])
+        roles_find
+        テキストメッセージからロールのメンションを検出し、変換する。
+        @ロール#role → <@&0000000000>
+
+        channel_select
+        テキストメッセージから送信場所を検出し、送信先のチャンネルidを返す。
+        テキストチャンネルのみ送信可能。ただし、メッセージの先頭に書かれていなければ適用されない。
+        /チャンネル名#channel → 削除
+        """
+
+        message = await discord_find_message.members_find(message=message)
+        message = await discord_find_message.roles_find(message=message)
+        channel_id, message = await discord_find_message.channel_select(channel_id=channel_id,message=message)
 
     # スタンプが送信された場合
     if event.message.type == 'sticker':

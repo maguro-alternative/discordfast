@@ -1,5 +1,5 @@
 import os
-import requests
+import re
 
 import aiohttp
 import requests
@@ -10,8 +10,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from functools import partial
+from typing import List,Tuple
 
 import asyncio
+
+#from discord_type import Discord_Member,Discord_Role,Discord_Channel
+from message_type.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
@@ -84,14 +88,11 @@ class ReqestDiscord:
             'Content-Type': 'application/x-www-form-urlencoded',
         }
 
-    async def member_find(self, message: str):
+    async def member_get(self) -> List[Discord_Member]:
         """
-        テキストメッセージのメンションを変換する。
-        @ユーザ名#member → @ユーザ名
-
+        サーバーのユーザーを取得する。
         戻り値
-        @ユーザ名#member 変更前の文字列: str
-        <@ユーザid>      変更後の文字列: str 変更がない場合: None
+        Discord_Member
         """
         
         async with aiohttp.ClientSession() as session:
@@ -101,20 +102,19 @@ class ReqestDiscord:
             ) as resp:
                 # 取得したユーザー情報を展開
                 res = await resp.json()
-                for rs in res:
-                    # メッセージに「@{ユーザー名}#member」が含まれていた場合
-                    if message.find(f'@{rs["user"]["username"]}#member') >= 0:
-                        return f'@{rs["user"]["username"]}#member', f'<@{rs["user"]["id"]}>'
+                member_list = []
+                for member in res:
+                    r = Discord_Member.new_from_json_dict(member)
+                    member_list.append(r)
         
+        return member_list
+            
 
-    async def role_find(self, message: str):
+    async def role_get(self) -> List[Discord_Role]:
         """
-        テキストメッセージのロールを変換する。
-        @ロール名#role → @ロール名
-
+        ロールを取得する。
         戻り値
-        @ロール名#role   変更前の文字列: str
-        <@ロールid>      変更後の文字列: str 変更がない場合: None
+        Discord_Role
         """
 
         async with aiohttp.ClientSession() as session:
@@ -124,21 +124,18 @@ class ReqestDiscord:
             ) as resp:
                 # 取得したロール情報を取得
                 res = await resp.json()
-                for rs in res:
-                    # メッセージに「@{ロール名}#role」が含まれていた場合
-                    if message.find(f'@{rs["name"]}#role') >= 0:
-                        return f'@{rs["name"]}#role', f'<@&{rs["id"]}>'
-        
+                role_list = []
+                for role in res:
+                    r = Discord_Role.new_from_json_dict(role)
+                    role_list.append(r)
 
-    async def channel_find(self, message: str):
+        return role_list
+
+    async def channel_get(self) -> List[Discord_Channel]:
         """
-        テキストメッセージから送信場所を読み取り変更する。
-        テキストチャンネルのみ可能。
-        @チャンネル名#channel → 削除
-
+        チャンネルを取得する。
         戻り値
-        @チャンネル名#channel 指定したチャンネル名: str
-        チャンネルid          指定したチャンネルid: int 変更がない場合: None
+        Discord_Channel
         """
 
         async with aiohttp.ClientSession() as session:
@@ -148,27 +145,112 @@ class ReqestDiscord:
             ) as resp:
                 # 取得したチャンネルを展開
                 res = await resp.json()
-                for rs in res:
-                    # チャンネルのタイプが0(テキストチャンネル)の場合
-                    if rs['type'] == 0:
-                        # テキストの先頭が「/{チャンネル名}#channel」の場合
-                        if message.find(f'/{rs["name"]}#channel') == 0:
-                            return f'/{rs["name"]}#channel', int(rs["id"])
+                channel_list = []
+                for channel in res:
+                    r = Discord_Channel.new_from_json_dict(channel)
+                    channel_list.append(r)
+
+        return channel_list
+
+    async def members_find(self, message: str) -> str:
+        """
+        テキストメッセージのメンションを変換する。
+        @ユーザ名#4桁の数字#member → @ユーザ名
+
+        戻り値
+        message      変更後の文字列: str
+        """
+        
+        # @{空白以外の0文字以上}#{0以上の数字}#member
+        member_mention_list = re.findall("@\S*?#\d*?#member",message,re.S)
+
+        if not member_mention_list:
+            return message
+        
+        get_member_list = await self.member_get()
+
+        for member in get_member_list:
+            # ユーザー名の空白文字を削除
+            member.user.username = member.user.username.replace(' ', '')
+            member.user.username = member.user.username.replace('　', '')
+
+            # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
+            if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
+                message = message.replace(f'@{member.user.username}#{member.user.discreminator}#member',f'<@{member.user.id}>')
+                member_mention_list = [
+                    user for user in member_mention_list 
+                    if user != f'@{member.user.username}#{member.user.discreminator}#member'
+                ]
+            if not member_mention_list:
+                return message
+
+        return message
 
 
-class MessageFind(ReqestDiscord):
-    """
-    Discordへメッセージを送信するクラス
+    async def roles_find(self, message: str) -> str:
+        """
+        テキストメッセージのメンションを変換する。
+        @ロール名#role → @ロール名
 
-    guild_id    :int
-        Discordのサーバーid
-    limit       :int
-        1度のcallで呼び出す情報の上限
-    token       :str
-        DiscordBotのトークン
-    """
-    def __init__(self, guild_id: int, limit: int, token: str) -> None:
-        super().__init__(guild_id, limit, token)
+        戻り値
+        message      変更後の文字列: str
+        """
+        
+        role_list = re.findall("@\S*?#role",message,re.S)
+
+        if not role_list:
+            return message
+        
+        get_role_list = await self.role_get()
+
+        for role in get_role_list:
+            # ロール名の空白文字を削除
+            role.name = role.name.replace(' ', '')
+            role.name = role.name.replace('　', '')
+
+            # メッセージに「@{ロール名}#role」が含まれていた場合
+            if f'@{role.name}#role' in role_list:
+                message = message.replace(f'@{role.name}#role',f'<@&{role.id}>')
+                role_list = [
+                    rolename for rolename in role_list 
+                    if rolename != f'@{role.name}#role'
+                ]
+            if not role_list:
+                return message
+
+        return message
+                
+        
+    async def channel_select(self, channel_id: int, message: str) -> Tuple[int,str]:
+        """
+        テキストメッセージから送信場所を読み取り変更する。
+        テキストチャンネルのみ可能。
+        /チャンネル名#channel → 削除
+
+        戻り値
+        channel_id      送信先のチャンネル      :id
+        message         指定したチャンネル名    :str
+        """
+        
+        channel_list = re.findall("\A/\S*?#channel",message,re.S)
+
+        if not channel_list or message.find('/') != 0:
+            return channel_id, message
+        
+        get_channel_list = await self.channel_get()
+
+        for channel in get_channel_list:
+            # チャンネル名の空白文字を削除
+            channel.name = channel.name.replace(' ', '')
+            channel.name = channel.name.replace('　', '')
+
+            # メッセージの先頭に「/{チャンネル名}#channel」が含まれていた場合
+            if message.find(f'/{channel.name}#channel') == 0 and channel.type == 0:
+                message = message.lstrip(f'/{channel.name}#channel')
+                channel_id = channel.id
+                return channel_id, message
+
+        return channel_id, message
 
     async def send_discord(self, channel_id: int, message: str):
         """
@@ -188,20 +270,21 @@ class MessageFind(ReqestDiscord):
                 return await resp.json()
 
 
-if __name__=="__main__":
-    loop = asyncio.get_event_loop()
-    r = MessageFind(int(os.environ['6_GUILD_ID']),100,os.environ['TOKEN'])
 
-    message = "/test#channel @マグロ・オルタ#member"
+if __name__=="_main__":
+    loop = asyncio.get_event_loop()
+    r = ReqestDiscord(int(os.environ['6_GUILD_ID']),100,os.environ['TOKEN'])
+
+    message = "/test#channel @マグロ・オルタ#member @マグロ#member"
     channel_id = int(os.environ['6_CHANNEL_ID'])
 
     start = time.time()
 
     discord_request = loop.run_until_complete(
         asyncio.gather(
-            r.member_find(message),
-            r.role_find(message),
-            r.channel_find(message)
+            r.members_find(message),
+            r.roles_find(message),
+            r.channel_select(message)
         )
     )
 
@@ -219,3 +302,16 @@ if __name__=="__main__":
 
     print(message)
     print(end)
+
+if __name__=="__main__":
+    loop = asyncio.get_event_loop()
+    res = ReqestDiscord(int(os.environ['PRO_GUILD_ID']),100,os.environ['PRO_TOKEN'])
+    r=loop.run_until_complete(
+        res.role_get()
+        #asyncio.gather(
+        #    r.member_get(),
+        #    r.role_get(),
+        #    r.channel_get()
+        #)
+    )
+    print(r[0].name)
