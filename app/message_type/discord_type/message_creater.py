@@ -171,8 +171,7 @@ class ReqestDiscord:
 
         for member in get_member_list:
             # ユーザー名の空白文字を削除
-            member.user.username = member.user.username.replace(' ', '')
-            member.user.username = member.user.username.replace('　', '')
+            member.user.username = re.sub("[\u3000 \t]", "",member.user.username)
 
             # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
             if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
@@ -205,8 +204,7 @@ class ReqestDiscord:
 
         for role in get_role_list:
             # ロール名の空白文字を削除
-            role.name = role.name.replace(' ', '')
-            role.name = role.name.replace('　', '')
+            role.name = re.sub("[\u3000 \t]", "",role.name)
 
             # メッセージに「@{ロール名}#role」が含まれていた場合
             if f'@{role.name}#role' in role_list:
@@ -241,8 +239,7 @@ class ReqestDiscord:
 
         for channel in get_channel_list:
             # チャンネル名の空白文字を削除
-            channel.name = channel.name.replace(' ', '')
-            channel.name = channel.name.replace('　', '')
+            channel.name = re.sub("[\u3000 \t]", "",channel.name)
 
             # メッセージの先頭に「/{チャンネル名}#channel」が含まれていた場合
             if message.find(f'/{channel.name}#channel') == 0 and channel.type == 0:
