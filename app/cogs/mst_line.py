@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from typing import List,Tuple,Union
+import re
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -57,7 +58,9 @@ class mst_line(commands.Cog):
         videolist = []
 
         # ユーザーネームの空白文字を削除
-        message.author.name = message.author.name.replace("[\u3000 \t]", "", regex=True)
+        # message.author.name = message.author.name.replace("[\u3000 \t]", "", regex=True)
+        message.author.name = re.sub("[\u3000 \t]", "",message.author.name)
+
 
         # テキストメッセージ
         messagetext=f"{message.channel.name}にて、{message.author.name}"
