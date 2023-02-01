@@ -1,12 +1,6 @@
 import re
 import json
 
-from typing import List
-try:
-    from message_type.line_type.line_event import Line_Events
-except:
-    from app.message_type.line_type.line_event import Line_Events
-
 class Base(object):
     def __init__(self, **kwargs):
         """__init__ method.
@@ -148,20 +142,4 @@ class GyazoJson(Base):
         self.type = type
         super(GyazoJson,self).__init__(**kwargs)
 
-class EventResponse(Base):
-    """
-    LINEのイベントクラス
 
-    destination :LINEBotのID
-    event       :イベントの内容
-
-    super(クラス, インスタンス自身).__init__(引数を辞書として受け取る)
-    """
-    def __init__(self, 
-        destination:str=None,
-        events:List[Line_Events]=None,
-        **kwargs
-    ):
-        self.destination = destination
-        self.events = events[0]
-        super(EventResponse,self).__init__(**kwargs)
