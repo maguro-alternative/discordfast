@@ -24,7 +24,7 @@ class mst_line(commands.Cog):
 
         # メッセージがbot、閲覧注意チャンネル、ピン止め、ボイスチャンネルの場合終了
         if (message.author.bot is True or
-            # message.channel.nsfw is True or
+            #message.channel.nsfw is True or
             message.type == discord.MessageType.pins_add or
             message.channel.type == discord.ChannelType.voice):
             return
