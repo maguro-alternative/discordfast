@@ -347,9 +347,9 @@ class YouTubeUpload():
         error:str = None
         retry:int = 0
         video_id:str = None
+        print("アップロード中...")
         while response is None:
             try:
-                print("アップロード中...")  # print文
                 status, response = insert_request.next_chunk()
                 if response is not None:
                     if 'id' in response:
