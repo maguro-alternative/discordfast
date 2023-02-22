@@ -5,6 +5,7 @@ from requests import Response
 import datetime
 
 import os
+import io
 import asyncio
 from functools import partial
 
@@ -17,8 +18,10 @@ load_dotenv()
 
 try:
     from message_type.line_type.line_type import Profile,GyazoJson
+    from message_type.youtube_upload import YouTubeUpload
 except:
     from app.message_type.line_type.line_type import Profile,GyazoJson
+    from app.message_type.youtube_upload import YouTubeUpload
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
@@ -273,6 +276,21 @@ class LineBotAPI:
                     }
             ) as bytes:
 
+                video_bytes = await bytes.read()
+
+                youtube_video = YouTubeUpload(
+                    title=f"{display_name}からの動画",
+                    description="LINEからの動画",
+                    privacy_status="unlisted"
+                )
+
+                youtube = await youtube_video.get_authenticated_service()
+
+                return await youtube_video.byte_upload(
+                    video_bytes=io.BytesIO(video_bytes),
+                    youtube=youtube
+                )
+                """
                 # mp4で保存
                 # aiofileでは動画が書き込めない
                 # 参考 https://docs.aiohttp.org/en/stable/client_quickstart.html?highlight=file
@@ -292,6 +310,7 @@ class LineBotAPI:
 
                 # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
                 return f"https://youtu.be/{youtube_id.stdout.decode()}"
+                """
 
 
 

@@ -33,3 +33,4 @@ RUN pip install --upgrade setuptools
 RUN pip install -r requirements.txt
 # discord.pyをpy-cordにアップグレード
 RUN pip install git+https://github.com/Pycord-Development/pycord
+RUN pip install git+https://github.com/ytdl-org/youtube-dl.git@master#egg=youtube_dl
