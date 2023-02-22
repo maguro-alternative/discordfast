@@ -5,6 +5,7 @@ from requests import Response
 import datetime
 
 import os
+import io
 import asyncio
 from functools import partial
 
@@ -17,8 +18,10 @@ load_dotenv()
 
 try:
     from message_type.line_type.line_type import Profile,GyazoJson
+    from message_type.youtube_upload import YouTubeUpload
 except:
     from app.message_type.line_type.line_type import Profile,GyazoJson
+    from app.message_type.youtube_upload import YouTubeUpload
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
@@ -27,6 +30,19 @@ LINE_CONTENT_URL = 'https://api-data.line.me/v2/bot'
 
 # LINEのgetリクエストを行う
 async def line_get_request(url: str, token: str) -> json:
+    """
+    GETリクエストを送る。
+    param
+    url:str
+    リクエストを送るURL
+
+    token:str
+    LINEのトークン
+
+    return
+    resp.json:json
+    レスポンスを示すjsonファイル。
+    """
     async with aiohttp.ClientSession() as session:
         async with session.get(
             url = url,
@@ -36,6 +52,22 @@ async def line_get_request(url: str, token: str) -> json:
 
 # LINEのpostリクエストを行う
 async def line_post_request(url: str, headers: dict, data: dict) -> json:
+    """
+    POSTリクエストを送る。
+    param
+    url:str
+    リクエストを送るURL
+
+    headers:dict
+    リクエストを送るヘッダ
+
+    data:dict
+    リクエスト先に送るパラメータ
+
+    return
+    resp.json:json
+    レスポンスを示すjsonファイル。
+    """
     async with aiohttp.ClientSession() as session:
         async with session.post(
             url = url,
@@ -45,7 +77,25 @@ async def line_post_request(url: str, headers: dict, data: dict) -> json:
             return await resp.json()
 
 class LineBotAPI:
-    def __init__(self, notify_token: str, line_bot_token: str, line_group_id: str) -> None:
+    def __init__(
+        self, 
+        notify_token: str, 
+        line_bot_token: str, 
+        line_group_id: str
+    ) -> None:
+        """
+        LINEBotのオブジェクト
+
+        param
+        notify_token: str
+        LINE Notifyのトークン
+
+        line_bot_token: str 
+        LINEBotのトークン
+
+        line_group_id: str
+        LINEグループのid
+        """
         self.notify_token = notify_token
         self.line_bot_token = line_bot_token
         self.line_group_id = line_group_id
@@ -53,6 +103,17 @@ class LineBotAPI:
 
     # LINE Notifyでテキストメッセージを送信
     async def push_message_notify(self, message: str) -> json:
+        """
+        LINE Notifyでテキストメッセージを送信
+
+        param
+        message:str
+        送信するテキストメッセージ
+
+        return
+        resp.json:json
+        レスポンス
+        """
         data = {'message': f'message: {message}'}
         return await line_post_request(
             url = NOTIFY_URL, 
@@ -62,6 +123,20 @@ class LineBotAPI:
         
     # LINE Notifyで画像を送信
     async def push_image_notify(self, message: str, image_url: str) -> json:
+        """
+        LINE Notifyで画像を送信
+
+        param
+        message:str
+        送信するテキストメッセージ
+
+        image_url:str
+        送信する画像のURL
+
+        return
+        resp.json:json
+        レスポンス
+        """
         if len(message) == 0:
             message = "画像を送信しました。"
         data = {
@@ -77,6 +152,17 @@ class LineBotAPI:
 
     # LINE Messageing APIでテキストメッセージを送信
     async def push_message(self,message_text:str) -> json:
+        """
+        LINE Messageing APIでテキストメッセージを送信
+
+        param
+        message:str
+        送信するテキストメッセージ
+
+        return
+        resp.json:json
+        レスポンス
+        """
         data = {
             'to':self.line_group_id,
             'messages':[
@@ -97,6 +183,20 @@ class LineBotAPI:
 
     # LINE Messageing APIで画像を送信
     async def push_image(self,message_text:str,image_urls:List[str]) -> json:
+        """
+        LINE Messageing APIで画像を送信
+
+        param
+        message_text:str
+        送信するテキストメッセージ
+
+        image_urls:List[str]
+        送信する画像のURL(複数)
+
+        return
+        resp.json:json
+        レスポンス
+        """
         data = [
             {
                 'type':'text',
@@ -127,6 +227,20 @@ class LineBotAPI:
 
     # 動画の送信(動画のみ)
     async def push_movie(self, preview_image: str, movie_urls: List[str]) -> json:
+        """
+        LINEBotで動画の送信(動画のみ)
+
+        param
+        preview_image:str
+        プレビュー画像のURL
+
+        movie_urls:List[str]
+        動画のURL(複数)
+
+        return
+        resp.json:json
+        レスポンス
+        """
         data = []
         # 動画を1個ずつ格納
         for movie_url in movie_urls:
@@ -150,6 +264,13 @@ class LineBotAPI:
 
     # 送ったメッセージ数を取得
     async def totalpush(self) -> int:
+        """
+        送ったメッセージ数を取得
+        
+        return
+        totalUsage:int
+        送ったメッセージの総数
+        """
         r = await line_get_request(
             LINE_BOT_URL + "/message/quota/consumption",
             self.line_bot_token
@@ -158,6 +279,13 @@ class LineBotAPI:
 
     # LINE Notifyのステータスを取得
     async def notify_status(self) -> Response:
+        """
+        LINE Notifyのステータスを取得
+
+        return
+        resp:Response
+        レスポンス
+        """
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 url = NOTIFY_STATUS_URL,
@@ -167,30 +295,65 @@ class LineBotAPI:
 
     # LINE Notifyの1時間当たりの上限を取得
     async def rate_limit(self) -> int:
+        """
+        LINE Notifyの1時間当たりの上限を取得
+
+        return
+        X-RateLimit-Limit:int
+        リクエスト上限数
+        """
         resp = await self.notify_status()
         ratelimit = resp.headers.get('X-RateLimit-Limit')
         return int(ratelimit)
 
     # LINE Notifyの1時間当たりの残りの回数を取得
     async def rate_remaining(self) -> int:
+        """
+        LINE Notifyの1時間当たりの残りの回数を取得
+
+        return
+        X-RateLimit-Remaining:int
+        残りリクエスト数
+        """
         resp = await self.notify_status()
         ratelimit = resp.headers.get('X-RateLimit-Remaining')
         return int(ratelimit)
 
     # LINE Notifyの1時間当たりの画像送信上限を取得
     async def rate_image_limit(self) -> int:
+        """
+        LINE Notifyの1時間当たりの画像送信上限を取得
+
+        return
+        X-RateLimit-ImageLimit:int
+        画像送信上限数
+        """
         resp = await self.notify_status()
         ratelimit = resp.headers.get('X-RateLimit-ImageLimit')
         return int(ratelimit)
 
     # LINE Notifyの1時間当たりの残り画像送信上限を取得
     async def rate_image_remaining(self) -> int:
+        """
+        LINE Notifyの1時間当たりの残り画像送信上限を取得
+
+        return
+        X-RateLimit-ImageRemaining:int
+        残り画像送信上限数
+        """
         resp = await self.notify_status()
         ratelimit = resp.headers.get('X-RateLimit-ImageRemaining')
         return int(ratelimit)
 
     # 友達数、グループ人数をカウント
     async def friend(self) -> str:
+        """
+        友達数、グループ人数を数える
+
+        return
+        count or followers:int
+        友達数、またはグループ人数
+        """
         # グループIDが有効かどうか判断
         try:
             r = await line_get_request(
@@ -214,6 +377,14 @@ class LineBotAPI:
 
     # 当月に送信できるメッセージ数の上限目安を取得(基本1000,23年6月以降は200)
     async def pushlimit(self) -> str:
+        """
+        当月に送信できるメッセージ数の上限目安を取得
+        23年6月以降は200になる
+
+        return
+        value:int
+        メッセージの上限目安(基本1000,23年6月以降は200)
+        """
         r = await line_get_request(
             LINE_BOT_URL + "/message/quota",
             self.line_bot_token
@@ -223,12 +394,24 @@ class LineBotAPI:
 
     # LINEのユーザプロフィールから名前を取得
     async def get_proflie(self, user_id: str) -> Profile:
+        """
+        LINEのユーザプロフィールから名前を取得
+
+        param
+        user_id:str
+        LINEのユーザーid
+
+        return
+        profile:Profile
+        LINEユーザーのプロフィールオブジェクト
+        """
         # グループIDが有効かどうか判断
         try:
             r = await line_get_request(
                 LINE_BOT_URL + f"/group/{self.line_group_id}/member/{user_id}",
                 self.line_bot_token,
             )
+            r["user_id"]
         # グループIDが無効の場合、友達から判断
         except KeyError:
             r = await line_get_request(
@@ -239,6 +422,17 @@ class LineBotAPI:
 
     # LINEから画像データを取得し、Gyazoにアップロード
     async def image_upload(self, message_id: int) -> GyazoJson:
+        """
+        LINEから画像データを取得し、Gyazoにアップロードする
+
+        param
+        message_id:int
+        LINEのメッセージのid
+
+        return
+        gayzo:GyazoJson
+        Gyazoの画像のオブジェクト
+        """
         # 画像のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -264,6 +458,20 @@ class LineBotAPI:
         
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(self, message_id: int, display_name: str) -> str:
+        """
+        LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
+
+        param
+        message_id:int
+        LINEのメッセージのid
+
+        display_name:str
+        LINEのユーザー名
+
+        return
+        youtube_id:str
+        YouTubeの動画id
+        """
         # 動画のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -273,25 +481,20 @@ class LineBotAPI:
                     }
             ) as bytes:
 
-                # mp4で保存
-                # aiofileでは動画が書き込めない
-                # 参考 https://docs.aiohttp.org/en/stable/client_quickstart.html?highlight=file
-                with open(f'.\movies\{message_id}.mp4', 'wb') as fd:
-                    async for chunk in bytes.content.iter_chunked(1024):
-                        fd.write(chunk)
+                video_bytes = await bytes.read()
 
-                # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
-                youtube_id = await self.loop.run_in_executor(
-                    None,
-                    partial(
-                        subprocess.run,
-                        ['python', 'upload_video.py', f'--file=.\movies\{message_id}.mp4', f'--title={display_name}の動画', '--description=LINEからの動画'],
-                        capture_output=True
-                    )
+                youtube_video = YouTubeUpload(
+                    title=f"{display_name}からの動画",
+                    description="LINEからの動画",
+                    privacy_status="unlisted"
                 )
 
-                # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
-                return f"https://youtu.be/{youtube_id.stdout.decode()}"
+                youtube = await youtube_video.get_authenticated_service()
+
+                return await youtube_video.byte_upload(
+                    video_bytes=io.BytesIO(video_bytes),
+                    youtube=youtube
+                )
 
 
 
