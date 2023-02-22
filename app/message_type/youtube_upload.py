@@ -284,6 +284,10 @@ class YouTubeUpload():
 
         youtube:Resource
         動的生成されたYouTubeAPIのオブジェクト
+
+        return
+        youtube_id:str
+        アップロードした動画のid
         """
         # タグ(カンマ区切り)があった場合、格納
         tags:list = None
@@ -299,24 +303,6 @@ class YouTubeUpload():
         )
 
         # videos.insertで動画をアップロード
-        """
-        request:HttpRequest = youtube.videos().insert(
-            part='snippet,status',
-            body={
-                'snippet': {
-                    'title': self.title,
-                    'description': self.description,
-                    'tags': tags,
-                    'categoryId': self.category_id
-                },
-                'status': {
-                    'privacyStatus': 'private'
-                }
-            },
-            media_body=media
-        )
-        """
-
         request:HttpRequest = await self.loop.run_in_executor(
             None,
             partial(
@@ -337,12 +323,20 @@ class YouTubeUpload():
             )
         )
 
+        # 動画のidを取得
         youtube_id = await self.resumable_upload(request)
         return youtube_id
 
 
     # 失敗したアップロードを再開するために指数関数的なバックオフ戦略を実装しています。
     async def resumable_upload(self,insert_request:HttpRequest) -> str:
+        """
+        正常なアップロードができるまでアップロードを繰り返します。
+
+        param
+        insert_request:HttpRequest
+        動画のアップロード情報を格納するオブジェクト
+        """
         response:dict = None
         error:str = None
         retry:int = 0
@@ -350,7 +344,12 @@ class YouTubeUpload():
         print("アップロード中...")
         while response is None:
             try:
-                status, response = insert_request.next_chunk()
+                status, response = await self.loop.run_in_executor(
+                    None,
+                    partial(
+                        insert_request.next_chunk,
+                    )
+                )
                 if response is not None:
                     if 'id' in response:
                         print(f"アップロードに成功しました。動画ID:{response['id']}")
@@ -372,6 +371,6 @@ class YouTubeUpload():
                 max_sleep = 2 ** retry
                 sleep_seconds = random.random() * max_sleep
                 print(f"{sleep_seconds}秒後、再アップロードを試みます。")
-                time.sleep(sleep_seconds)
+                await asyncio.sleep(sleep_seconds)
 
         return video_id
