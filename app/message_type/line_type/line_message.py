@@ -290,27 +290,6 @@ class LineBotAPI:
                     video_bytes=io.BytesIO(video_bytes),
                     youtube=youtube
                 )
-                """
-                # mp4で保存
-                # aiofileでは動画が書き込めない
-                # 参考 https://docs.aiohttp.org/en/stable/client_quickstart.html?highlight=file
-                with open(f'.\movies\{message_id}.mp4', 'wb') as fd:
-                    async for chunk in bytes.content.iter_chunked(1024):
-                        fd.write(chunk)
-
-                # subprocessでupload_video.pyを実行、動画がYouTubeに限定公開でアップロードされる
-                youtube_id = await self.loop.run_in_executor(
-                    None,
-                    partial(
-                        subprocess.run,
-                        ['python', 'upload_video.py', f'--file=.\movies\{message_id}.mp4', f'--title={display_name}の動画', '--description=LINEからの動画'],
-                        capture_output=True
-                    )
-                )
-
-                # 出力されたidを当てはめ、YouTubeの限定公開リンクを作成
-                return f"https://youtu.be/{youtube_id.stdout.decode()}"
-                """
 
 
 

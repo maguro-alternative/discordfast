@@ -330,7 +330,7 @@ class YouTubeUpload():
                         'categoryId': self.category_id
                     },
                     'status': {
-                        'privacyStatus': 'private'
+                        'privacyStatus': self.privacy_status
                     }
                 },
                 media_body=media
