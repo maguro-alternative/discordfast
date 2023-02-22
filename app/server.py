@@ -146,9 +146,9 @@ async def line_response(
     # 動画が送信された場合
     if event.message.type == 'video':
         # 動画をYouTubeにアップロードし、urlを返す
-        message = await line_bot_api.movie_upload(message_id=event.message.id,display_name=profile_name.display_name)
-        # 容量を確保するために、動画を削除
-        # os.remove(f'.\movies\{event.message.id}.mp4')
+        youtube_id = await line_bot_api.movie_upload(message_id=event.message.id,display_name=profile_name.display_name)
+        message = f"https://youtu.be/{youtube_id}"
+
 
     # LINEの名前 「メッセージ」の形式で送信
     message = f'{profile_name.display_name} \n「 {message} 」'
