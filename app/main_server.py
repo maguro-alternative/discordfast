@@ -58,7 +58,7 @@ def local_run():
 # 本番環境
 def run():
     uvicorn.run(
-        "server:app",
+        "main_server:app",
         host="0.0.0.0", 
         port=int(os.getenv("PORT", default=8080)), 
         log_level="info"
