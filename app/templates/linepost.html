@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <script type="text/javascript">
+        function check(targetForm,flag,name){
+          for (let n = 0;n <= targetForm.length - 1;n++) {
+            if (targetForm.elements[n].type == "checkbox" && targetForm.elements[n].name.indexOf(name) >= 0) {
+              targetForm.elements[n].checked = flag;
+            }
+          }
+        }
+      </script>
+  {% extends "layout.html" %}
+  {% block content %}
+  <head>
+    <title>{{title}}</title>
+  </head>
+  <body bgcolor="#252525" text="#ffffff">
+    <div class="col-md-2">
+        {% if request.session.oauth_data %}
+            <a href="/logout" class="btn btn-primary">Logout</a>
+        {% else %}
+            <a href="/register" class="btn btn-primary">Login</a>
+        {% endif %}
+        <a href="/" class="btn btn-primary">top</a>
+    </div>
+    {% if not guild.icon %}
+        <a href="/guild/{{guild.id}}">
+            <img src="https://img.freepik.com/premium-vector/modern-badge-discord-icon_578229-169.jpg?w=150" />
+        </a>
+    {% else %}
+        <a href="/guild/{{guild.id}}">
+            <img src="https://cdn.discordapp.com/icons/{{guild.id}}/{{guild.icon}}.png"  />
+        </a>
+    {% endif %}
+    <a href="/guild/{{guild.id}}">
+        <li>{{ guild.name }}</li>
+    </a>
+    <br><br>
+    <form action="/api/line-post-success" name="discordForm" method="post">
+        <details>
+            <summary>
+                <strong>チャンネル一覧</strong>
+            </summary>
+            {% set i = [1] %}
+            {% set chack_flag = 0 %}
+            {% for all in all_channel %}
+                <!--ng_channelが設定されている場合-->
+                {% if all.id in ng_channel %}
+                    {% if all.type != 4 %}
+                        {% for ng in ng_channel %}
+                            <!--ng_channelの場合初めからチェックを付ける-->
+                            {% if all.id == ng %}
+                                {% if all.type == 0 %}
+                                    テキストチャンネル　:
+                                {% elif all.type == 2 %}
+                                    ボイスチャンネル　　:
+                                {% endif %}
+                                <input type="checkbox" checked="checked" name="channel_{{i[0]}}" value="{{all.id}}"/>:{{all.name}}
+                                {% set chack_flag = 1 %}
+                                <br/>
+                            {% elif check_flag == 0 %}
+                                {% if all.type == 0 %}
+                                    テキストチャンネル　:
+                                {% elif all.type == 2 %}
+                                    ボイスチャンネル　　:
+                                {% endif %}
+                                <input type="checkbox" name="channel_{{i[0]}}" value="{{all.id}}"/>:{{all.name}}
+                                <br/>
+                            {% endif %}
+                            {% set _ = i.append(i[0] + 1) %}
+                            {% set _ = i.pop(0) %}
+                        {% endfor %}
+                        {% set chack_flag = 0 %}
+                    {% endif %}
+                {% else %}
+                    <!--ng_channelが空の場合-->
+                    {% if all.type != 4 %}
+                        {% if all.type == 0 %}
+                            テキストチャンネル　:
+                        {% elif all.type == 2 %}
+                            ボイスチャンネル　　:
+                        {% endif %}
+                        <input type="checkbox" name="channel_{{i[0]}}" value="{{all.id}}">
+                            <label for="channel_{{i[0]}}">
+                                :{{all.name}}
+                            </label>
+                        </input>
+                        <br/>
+                        {% set _ = i.append(i[0] + 1) %}
+                        {% set _ = i.pop(0) %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            <input type="button" value="全選択" onClick="check(this.form,true,'channel_')"/>
+            <input type="button" value="全解除" onClick="check(this.form,false,'channel_')"/>
+        </details>
+
+
+        <details>
+            <summary>
+                <strong>チャンネルタイプ一覧</strong>
+            </summary>
+            チャンネルのタイプ:{{channel_type}}<br/>
+            {% if "text" in channel_type %}
+                <input type="checkbox" name="text_channel" checked="checked" value="text"/>
+            {% else %}
+                <input type="checkbox" name="text_channel" value="text"/>
+            {% endif %}
+            :テキストチャンネル
+
+            {% if "voice" in channel_type %}
+                <input type="checkbox" name="voice_channel" checked="checked" value="voice"/>
+            {% else %}
+                <input type="checkbox" name="voice_channel" value="voice"/>
+            {% endif %}
+            :ボイスチャンネル
+            <br/>
+            <input type="button" value="全選択" onClick="check(this.form,true,'_channel')"/>
+            <input type="button" value="全解除" onClick="check(this.form,false,'_channel')"/>
+            </br>
+        </details>
+
+
+        <details>
+            <summary>
+                <strong>メッセージの種類一覧</strong>
+            </summary>
+            メッセージの種類:{{message_type}}<br/>
+            {% if "MessageType.default" in message_type %}
+                <input type="checkbox" name="default" checked="checked" value="MessageType.default"/>
+            {% else %}
+                <input type="checkbox" name="default" value="MessageType.default"/>
+            {% endif %}
+            :デフォルト
+            </br>
+
+            {% if "MessageType.recipient_add" in message_type %}
+                <input type="checkbox" name="recipient_add" checked="checked" value="MessageType.default"/>
+            {% else %}
+                <input type="checkbox" name="recipient_add" value="MessageType.recipient_add"/>
+            {% endif %}
+            :スレッド追加
+            </br>
+
+            {% if "MessageType.pins_add" in message_type %}
+                <input type="checkbox" name="pins_add" checked="checked" value="MessageType.pins_add"/>
+            {% else %}
+                <input type="checkbox" name="pins_add" value="MessageType.pins_add"/>
+            {% endif %}
+            :ピン止め
+            </br>
+        </details>
+
+        送信ユーザがbot:{{message_bot}}<br/>
+        {% if message_bot is true %}
+            <input type="checkbox" name="message_bot" checked="checked" value="True"/>
+        {% else %}
+            <input type="checkbox" name="message_bot" value="True"/>
+        {% endif %}
+        :botのメッセージを送信しない</br>
+        職場閲覧注意チャンネル:{{channel_nsfw}}<br/>
+        {% if channel_nsfw is true %}
+            <input type="checkbox" name="message_nsfw" checked="checked"/>
+        {% else %}
+            <input type="checkbox" name="message_nsfw"/>
+        {% endif %}
+        :チャンネルのメッセージを表示しない</br>
+        <input type="button" value="全選択" onClick="check(this.form,true,'message_')"/>
+        <input type="button" value="全解除" onClick="check(this.form,false,'message_')"/>
+        </br>
+
+        <input type="hidden" name="count_channel" value="{{i[0]}}"/>
+        <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+        <input type="submit" value="送信"/>
+    </form>
+    <a href="/guild/{{guild_id}}" class="btn btn-primary">前のページに戻る</a>
+    <a href="/guilds" class="btn btn-primary">サーバ一覧に戻る</a>
+  </body>
+  {% endblock %}
+</html>

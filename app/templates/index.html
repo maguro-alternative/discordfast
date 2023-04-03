@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  {% extends "layout.html" %}
+  {% block content %}
+  <head>
+    <title>{{title}}</title>
+  </head>
+  <body bgcolor="#252525" text="#ffffff">
+    <div class="col-md-2">
+      {% if request.session.oauth_data %}
+        <a href="/logout" class="btn btn-primary">Logout</a>
+      {% else %}
+        <a href="/register" class="btn btn-primary">Login</a>
+      {% endif %}
+      <a href="/" class="btn btn-primary">top</a>
+    </div>
+    {% if request.session.oauth_data %}
+      <a href="/guilds" class="btn btn-primary">guilds</a>
+    {% endif %}
+    <br/>
+    <img src="https://i.gyazo.com/2e6e88274cd7ddd8956ef737548030d5.jpg"/>
+  </body>
+  {% endblock %}
+</html>

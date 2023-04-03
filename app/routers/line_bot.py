@@ -1,27 +1,15 @@
-from fastapi import FastAPI,Depends,HTTPException,Request,Header,Response
-from fastapi.responses import HTMLResponse,RedirectResponse
+from fastapi import APIRouter,Request,Header
+from fastapi.responses import HTMLResponse
 from starlette.requests import Request
-from fastapi.templating import Jinja2Templates
-from threading import Thread
-import uvicorn
-
 
 import base64
 import hashlib
 import hmac
-import re
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from base.database import PostgresDB
-from base.aio_req import (
-    aio_get_request,
-    aio_post_request,
-    search_guild,
-    search_role
-)
-
+router = APIRouter()
 
 try:
     from message_type.line_type.line_event import Line_Responses
@@ -35,39 +23,16 @@ except:
 
 import os
 
+
 bots_name = os.environ['BOTS_NAME'].split(",")
 TOKEN = os.environ['DISCORD_BOT_TOKEN']
 
-DISCORD_BASE_URL = "https://discord.com/api"
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
-
-app = FastAPI(
-    docs_url=None, 
-    redoc_url=None, 
-    openapi_url=None
-)
-
-# new テンプレート関連の設定 (jinja2)
-templates = Jinja2Templates(directory="templates")
-
 # LINE側のメッセージを受け取る
-@app.post("/line_bot")
+@router.post("/line-bot")
 async def line_response(
     response:Line_Responses,
     byte_body:Request, 
-    x_line_signature=Header(None),
-    #token: str = Depends(oauth2_scheme)
+    x_line_signature=Header(None)
 ):
     """
     response:Line_Responses
@@ -181,20 +146,3 @@ async def line_response(
 
     # レスポンス200を返し終了
     return HTMLResponse(content="OK")
-
-def run():
-    uvicorn.run(
-        "server:app",  
-        host="0.0.0.0", 
-        port=int(os.getenv("PORT", default=8080)), 
-        log_level="info"
-    )
-
-# DiscordBotと並列で立ち上げる
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
-# ローカルで実行する際
-if __name__ == '__main__':
-    uvicorn.run(app,host='localhost', port=8000)

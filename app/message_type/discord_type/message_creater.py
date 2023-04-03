@@ -270,7 +270,7 @@ class ReqestDiscord:
 
 if __name__=="_main__":
     loop = asyncio.get_event_loop()
-    r = ReqestDiscord(int(os.environ['6_GUILD_ID']),100,os.environ['TOKEN'])
+    r = ReqestDiscord(int(os.environ['6_GUILD_ID']),100,os.environ['DISCORD_BOT_TOKEN'])
 
     message = "/test#channel @マグロ・オルタ#member @マグロ#member"
     channel_id = int(os.environ['6_CHANNEL_ID'])
