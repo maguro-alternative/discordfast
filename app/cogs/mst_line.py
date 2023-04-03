@@ -2,7 +2,24 @@ import discord
 from discord.ext import commands
 import os
 from typing import List,Tuple,Union
+from decimal import Decimal
 import re
+
+from base.database import PostgresDB
+
+USER = os.getenv('PGUSER')
+PASSWORD = os.getenv('PGPASSWORD')
+DATABASE = os.getenv('PGDATABASE')
+HOST = os.getenv('PGHOST')
+db = PostgresDB(
+    user=USER,
+    password=PASSWORD,
+    database=DATABASE,
+    host=HOST
+)
+
+# 使用するデータベースのテーブル名
+TABLE = 'guilds_ng_channel'
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -22,16 +39,41 @@ class mst_line(commands.Cog):
     @commands.Cog.listener(name='on_message')
     async def on_message(self, message:discord.Message):
 
+        # データベースへ接続
+        await db.connect()
+
+        # テーブルの中身を取得
+        table_fetch = await db.select_rows(
+            table_name=TABLE,
+            columns=None,
+            where_clause={'guild_id':message.guild.id}
+        )
+
+        await db.disconnect()
+
+        bot_message = False
+        nsfw_channel = False
+
+        if (bool(table_fetch[0]['message_bot']) == True and
+            message.author.bot == True):
+            bot_message = True
+
+        if (bool(table_fetch[0]['channel_nsfw']) == True and
+            message.channel.nsfw == True):
+            nsfw_channel = True
+
         # メッセージがbot、閲覧注意チャンネル、ピン止め、ボイスチャンネルの場合終了
-        if (message.author.bot is True or
-            #message.channel.nsfw is True or
-            message.type == discord.MessageType.pins_add or
-            message.channel.type == discord.ChannelType.voice):
+        # 送信NGのチャンネル名の場合、終了
+        if (bot_message or nsfw_channel or
+            Decimal(message.channel.id) in table_fetch[0]['channel_id'] or
+            str(message.type) in table_fetch[0]['message_type'] or
+            str(message.channel.type) in table_fetch[0]['channel_type']):
             return
+        
 
         # FIVE_SECONDs,FIVE_HOUR
         # ACCESS_TOKEN,GUILD_ID,TEMPLE_ID (それぞれ最低限必要な環境変数)
-        bots_name=os.environ['BOTS_NAME'].split(",")
+        bots_name = os.environ['BOTS_NAME'].split(",")
 
         for bot_name in bots_name:
             # メッセージが送られたサーバーを探す
@@ -46,12 +88,7 @@ class mst_line(commands.Cog):
         # line_bot_apiが定義されなかった場合、終了
         # 主な原因はLINEグループを作成していないサーバーからのメッセージ
         if not bool('line_bot_api' in locals()):
-            return
-
-        # 送信NGのチャンネル名の場合、終了
-        ng_channel = os.environ.get(f"{bot_name}_NG_CHANNEL").split(",")
-        if message.channel.name in ng_channel:
-            return
+            return 
 
         # LINEに送信する動画、画像ファイルのリスト
         imagelist = []

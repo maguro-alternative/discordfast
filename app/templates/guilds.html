@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  {% extends "layout.html" %}
+  {% block content %}
+  <head>
+    <title>{{title}}</title>
+  </head>
+  <body bgcolor="#252525" text="#ffffff">
+    <div class="col-md-2">
+      {% if request.session.oauth_data %}
+        <a href="/logout" class="btn btn-primary">Logout</a>
+      {% else %}
+        <a href="/register" class="btn btn-primary">Login</a>
+      {% endif %}
+      <a href="/" class="btn btn-primary">top</a>
+    </div>
+    <ul>
+      {% for guild in match_guild %}
+        {% if not guild.icon %}
+          <a href="/guild/{{guild.id}}">
+            <img src="https://img.freepik.com/premium-vector/modern-badge-discord-icon_578229-169.jpg?w=150" />
+          </a>
+        {% else %}
+          <a href="/guild/{{guild.id}}">
+            <img src="https://cdn.discordapp.com/icons/{{guild.id}}/{{guild.icon}}.png"  />
+          </a>
+        {% endif %}
+        <a href="/guild/{{guild.id}}">
+          <li>{{ guild.name }}</li>
+        </a>
+        <br><br>
+      {% endfor %}
+    </ul>
+  </body>
+  {% endblock %}
+</html>

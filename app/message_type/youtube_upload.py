@@ -53,7 +53,7 @@ https://developers.google.com/youtube/v3/guides/authentication
 client_secrets.jsonのファイルフォーマットに関する詳しい情報は, こちらを参照してください:
 https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 """
-CLIENT_SECRETS_FILE = os.environ["CLIENT_SECRET_NAME"]+".json"
+CLIENT_SECRETS_FILE = f"client_secret_{os.environ['YOUTUBE_CLIENT_ID']}.json"
 OAUTH2_FILE = "upload_video.py-oauth2.json"
 
 # この変数はCLIENT_SECRETS_FILEが見つからない場合に表示されるメッセージを定義します。
@@ -140,12 +140,12 @@ class YouTubeUpload():
         cli = {
             "installed":
                 {
-                    "client_id":os.environ["client_id"],
-                    "project_id":os.environ["project_id"],
+                    "client_id":os.environ["YOUTUBE_CLIENT_ID"],
+                    "project_id":os.environ["YOUTUBE_PROJECT_ID"],
                     "auth_uri":"https://accounts.google.com/o/oauth2/auth",
                     "token_uri":"https://oauth2.googleapis.com/token",
                     "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
-			        "client_secret":os.environ["client_secret"],
+			        "client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
 			        "redirect_uris":["http://localhost"]
 		        }
 	    }
@@ -156,18 +156,18 @@ class YouTubeUpload():
 
     async def create_oauth(self) -> None:
         oau = {
-            "access_token":os.environ["access_token"],
-            "client_id":os.environ["client_id"],
-            "client_secret":os.environ["client_secret"],
-            "refresh_token":os.environ["refresh_token"],
-            "token_expiry": os.environ["token_expiry"], 
+            "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
+            "client_id":os.environ["YOUTUBE_CLIENT_ID"],
+            "client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
+            "refresh_token":os.environ["YOUTUBE_REFRESH_TOKEN"],
+            "token_expiry": os.environ["YOUTUBE_TOKEN_EXPIRY"], 
             "token_uri": "https://oauth2.googleapis.com/token",
             "user_agent": None,
             "revoke_uri": "https://oauth2.googleapis.com/revoke", 
             "id_token": None, 
             "id_token_jwt": None, 
             "token_response": {
-                "access_token":os.environ["access_token"],
+                "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
                 "expires_in": 3599, 
                 "scope": "https://www.googleapis.com/auth/youtube.upload", 
                 "token_type": "Bearer"
