@@ -134,6 +134,8 @@ async def check_permission(
         }
     )
 
+    permission = None
+
     # サーバでの権限を取得
     for info in guild_info:
         if str(guild_id) == info["id"]:
@@ -146,7 +148,8 @@ async def check_permission(
 
     for role in match_role:
         # サーバー管理者であるかどうかを調べる
-        if (int(role["permissions"]) & permission_16 == permission_16):
+        if (permission & permission_16 == permission_16 or
+            int(role["permissions"]) & permission_16 == permission_16):
             user_permission = True
             break
 
