@@ -10,7 +10,8 @@ import os
 
 from base.database import PostgresDB
 from base.aio_req import (
-    aio_get_request
+    aio_get_request,
+    check_permission
 )
 
 DISCORD_BASE_URL = "https://discord.com/api"
@@ -145,6 +146,19 @@ async def line_post(
 
     await db.disconnect()
 
+    permission_bool = await check_permission(
+        guild_id=guild_id,
+        user_id=request.session["user"]["id"],
+        access_token=request.session["oauth_data"]["access_token"],
+        permission_16=0x00000008
+    )
+
+    user_permission:str = 'normal'
+
+    if permission_bool == True:
+        user_permission = 'admin'
+        print('admin')
+
     return templates.TemplateResponse(
         "linepost.html",
         {
@@ -157,6 +171,7 @@ async def line_post(
             'message_type': message_type,
             'message_bot': message_bot,
             'channel_nsfw': channel_nsfw,
+            "user_permission":user_permission,
             "title": request.session["user"]['username']
         }
     )

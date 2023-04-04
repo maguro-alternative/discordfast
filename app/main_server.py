@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from starlette.middleware.sessions import SessionMiddleware
@@ -31,6 +32,9 @@ app = FastAPI(
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 jinja_env = templates.env  #Jinja2.Environment : filterやglobalの設定用
+
+# templates/static以下のファイルを静的に扱えるようにする
+app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
 # session使用
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")

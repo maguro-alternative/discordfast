@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html>
-    <script type="text/javascript">
-        function check(targetForm,flag,name){
-          for (let n = 0;n <= targetForm.length - 1;n++) {
-            if (targetForm.elements[n].type == "checkbox" && targetForm.elements[n].name.indexOf(name) >= 0) {
-              targetForm.elements[n].checked = flag;
-            }
-          }
-        }
-      </script>
+    <script src="/static/js/box_allcheck.js" type="text/javascript"></script>
   {% extends "layout.html" %}
   {% block content %}
   <head>
@@ -36,6 +28,12 @@
         <li>{{ guild.name }}</li>
     </a>
     <br><br>
+
+    {% set per = ['admin'] %}
+    {% if user_permission not in per %}
+    <fieldset disabled>
+    {% endif %}
+
     <form action="/api/line-post-success" name="discordForm" method="post">
         <details>
             <summary>
@@ -173,9 +171,13 @@
         <input type="hidden" name="guild_id" value="{{guild_id}}"/>
         <input type="submit" value="送信"/>
     </form>
+    {% if user_permission not in per %}
+    </fieldset>
+    {% endif %}
     <a href="/guild/{{guild_id}}" class="btn btn-primary">前のページに戻る</a>
     <a href="/guilds" class="btn btn-primary">サーバ一覧に戻る</a>
-    <iframe title="discord_5second" className="disgetbot max-w-4xl px-7 py-10 mx-auto" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+    <br/>
+    <iframe title="discord_5second" style="height: 350px;" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
   </body>
   {% endblock %}
 </html>
