@@ -157,6 +157,7 @@ async def line_post(
 
     if permission_bool == True:
         user_permission = 'admin'
+        print('admin')
 
     return templates.TemplateResponse(
         "linepost.html",
