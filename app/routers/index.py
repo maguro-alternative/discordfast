@@ -2,6 +2,8 @@ from fastapi import APIRouter,Request,Header
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
+import os
+
 from base.aio_req import (
     aio_get_request
 )
@@ -13,8 +15,11 @@ router = APIRouter()
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
+DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+
 @router.get("/")
 async def index(request: Request):
+    # discordの認証が有効か確認
     try:
         oauth_data:dict = await aio_get_request(
             url = DISCORD_BASE_URL + '/users/@me', 
@@ -27,10 +32,19 @@ async def index(request: Request):
     except KeyError:
         if request.session.get("oauth_data") != None:
             request.session.pop("oauth_data")
+    
+    bot_data:dict = await aio_get_request(
+        url = DISCORD_BASE_URL + '/users/@me', 
+        headers = { 
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}' 
+        }
+    )
+
     return templates.TemplateResponse(
         'index.html',
         {
             'request': request,
+            'bot_data':bot_data,
             'title':'トップページ'
         }
     )

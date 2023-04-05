@@ -7,14 +7,18 @@
     <title>{{title}}</title>
   </head>
   <body bgcolor="#252525" text="#ffffff">
-    <div class="col-md-2">
-        {% if request.session.oauth_data %}
-            <a href="/logout" class="btn btn-primary">Logout</a>
-        {% else %}
-            <a href="/register" class="btn btn-primary">Login</a>
-        {% endif %}
+    <div class="col-md-90">
         <a href="/" class="btn btn-primary">top</a>
+        {% if request.session.oauth_data %}
+            <a href="/logout" class="btn btn-primary ml-xl-5">Logout</a>
+        {% else %}
+            <a href="/register" class="btn btn-primary text-right">Login</a>
+        {% endif %}
     </div>
+
+    <h1>LINEへの送信設定</h1>
+    <h4>チェックマークがついている条件を満たしている場合、そのメッセージは送信されません。</h4>
+
     {% if not guild.icon %}
         <a href="/guild/{{guild.id}}">
             <img src="https://img.freepik.com/premium-vector/modern-badge-discord-icon_578229-169.jpg?w=150" />
@@ -28,6 +32,15 @@
         <li>{{ guild.name }}</li>
     </a>
     <br><br>
+
+    <h3>{{request.session.user.username}}さんは
+    {% if user_permission in per %}
+        編集できません。閲覧のみになります。
+    {% else %}
+        編集できます。
+    {% endif %}
+    </h3>
+    <br/>
 
     {% set per = ['admin'] %}
     {% if user_permission not in per %}
@@ -43,6 +56,10 @@
             {% set chack_flag = 0 %}
             {% for all in all_channel %}
                 <!--ng_channelが設定されている場合-->
+                {% if all.type == 4 %}
+                    {{ all.name }}
+                    <br/>
+                {% endif %}
                 {% if all.id in ng_channel %}
                     {% if all.type != 4 %}
                         {% for ng in ng_channel %}
@@ -177,6 +194,7 @@
     <a href="/guild/{{guild_id}}" class="btn btn-primary">前のページに戻る</a>
     <a href="/guilds" class="btn btn-primary">サーバ一覧に戻る</a>
     <br/>
+    サーバーウィジェットが有効の場合、サーバーの状況が表示されます。<br/>
     <iframe title="discord_5second" style="height: 350px;" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
   </body>
   {% endblock %}

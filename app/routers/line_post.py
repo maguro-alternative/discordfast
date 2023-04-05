@@ -50,6 +50,30 @@ async def line_post(
         }
     )
 
+    position = []
+    channel_position = {}
+
+    all_channel_sort = []
+
+    # 順序がバラバラなのでアプリと同様の並びにソート
+    for all in all_channel:
+        # 親チャンネルがすでに連想配列として定義されているか、また親チャンネルではないか
+        if str(all.get('parent_id')) in channel_position and all.get('type') != 4:
+            channel_position[str(all.get('parent_id'))].append(all)
+        # 親チャンネルの場合
+        elif all.get('type') == 4:
+            position.append(all)
+        # 親チャンネルが存在しない場合
+        else:
+            channel_position[str(all.get('parent_id'))] = [all]
+            if str(all.get('parent_id')) == 'None':
+                position.append(all)
+
+    for po_id in position:
+        all_channel_sort.append(po_id)
+        for i in range(0,len(channel_position.get(str(po_id['id']),[]))):
+            all_channel_sort.append(channel_position[str(po_id['id'])][i])
+
     # サーバの情報を取得
     guild = await aio_get_request(
         url = DISCORD_BASE_URL + f'/guilds/{guild_id}',
@@ -86,7 +110,7 @@ async def line_post(
                 {
                     "request": request, 
                     "guild_id": guild_id,
-                    "all_channel": all_channel,
+                    "all_channel": all_channel_sort,
                     "ng_channel": [],
                     'channel_type': [],
                     'message_type': [],
@@ -165,7 +189,7 @@ async def line_post(
             "request": request, 
             "guild": guild,
             "guild_id": guild_id,
-            "all_channel": all_channel,
+            "all_channel": all_channel_sort,
             "ng_channel": ng_channel,
             'channel_type': channel_type,
             'message_type': message_type,
