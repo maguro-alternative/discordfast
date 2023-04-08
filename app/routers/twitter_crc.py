@@ -8,7 +8,7 @@ import json
 
 router = APIRouter()
 
-consumer_secret = os.environ["WEBHOOK_SECRET"]
+consumer_secret = os.environ["TWITTER_CLIENT_SECRET"]
 
 @router.get('/api/webhook')
 async def webhook_challenge(request:Request):
@@ -24,6 +24,6 @@ async def webhook_challenge(request:Request):
 		response = {
 			'response_token':f'sha256={digested}'
 		}
-		return json.dumps(response)#, 200, {'Content-Type': 'application/json'}
+		return json.dumps(response)
 	else:
 		return json.dumps({'error':'No Content'})
