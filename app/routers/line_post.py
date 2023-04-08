@@ -105,6 +105,7 @@ async def line_post(
                     'channel_nsfw': 'boolean'
                 }
             )
+            await db.disconnect()
             return templates.TemplateResponse(
                 "linepost.html",
                 {
