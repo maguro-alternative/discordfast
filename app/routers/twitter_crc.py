@@ -24,6 +24,6 @@ async def webhook_challenge(request:Request):
 		response = {
 			'response_token':f'sha256={digested}'
 		}
-		return json.dumps(response)
+		return response
 	else:
 		return json.dumps({'error':'No Content'})
