@@ -8,6 +8,11 @@ USER root
 # 再ビルドをする場合必ずimageは削除すること
 # docker rm discordfast
 
+# 仮想環境の構築
+# python3 -m venv venv
+# .\venv\Scripts\activate
+# pip install -r requirements.txt
+
 # ディレクトリ ./appに移動
 WORKDIR /app
 
