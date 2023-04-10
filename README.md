@@ -6,6 +6,7 @@ Discordの多機能Botです。
 - Web版VOICEVOXによる読み上げ機能
 - カラオケ(動作不安定)
 - ChatGPTへの質問
+- PostgreSQLを使用したLINEと入退室の管理
 
 # ボイスチャンネルの入退室通知
 <img src="https://github.com/maguro-alternative/mywebsite/blob/main/pic/disvlog.png?raw=true" height="60%" width="60%">
@@ -21,7 +22,7 @@ LINE側でメンションも可能です。
 ```
 /チャンネル名#channel
     メッセージの先頭につけることで、送信先のチャンネルを指定できる。
-@Discordのユーザー名#member
+@Discordのユーザー名#4桁の数字#member
     Discordのユーザーにメンションが可能。(ニックネームはNG)
 @ロール名#role
     ロールでメンションが可能。
@@ -130,11 +131,6 @@ DiscordのサーバーとLINEのグループを識別するための名前。
 ・Discordにメッセージを送信するテキストチャンネルのID。雑談とかにおすすめ。
 ```
 
-- _NG_CHANNEL
-```bash
-・LINE側に送りたくないDiscordチャンネルの名前。BOTS_NAMEと同様にカンマ区切りで複数指定可能。
-```
-
 - _NOTIFY_TOKEN
 ```bash
 ・LINE Notifyのトークン。メッセージの送信に使用する。
@@ -152,7 +148,7 @@ DiscordのサーバーとLINEのグループを識別するための名前。
 LINEからDiscordへ画像を送信する際に使用。
 ```
 
-- TOKEN 
+- DISCORD_BOT_TOKEN 
 ```bash
 ・DiscordBotのトークン。
 ```
@@ -167,13 +163,12 @@ LINEからDiscordへ画像を送信する際に使用。
 jsonの中身が機密情報の塊なので、一気に説明する。  
 登録する環境変数は以下の通り7つ。
 ```bash
-CLIENT_SECRET_NAME
-access_token
-client_id
-client_secret
-refresh_token
-project_id
-token_expiry
+YOUTUBE_ACCESS_TOKEN
+YOUTUBE_CLIENT_ID
+YOUTUBE_CLIENT_SECRET
+YOUTUBE_REFRESH_TOKEN
+YOUTUBE_PROJECT_ID
+YOUTUBE_TOKEN_EXPIRY
 ```
 YouTube Data APIで生成された2つのjsonを以下に示す。  
 os.environ[]となっている部分が、環境変数に該当する部分になる。
@@ -183,12 +178,12 @@ client_secret.json
 {
   "installed":
   	        {
-  	            "client_id":os.environ["client_id"],
-  	            "project_id":os.environ["project_id"],
+  	            "client_id":os.environ["YOUTUBE_CLIENT_ID"],
+  	            "project_id":os.environ["YOUTUBE_PROJECT_ID"],
   	            "auth_uri":"https://accounts.google.com/o/oauth2/auth",
   	            "token_uri":"https://oauth2.googleapis.com/token",
   	            "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
-  				"client_secret":os.environ["client_secret"],
+  				"client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
   				"redirect_uris":["http://localhost"]
   			}
 }
@@ -196,18 +191,18 @@ client_secret.json
 upload_video.py-oauth2.json
 ``` upload_video.py-oauth2.json
 {
-	    "access_token":os.environ["access_token"],
-	    "client_id":os.environ["client_id"],
-	    "client_secret":os.environ["client_secret"],
-	    "refresh_token":os.environ["refresh_token"],
-	    "token_expiry": os.environ["token_expiry"], 
+	    "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
+	    "client_id":os.environ["YOUTUBE_CLIENT_ID"],
+	    "client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
+	    "refresh_token":os.environ["YOUTUBE_REFRESH_TOKEN"],
+	    "token_expiry": os.environ["YOUTUBE_TOKEN_EXPIRY"], 
 	    "token_uri": "https://oauth2.googleapis.com/token",
 	    "user_agent": None,
 	    "revoke_uri": "https://oauth2.googleapis.com/revoke", 
 	    "id_token": None, 
 	    "id_token_jwt": None, 
 	    "token_response": {
-	        "access_token":os.environ["access_token"],
+	        "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
 	        "expires_in": 3599, 
 	        "scope": "https://www.googleapis.com/auth/youtube.upload", 
 	        "token_type": "Bearer"
@@ -228,4 +223,29 @@ upload_video.py-oauth2.json
 - CHATGPT
 ```bash
 ・ChatGPTのAPIキー。
+```
+
+- PGDATABASE
+```bash
+・PostgreSQLのデータベース名
+```
+
+- PGHOST
+```bash
+・データベースのホスト名
+```
+
+- PGPASSWORD
+```bash
+・データベースのパスワード
+```
+
+- PGPORT
+```bash
+・データベースのポート番号
+```
+
+- PGUSER
+```bash
+・データベースのユーザー名
 ```

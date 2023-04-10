@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, Form
-from fastapi.responses import HTMLResponse,RedirectResponse
+from fastapi import APIRouter
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -52,9 +51,9 @@ async def line_post(
         }
     )
 
+    # 親カテゴリー格納用
     position = []
-    channel_position = {}
-
+    # ソート後のチャンネル一覧
     all_channel_sort = []
 
     # レスポンスのJSONからpositionでソートされたリストを作成
@@ -63,20 +62,26 @@ async def line_post(
     # parent_idごとにチャンネルをまとめた辞書を作成
     channel_dict = {}
 
-    for parent_id, group in groupby(sorted_channels, key=lambda c: c['parent_id']):
+    for parent_id, group in groupby(
+        sorted_channels, 
+        key=lambda c: c['parent_id']
+    ):
         if parent_id is None:
             # 親カテゴリーのないチャンネルは、キーがNoneの辞書に追加される
             parent_id = 'None'
     
+        # キーがまだない場合、作成(同時に値も代入)
         if channel_dict.get(str(parent_id)) == None:
             channel_dict[str(parent_id)] = list(group)
-       
+        # キーがある場合、リストを取り出して結合し代入
         else:
             listtmp:List = channel_dict[str(parent_id)]
             listtmp.extend(list(group))
             channel_dict[str(parent_id)] = listtmp
+            # リストを空にする
             listtmp = list()
 
+    # 親カテゴリーがある場合、Noneから取り出す
     for chan in channel_dict['None'][:]:
         if chan['type'] == 4:
             position.append(chan)
@@ -85,17 +90,20 @@ async def line_post(
     # 辞書を表示
     position_index = 0
 
+    # 親カテゴリーの名前をリスト化
     extracted_list = [d["name"] for d in position]
+    # カテゴリーに属しないチャンネルが存在する場合
     if len(channel_dict['None']) != 0:
+        # 配列の長さをカテゴリー数+1にする
         all_channels = [{}] * (len(extracted_list) + 1)
     else:
         all_channels = [{}] * len(extracted_list)
 
-    all_channel_sort = []
-
     for parent_id, channel in channel_dict.items():
+        # カテゴリー内にチャンネルがある場合
         if len(channel) != 0:
             for d in position:
+                # カテゴリーを探索、あった場合positionを代入
                 if d['id'] == channel[0]['parent_id']:
                     position_index = d['position']
                     break
@@ -103,17 +111,22 @@ async def line_post(
             position_index = len(extracted_list)
     
         if len(channel) != 0:
+            # 指定したリストの中身が空でない場合、空のリストを探す
             while len(all_channels[position_index]) != 0:
                 if len(extracted_list) == position_index:
                     position_index -= 1
                 else:
                     position_index += 1
 
+            # 指定した位置にカテゴリー内のチャンネルを代入
             all_channels[position_index] = channel
 
+            # 先頭がカテゴリーでない場合
             if channel[0]['parent_id'] != None:
+                # 先頭にカテゴリーチャンネルを代入
                 all_channels[position_index].insert(0,d)
     
+    # list(list),[[],[]]を一つのリストにする
     all_channel_sort = list(chain.from_iterable(all_channels))
 
     # サーバの情報を取得
@@ -134,6 +147,7 @@ async def line_post(
         where_clause={'guild_id':guild_id}
     )
 
+    # リストが空でなく、テーブルが存在しない場合は作成
     if len(table_fetch) != 0:
         if table_fetch[0] == f"{TABLE} does not exist":
             await db.create_table(
@@ -163,6 +177,7 @@ async def line_post(
                 }
             )
 
+    # テーブルはあるが中身が空の場合
     if len(table_fetch) == 0:
         row_values = {
             'guild_id': guild_id, 
@@ -173,6 +188,7 @@ async def line_post(
             'channel_nsfw': False
         }
 
+        # サーバー用に新たにカラムを作成
         await db.insert_row(
             table_name=TABLE,
             row_values=row_values
@@ -184,6 +200,7 @@ async def line_post(
 
         ng_channel = []
     else:
+        # 指定したサーバーのカラムを取得する
         table_fetch = await db.select_rows(
             table_name=TABLE,
             columns=None,
@@ -213,6 +230,7 @@ async def line_post(
 
     await db.disconnect()
 
+    # Discordサーバー内での権限をチェック(この場合管理者かどうか)
     permission_bool = await check_permission(
         guild_id=guild_id,
         user_id=request.session["user"]["id"],
@@ -222,6 +240,7 @@ async def line_post(
 
     user_permission:str = 'normal'
 
+    # 管理者の場合adminを代入
     if permission_bool == True:
         user_permission = 'admin'
 
