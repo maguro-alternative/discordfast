@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 
 try:
-    import app.cogs.bin.activity
+    # Botのみ起動の場合
+    from app.cogs.bin import activity
     from app.core.start import DBot
 except:
     from cogs.bin import activity

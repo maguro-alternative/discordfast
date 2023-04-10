@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+from typing import List
+from itertools import groupby,chain
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -55,24 +57,64 @@ async def line_post(
 
     all_channel_sort = []
 
-    # 順序がバラバラなのでアプリと同様の並びにソート
-    for all in all_channel:
-        # 親チャンネルがすでに連想配列として定義されているか、また親チャンネルではないか
-        if str(all.get('parent_id')) in channel_position and all.get('type') != 4:
-            channel_position[str(all.get('parent_id'))].append(all)
-        # 親チャンネルの場合
-        elif all.get('type') == 4:
-            position.append(all)
-        # 親チャンネルが存在しない場合
-        else:
-            channel_position[str(all.get('parent_id'))] = [all]
-            if str(all.get('parent_id')) == 'None':
-                position.append(all)
+    # レスポンスのJSONからpositionでソートされたリストを作成
+    sorted_channels = sorted(all_channel, key=lambda c: c['position'])
 
-    for po_id in position:
-        all_channel_sort.append(po_id)
-        for i in range(0,len(channel_position.get(str(po_id['id']),[]))):
-            all_channel_sort.append(channel_position[str(po_id['id'])][i])
+    # parent_idごとにチャンネルをまとめた辞書を作成
+    channel_dict = {}
+
+    for parent_id, group in groupby(sorted_channels, key=lambda c: c['parent_id']):
+        if parent_id is None:
+            # 親カテゴリーのないチャンネルは、キーがNoneの辞書に追加される
+            parent_id = 'None'
+    
+        if channel_dict.get(str(parent_id)) == None:
+            channel_dict[str(parent_id)] = list(group)
+       
+        else:
+            listtmp:List = channel_dict[str(parent_id)]
+            listtmp.extend(list(group))
+            channel_dict[str(parent_id)] = listtmp
+            listtmp = list()
+
+    for chan in channel_dict['None'][:]:
+        if chan['type'] == 4:
+            position.append(chan)
+            channel_dict['None'].remove(chan)
+
+    # 辞書を表示
+    position_index = 0
+
+    extracted_list = [d["name"] for d in position]
+    if len(channel_dict['None']) != 0:
+        all_channels = [{}] * (len(extracted_list) + 1)
+    else:
+        all_channels = [{}] * len(extracted_list)
+
+    all_channel_sort = []
+
+    for parent_id, channel in channel_dict.items():
+        if len(channel) != 0:
+            for d in position:
+                if d['id'] == channel[0]['parent_id']:
+                    position_index = d['position']
+                    break
+        else:
+            position_index = len(extracted_list)
+    
+        if len(channel) != 0:
+            while len(all_channels[position_index]) != 0:
+                if len(extracted_list) == position_index:
+                    position_index -= 1
+                else:
+                    position_index += 1
+
+            all_channels[position_index] = channel
+
+            if channel[0]['parent_id'] != None:
+                all_channels[position_index].insert(0,d)
+    
+    all_channel_sort = list(chain.from_iterable(all_channels))
 
     # サーバの情報を取得
     guild = await aio_get_request(
@@ -105,6 +147,7 @@ async def line_post(
                     'channel_nsfw': 'boolean'
                 }
             )
+            await db.disconnect()
             return templates.TemplateResponse(
                 "linepost.html",
                 {
@@ -181,7 +224,6 @@ async def line_post(
 
     if permission_bool == True:
         user_permission = 'admin'
-        print('admin')
 
     return templates.TemplateResponse(
         "linepost.html",

@@ -7,14 +7,15 @@
     <title>{{title}}</title>
   </head>
   <body bgcolor="#252525" text="#ffffff">
-    <div class="col-md-90">
+    <div class="col-md-1 text-right">
         <a href="/" class="btn btn-primary">top</a>
         {% if request.session.oauth_data %}
-            <a href="/logout" class="btn btn-primary ml-xl-5">Logout</a>
+            <a href="/logout" style="margin-left :200px;" class="btn btn-primary">Logout</a>
         {% else %}
-            <a href="/register" class="btn btn-primary text-right">Login</a>
+            <a href="/register" class="btn btn-primary">Login</a>
         {% endif %}
     </div>
+    
 
     <h1>LINEへの送信設定</h1>
     <h4>チェックマークがついている条件を満たしている場合、そのメッセージは送信されません。</h4>
