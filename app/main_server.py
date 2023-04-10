@@ -17,8 +17,7 @@ from routers import (
     guilds,
     line_post,
     line_post_sucess,
-    logout,
-    twitter_crc
+    logout
 )
 
 app = FastAPI(
@@ -50,8 +49,6 @@ app.include_router(guilds.router)
 app.include_router(line_post.router)
 app.include_router(line_post_sucess.router)
 app.include_router(logout.router)
-
-app.include_router(twitter_crc.router)
 
 # ローカル実行
 def local_run():
