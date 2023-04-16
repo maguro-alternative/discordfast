@@ -7,10 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List
+from typing import List,Dict
 from itertools import groupby,chain
-
-from decimal import Decimal
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -177,7 +175,7 @@ async def line_post(
     if permission_bool == True:
         user_permission = 'admin'
 
-    vc_set = [{}]
+    vc_set = []
 
     # データベースへ接続
     await db.connect()
@@ -199,7 +197,7 @@ async def line_post(
                     'guild_id': 'NUMERIC', 
                     'send_channel_id': 'NUMERIC', 
                     'join_bot': 'boolean',
-                    'evryone_mention': 'boolean',
+                    'everyone_mention': 'boolean',
                     'mention_role_id':'NUMERIC[]'
                 }
             )
@@ -212,7 +210,7 @@ async def line_post(
                         'guild_id': guild_id, 
                         'send_channel_id': guild.get('system_channel_id'), 
                         'join_bot': False,
-                        'evryone_mention': True,
+                        'everyone_mention': True,
                         'mention_role_id':[]
                     }
 
@@ -248,7 +246,7 @@ async def line_post(
                     'guild_id': guild_id, 
                     'send_channel_id': guild.get('system_channel_id'), 
                     'join_bot': False,
-                    'evryone_mention': True,
+                    'everyone_mention': True,
                     'mention_role_id':[]
                 }
 
@@ -257,9 +255,9 @@ async def line_post(
                     table_name=TABLE,
                     row_values=row_values
                 )
-
+                
                 vc_set.append(row_values)
-        
+
     else:
         # 指定したサーバーのカラムを取得する
         table_fetch = await db.select_rows(
@@ -287,7 +285,7 @@ async def line_post(
                             'guild_id': guild_id, 
                             'send_channel_id': guild.get('system_channel_id'), 
                             'join_bot': False,
-                            'evryone_mention': True,
+                            'everyone_mention': True,
                             'mention_role_id':[]
                         }
 

@@ -17,7 +17,7 @@
             'guild_id': guild_id, 
             'send_channel_id': guild.get('system_channel_id'), 
             'join_bot': False,
-            'evryone_mention': True,
+            'everyone_mention': True,
             'mention_role_id':[]
         }],
         "user_permission":user_permission,
@@ -77,8 +77,7 @@
                                 </strong>
                             </summary>
                             通知の送信先チャンネル<br/>
-                            <select name="send_channel_id" size="1">
-                                {% set send_id_flag = 0 %}
+                            <select name="send_channel_id_{{vc_cate.id}}" size="1">
                                 {% for chan in text_channel %}
                                     <!--テキストチャンネルの場合-->
                                     {% if chan.type == 0 %}
@@ -89,7 +88,6 @@
                                                 {% endif %}
                                             {% endfor %}
                                         >
-                                        {% set send_id_flag = 0 %}
                                             {% if chan.parent_id %}
                                                 {% for cate in vc_cate_channel %}
                                                     {% if cate.type == 4 and cate.id == chan.parent_id %}
@@ -102,35 +100,32 @@
                                     {% endif %}
                                 {% endfor %}
                             </select>
-                            <br/>                            
+                            <br/>
+                            {% set role_len = 0 %}                        
                             {% for vc in vc_set %}
                                 {% if vc_cate.id|int == vc.vc_id|int %}
                                     Botの通知をする
                                     {% if vc.join_bot %}
-                                        <input type="checkbox" checked="checked" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>:{{vc_cate.name}}
-                                        {% set chack_flag = 1 %}
-                                        <br/>
-                                    {% elif check_flag == 0 %}
-                                        {% if vc_cate.type == 2 %}
-                                            ボイスチャンネル　　:
-                                        {% endif %}
-                                        <input type="checkbox" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>:{{vc_cate.name}}
-                                        <br/>
+                                        <input type="checkbox" checked="checked" name="join_bot_{{vc_cate.id}}" value="True"/>
                                     {% else %}
-                                        <input type="checkbox" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>
+                                        <input type="checkbox" name="join_bot_{{vc_cate.id}}" value="True"/>
                                     {% endif %}
                                     <br/>
                                     everyoneで通知する
                                     {% if vc.everyone_mention %}
-                                        <input type="checkbox" checked="checked" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>:{{vc_cate.name}}
+                                        <input type="checkbox" checked="checked" name="everyone_mention_{{vc_cate.id}}" value="True"/>
                                     {% else %}
-                                        <input type="checkbox" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>
+                                        <input type="checkbox" name="everyone_mention_{{vc_cate.id}}" value="True"/>
                                     {% endif %}
                                     <br/>
                                     通知するロールの追加
                                     <br/>
+
+                                    {% if vc.mention_role_id|length > 0 %}
+                                        {% set role_len = vc.mention_role_id|length %}
+                                    {% endif %}
                                     
-                                    <select id="mySelect_{{vc_cate.id}}" onchange="selectAddEvent(this)" size="1">
+                                    <select id="mySelect_{{vc_cate.id}}" onchange="selectAddEvent('{{role_len}}',this)" size="1">
                                         {% for role in guild.roles %}
                                             <option value="{{role.id}}">
                                                 {{role.name}}
@@ -138,13 +133,16 @@
                                         {% endfor %}
                                     </select>
                                     <br/>
+                                    {% set i = 1 %}
                                     <div id="{{vc_cate.id}}" class="selected-items">
-                                        {% for role_mention in vc_set.mention_role_id %}
+                                        {% for role_mention in vc.mention_role_id %}
                                             <div id="{{role_mention}}" class="selected-item">
                                                 {% for role in guild.roles %}
                                                     {% if role.id|int == role_mention|int %}
                                                         {{role.name}}
                                                         <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                                        <input type="hidden" name="role_{{vc_cate.id}}_{{i}}" value="{{role.id}}"/>
+                                                        {% set i = i + 1 %}
                                                     {% endif %}
                                                 {% endfor %}
                                             </div>
@@ -162,6 +160,7 @@
             </details>
             <br/>
             <br/>
+            <input type="hidden" name="guild_id" value="{{guild_id}}"/>
             <input type="submit" value="送信"/>
         </form>
         <script src="/static/js/selects_bar.js" type="text/javascript"></script>

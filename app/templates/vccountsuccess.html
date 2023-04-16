@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  {% extends "layout.html" %}
+  {% block content %}
+  <head>
+    <title>{{title}}</title>
+  </head>
+  <body bgcolor="#252525" text="#ffffff">
+    <div class="col-md-2">
+      <a href="/guild/{{guild_id}}" class="btn btn-primary">戻る</a>
+    </div>
+    <div class="col-md-2">
+      <a href="/guilds" class="btn btn-primary">サーバ一覧へ</a>
+    </div>
+  </body>
+  {% endblock %}
+</html>

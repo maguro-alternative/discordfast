@@ -138,11 +138,18 @@ const selectAddEvent = (se) => {
 }
 */
 
-const selectAddEvent = (se) => {
+const selectAddEvent = (roleLen,se) => {
     let selectId = document.getElementById(se.id);
 
     // チャンネルidのみを引き出す
-    const divId =se.id.substring(se.id.indexOf("_") + 1) 
+    const divId = se.id.substring(se.id.indexOf("_") + 1) 
+
+    if (roleLen > 0){
+        roleArray[se.id] = []
+        for (let i = 0; i < roleLen; i++){
+            roleArray[se.id].push(i)
+        }
+    }
 
     function addSelectEvent(e) {
         const selectedItems = document.getElementById(divId);

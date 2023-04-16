@@ -1,5 +1,9 @@
 import discord
-async def activity(after:discord.VoiceState,member:discord.Member):
+async def activity(
+    after:discord.VoiceState,
+    member:discord.Member,
+    mention_str:str
+):
     try:
         embed = discord.Embed(
             title='配信タイトル', 
@@ -32,10 +36,10 @@ async def activity(after:discord.VoiceState,member:discord.Member):
             if member.activities[0].large_image_url != None:
                 embed.set_image(url=member.activities[0].large_image_url)
         
-        return f"@everyone <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
+        return f"{mention_str} <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
     # 存在しない場合
     except IndexError:
-        return f"@everyone <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
+        return f" {mention_str} <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
 
 # 通話開始時の埋め込み作成
 async def callemb(after:discord.VoiceState,member:discord.Member):
