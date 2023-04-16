@@ -15,7 +15,12 @@ class vc_count(commands.Cog):
         self.bot = bot      
 
     @commands.Cog.listener(name='on_voice_state_update')
-    async def voice_update(self, member:discord.Member, before:discord.VoiceState, after:discord.VoiceState):
+    async def voice_update(
+        self, 
+        member:discord.Member, 
+        before:discord.VoiceState, 
+        after:discord.VoiceState
+    ):
         
         # Botの場合終了
         if member.bot is True:

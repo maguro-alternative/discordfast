@@ -17,7 +17,9 @@ from routers import (
     guilds,
     line_post,
     line_post_sucess,
-    logout
+    logout,
+    vc_signal,
+    vc_count_success
 )
 
 app = FastAPI(
@@ -49,6 +51,9 @@ app.include_router(guilds.router)
 app.include_router(line_post.router)
 app.include_router(line_post_sucess.router)
 app.include_router(logout.router)
+
+app.include_router(vc_signal.router)
+app.include_router(vc_count_success.router)
 
 # ローカル実行
 def local_run():

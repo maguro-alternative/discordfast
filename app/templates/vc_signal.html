@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+    <script src="/static/js/box_allcheck.js" type="text/javascript"></script>
+    {% extends "layout.html" %}
+    {% block content %}
+    <head>
+        <title>{{title}}</title>
+    </head>
+    <!--
+
+        "request": request, 
+        "all_channel": all_channel_sort,
+        "guild": guild,
+        "guild_id": guild_id,
+        'vc_set' : [{
+            'vc_id': vc['id'], 
+            'guild_id': guild_id, 
+            'send_channel_id': guild.get('system_channel_id'), 
+            'join_bot': False,
+            'evryone_mention': True,
+            'mention_role_id':[]
+        }],
+        "user_permission":user_permission,
+        "title": request.session["user"]['username']
+
+    -->
+    <body bgcolor="#252525" text="#ffffff">
+
+        {% if not guild.icon %}
+            <a href="/guild/{{guild.id}}">
+                <img src="/static/img/discord-icon.jpg" />
+            </a>
+        {% else %}
+            <a href="/guild/{{guild.id}}">
+                <img src="https://cdn.discordapp.com/icons/{{guild.id}}/{{guild.icon}}.png"  />
+            </a>
+        {% endif %}
+        <a href="/guild/{{guild.id}}">
+            <li>{{ guild.name }}</li>
+        </a>
+        <br><br>
+
+        {% set per = ['admin'] %}
+    
+        <h3>{{request.session.user.username}}さんは
+        {% if user_permission in per %}
+            編集できます。
+        {% else %}
+            編集できません。閲覧のみになります。
+        {% endif %}
+        </h3>
+        <br/>
+        {% if user_permission not in per %}
+        <fieldset disabled>
+        {% endif %}
+
+        <form action="/api/vc-count-success" name="discordForm" method="post">
+            <details>
+                <summary>
+                    <strong>チャンネル一覧</strong>
+                </summary>
+                {% set i = [1] %}
+                {% set chack_flag = 0 %}
+                {% for vc_cate in vc_cate_channel %}
+                    {% if vc_cate.type == 4 %}
+                        {{ vc_cate.name }}
+                        <br/>
+                    {% else %}
+                        <!--ng_channelの場合初めからチェックを付ける-->
+                        <details>
+                            <summary>
+                                <strong>
+                                    {% if vc_cate.type == 2 %}
+                                        ボイスチャンネル　　:
+                                    {% endif %}
+                                    {{vc_cate.name}}
+                                </strong>
+                            </summary>
+                            通知の送信先チャンネル<br/>
+                            <select name="send_channel_id" size="1">
+                                {% set send_id_flag = 0 %}
+                                {% for chan in text_channel %}
+                                    <!--テキストチャンネルの場合-->
+                                    {% if chan.type == 0 %}
+                                        <option value={{chan.id}} 
+                                            {% for vc in vc_set %} 
+                                                {% if chan.id|int == vc.send_channel_id|int %}
+                                                    selected
+                                                {% endif %}
+                                            {% endfor %}
+                                        >
+                                        {% set send_id_flag = 0 %}
+                                            {% if chan.parent_id %}
+                                                {% for cate in vc_cate_channel %}
+                                                    {% if cate.type == 4 and cate.id == chan.parent_id %}
+                                                        {{ cate.name }}:
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                            {{chan.name}}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <br/>                            
+                            {% for vc in vc_set %}
+                                {% if vc_cate.id|int == vc.vc_id|int %}
+                                    Botの通知をする
+                                    {% if vc.join_bot %}
+                                        <input type="checkbox" checked="checked" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>:{{vc_cate.name}}
+                                        {% set chack_flag = 1 %}
+                                        <br/>
+                                    {% elif check_flag == 0 %}
+                                        {% if vc_cate.type == 2 %}
+                                            ボイスチャンネル　　:
+                                        {% endif %}
+                                        <input type="checkbox" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>:{{vc_cate.name}}
+                                        <br/>
+                                    {% else %}
+                                        <input type="checkbox" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>
+                                    {% endif %}
+                                    <br/>
+                                    everyoneで通知する
+                                    {% if vc.everyone_mention %}
+                                        <input type="checkbox" checked="checked" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>:{{vc_cate.name}}
+                                    {% else %}
+                                        <input type="checkbox" name="channel_{{i[0]}}" value="{{vc_cate.id}}"/>
+                                    {% endif %}
+                                    <br/>
+                                    通知するロールの追加
+                                    <br/>
+                                    
+                                    <select id="mySelect_{{vc_cate.id}}" onchange="selectAddEvent(this)" size="1">
+                                        {% for role in guild.roles %}
+                                            <option value="{{role.id}}">
+                                                {{role.name}}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <br/>
+                                    <div id="{{vc_cate.id}}" class="selected-items">
+                                        {% for role_mention in vc_set.mention_role_id %}
+                                            <div id="{{role_mention}}" class="selected-item">
+                                                {% for role in guild.roles %}
+                                                    {% if role.id|int == role_mention|int %}
+                                                        {{role.name}}
+                                                        <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <br/><br/>
+                                {% endif %}
+                                
+                            {% endfor %}
+                        </details>
+                    {% endif %}
+                {% endfor %}
+            <input type="button" value="全選択" onClick="check(this.form,true,'channel_')"/>
+            <input type="button" value="全解除" onClick="check(this.form,false,'channel_')"/>
+            </details>
+            <br/>
+            <br/>
+            <input type="submit" value="送信"/>
+        </form>
+        <script src="/static/js/selects_bar.js" type="text/javascript"></script>
+    </body>
+    {% endblock %}
+</html>

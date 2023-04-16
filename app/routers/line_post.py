@@ -137,6 +137,20 @@ async def line_post(
         }
     )
 
+    # Discordサーバー内での権限をチェック(この場合管理者かどうか)
+    permission_bool = await check_permission(
+        guild_id=guild_id,
+        user_id=request.session["user"]["id"],
+        access_token=request.session["oauth_data"]["access_token"],
+        permission_16=0x00000008
+    )
+
+    user_permission:str = 'normal'
+
+    # 管理者の場合adminを代入
+    if permission_bool == True:
+        user_permission = 'admin'
+
     # データベースへ接続
     await db.connect()
 
@@ -161,11 +175,28 @@ async def line_post(
                     'channel_nsfw': 'boolean'
                 }
             )
+
+            row_values = {
+                'guild_id': guild_id, 
+                'channel_id': [], 
+                'channel_type': [],
+                'message_type': [],
+                'message_bot': True,
+                'channel_nsfw': False
+            }
+
+            # サーバー用に新たにカラムを作成
+            await db.insert_row(
+                table_name=TABLE,
+                row_values=row_values
+            )
+
             await db.disconnect()
             return templates.TemplateResponse(
                 "linepost.html",
                 {
                     "request": request, 
+                    "guild": guild,
                     "guild_id": guild_id,
                     "all_channel": all_channel_sort,
                     "ng_channel": [],
@@ -173,6 +204,7 @@ async def line_post(
                     'message_type': [],
                     'message_bot': False,
                     'channel_nsfw': False,
+                    "user_permission":user_permission,
                     "title": request.session["user"]['username']
                 }
             )
@@ -229,20 +261,6 @@ async def line_post(
         ng_channel = [str(i) for i in table_fetch[0]['channel_id']]
 
     await db.disconnect()
-
-    # Discordサーバー内での権限をチェック(この場合管理者かどうか)
-    permission_bool = await check_permission(
-        guild_id=guild_id,
-        user_id=request.session["user"]["id"],
-        access_token=request.session["oauth_data"]["access_token"],
-        permission_16=0x00000008
-    )
-
-    user_permission:str = 'normal'
-
-    # 管理者の場合adminを代入
-    if permission_bool == True:
-        user_permission = 'admin'
 
     return templates.TemplateResponse(
         "linepost.html",
