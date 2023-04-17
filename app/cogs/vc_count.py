@@ -68,6 +68,11 @@ class vc_count(commands.Cog):
         
         # Discordのシステムチャンネル(welcomeメッセージが送られる場所)を取得
         send_channel_id = int(table_fetch[0].get('send_channel_id'))
+
+        # ない場合システムチャンネルのidを代入
+        if send_channel_id == None:
+            send_channel_id = member.guild.system_channel.id
+
         client = self.bot.get_channel(send_channel_id)
 
         # メンションするロールの取り出し

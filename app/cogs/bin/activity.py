@@ -1,4 +1,6 @@
 import discord
+from discord.embeds import _EmptyEmbed,EmptyEmbed
+
 async def activity(
     after:discord.VoiceState,
     member:discord.Member,
@@ -51,8 +53,9 @@ async def callemb(after:discord.VoiceState,member:discord.Member):
     if hasattr(member.guild.icon,'url'):
         embed.set_image(url=member.guild.icon.url)
     # ない場合はユーザーのアイコンを設定
-    else:
+    elif hasattr(member.display_avatar,'url'):
         embed.set_image(url=member.display_avatar.url)
+        
     embed.set_author(
         name=member.name,  # ユーザー名
         icon_url=member.display_avatar.url  # アイコンを設定

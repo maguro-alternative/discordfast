@@ -6,14 +6,20 @@
     <title>{{title}}</title>
   </head>
   <body bgcolor="#252525" text="#ffffff">
-    <div class="col-md-2">
-      {% if request.session.oauth_data %}
-          <a href="/logout" class="btn btn-primary">Logout</a>
-      {% else %}
-          <a href="/register" class="btn btn-primary">Login</a>
-      {% endif %}
-      <a href="/" class="btn btn-primary">top</a>
-    </div>
+    <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/" class="btn btn-primary">top</a>
+          </div>
+          <div class="col-md-2">
+          {% if request.session.oauth_data %}
+              <a href="/logout" class="btn btn-primary">Logout</a>
+          {% else %}
+              <a href="/register" class="btn btn-primary">Login</a>
+          {% endif %}
+          </div>
+      </div>
+  </div>
     <br/>
     {% if not guild.icon %}
         <a href="/guild/{{guild.id}}">

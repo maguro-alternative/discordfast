@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, Form
-from fastapi.responses import HTMLResponse,RedirectResponse
+from fastapi import APIRouter
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -7,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict
+from typing import List
 from itertools import groupby,chain
 
 from base.database import PostgresDB
@@ -297,11 +296,13 @@ async def line_post(
                         vc_set.append(row_values)
             # ボイスチャンネルがいくつか削除されていた場合
             else:
+                # 削除されたチャンネルを取得
                 missing_items = [
                     item 
                     for item in all_channels 
                     if item not in table_fetch
                 ]
+                # 削除されたチャンネルをテーブルから削除
                 for vc in missing_items:
                     await db.delete_row(
                         table_name=TABLE,
@@ -310,6 +311,7 @@ async def line_post(
                         }
                     )
 
+                # 削除後のチャンネルを除き、残りのチャンネルを取得
                 vc_set = [
                     d for d in table_fetch 
                     if not (d.get('vc_id') in [
