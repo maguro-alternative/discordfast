@@ -10,7 +10,7 @@ DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 # getリクエストを行う
-async def aio_get_request(url: str, headers: dict) -> json:
+async def aio_get_request(url: str, headers: dict) -> dict:
     async with aiohttp.ClientSession() as session:
         async with session.get(
             url = url,
@@ -19,7 +19,7 @@ async def aio_get_request(url: str, headers: dict) -> json:
             return await resp.json()
 
 # postリクエストを行う
-async def aio_post_request(url: str, headers: dict, data: dict) -> json:
+async def aio_post_request(url: str, headers: dict, data: dict) -> dict:
     async with aiohttp.ClientSession() as session:
         async with session.post(
             url = url,

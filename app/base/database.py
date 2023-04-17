@@ -145,7 +145,7 @@ class PostgresDB:
         self, 
         table_name:str, 
         row_values:dict
-    ):
+    ) -> bool:
         """
         行の追加
         
@@ -163,7 +163,11 @@ class PostgresDB:
             ]
         )
         sql = f"INSERT INTO {table_name} ({columns_str}) VALUES ({values_str});"
-        await self.conn.execute(sql, *row_values.values())
+        try:
+            await self.conn.execute(sql, *row_values.values())
+            return True
+        except asyncpg.exceptions.UniqueViolationError:
+            return False
 
     async def update_row(
         self, 

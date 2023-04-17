@@ -6,14 +6,20 @@
     <title>{{title}}</title>
   </head>
   <body bgcolor="#252525" text="#ffffff">
-    <div class="col-md-2">
-      {% if request.session.oauth_data %}
-          <a href="/logout" class="btn btn-primary">Logout</a>
-      {% else %}
-          <a href="/register" class="btn btn-primary">Login</a>
-      {% endif %}
-      <a href="/" class="btn btn-primary">top</a>
-    </div>
+    <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/" class="btn btn-primary">top</a>
+          </div>
+          <div class="col-md-2">
+          {% if request.session.oauth_data %}
+              <a href="/logout" class="btn btn-primary">Logout</a>
+          {% else %}
+              <a href="/register" class="btn btn-primary">Login</a>
+          {% endif %}
+          </div>
+      </div>
+  </div>
     <br/>
     {% if not guild.icon %}
         <a href="/guild/{{guild.id}}">
@@ -31,7 +37,7 @@
     <h4>設定する項目一覧</h4>
     
     <a href="/guild/{{guild_id}}/line-post" class="btn btn-primary">lineの送信設定</a>
-    <a href="/guild/{{guild_id}}/" class="btn btn-primary">webhookの送信設定</a>
+    <a href="/guild/{{guild_id}}/vc-signal" class="btn btn-primary">ボイスチャンネルの通知設定</a>
     <br/>
     サーバーウィジェットが有効の場合、サーバーの状況が表示されます。<br/>
     <iframe title="discord_5second" style="height: 350px;" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>

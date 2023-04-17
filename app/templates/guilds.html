@@ -6,20 +6,26 @@
     <title>{{title}}</title>
   </head>
   <body bgcolor="#252525" text="#ffffff">
-    <div class="col-md-2">
-      {% if request.session.oauth_data %}
-        <a href="/logout" class="btn btn-primary">Logout</a>
-      {% else %}
-        <a href="/register" class="btn btn-primary">Login</a>
-      {% endif %}
-      <a href="/" class="btn btn-primary">top</a>
-    </div>
+    <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/" class="btn btn-primary">top</a>
+          </div>
+          <div class="col-md-2">
+          {% if request.session.oauth_data %}
+              <a href="/logout" class="btn btn-primary">Logout</a>
+          {% else %}
+              <a href="/register" class="btn btn-primary">Login</a>
+          {% endif %}
+          </div>
+      </div>
+  </div>
     <h1>編集、閲覧可能なサーバ一覧</h1>
     <ul>
       {% for guild in match_guild %}
         {% if not guild.icon %}
           <a href="/guild/{{guild.id}}">
-            <img src="https://img.freepik.com/premium-vector/modern-badge-discord-icon_578229-169.jpg?w=150" />
+            <img src="/static/img/discord-icon.jpg" />
           </a>
         {% else %}
           <a href="/guild/{{guild.id}}">

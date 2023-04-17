@@ -54,20 +54,23 @@ class mst_line(commands.Cog):
         bot_message = False
         nsfw_channel = False
 
-        if (bool(table_fetch[0]['message_bot']) == True and
+        # メッセージがbotの場合
+        if (bool(table_fetch[0].get('message_bot')) == True and
             message.author.bot == True):
+            # 禁止されていた場合終了
             bot_message = True
 
-        if (bool(table_fetch[0]['channel_nsfw']) == True and
+        # 閲覧注意チャンネルが禁止されていた場合終了
+        if (bool(table_fetch[0].get('channel_nsfw')) == True and
             message.channel.nsfw == True):
             nsfw_channel = True
 
-        # メッセージがbot、閲覧注意チャンネル、ピン止め、ボイスチャンネルの場合終了
+        # ピン止め、ボイスチャンネルの場合終了
         # 送信NGのチャンネル名の場合、終了
         if (bot_message or nsfw_channel or
-            Decimal(message.channel.id) in table_fetch[0]['channel_id'] or
-            str(message.type) in table_fetch[0]['message_type'] or
-            str(message.channel.type) in table_fetch[0]['channel_type']):
+            Decimal(message.channel.id) in table_fetch[0].get('channel_id') or
+            str(message.type) in table_fetch[0].get('message_type') or
+            str(message.channel.type) in table_fetch[0].get('channel_type')):
             return
         
 

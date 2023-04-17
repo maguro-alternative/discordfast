@@ -1,5 +1,11 @@
 import discord
-async def activity(after:discord.VoiceState,member:discord.Member):
+from discord.embeds import _EmptyEmbed,EmptyEmbed
+
+async def activity(
+    after:discord.VoiceState,
+    member:discord.Member,
+    mention_str:str
+):
     try:
         embed = discord.Embed(
             title='配信タイトル', 
@@ -32,10 +38,10 @@ async def activity(after:discord.VoiceState,member:discord.Member):
             if member.activities[0].large_image_url != None:
                 embed.set_image(url=member.activities[0].large_image_url)
         
-        return f"@everyone <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
+        return f"{mention_str} <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
     # 存在しない場合
     except IndexError:
-        return f"@everyone <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
+        return f" {mention_str} <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
 
 # 通話開始時の埋め込み作成
 async def callemb(after:discord.VoiceState,member:discord.Member):
@@ -47,8 +53,9 @@ async def callemb(after:discord.VoiceState,member:discord.Member):
     if hasattr(member.guild.icon,'url'):
         embed.set_image(url=member.guild.icon.url)
     # ない場合はユーザーのアイコンを設定
-    else:
+    elif hasattr(member.display_avatar,'url'):
         embed.set_image(url=member.display_avatar.url)
+        
     embed.set_author(
         name=member.name,  # ユーザー名
         icon_url=member.display_avatar.url  # アイコンを設定
