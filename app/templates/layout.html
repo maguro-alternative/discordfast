@@ -1,24 +1,59 @@
 <html lang="ja">
-<head>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="icon" href="/static/img/discord-icon.jpg">
-    <meta charset="UTF-8">
-</head>
-<body>
-<div style="display: flex; flex-direction: column; min-height: 80vh">
-    <div class="container">
-        {% block content %}
-        <!-- メインコンテンツ -->
-        {% endblock %}
-    </div>
-</div>
-<br>
-<hr>
-<footer>
-    <div align="center">
-        <p>Copyright &copy; maguro Inc. All right reserves.</p>
-        <p>Powered by FastAPI 0.88.0 &amp; starlette 0.22.0</p>
-    </div>
-</footer>
-</body>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="icon" href="/static/img/discord-icon.jpg">
+        <title>{{title}}</title>
+        <meta name="description" content="DiscordBotの設定を行います。" />
+        <link rel="icon" href="https://i.gyazo.com/adeb0735f71e695c7baf4c2ae6ede3e0.png"></link>
+        <meta property="og:url" content="/"></meta>
+        <meta property="og:image" content="https://i.gyazo.com/adeb0735f71e695c7baf4c2ae6ede3e0.png" />
+        <meta property="og:type" content=" website" />
+        <meta property="og:locale" content="ja_JP" />
+        <meta charset="UTF-8">
+
+        <!--レスポンシブ対応-->
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
+    </head>
+    <body>
+        <!-- display: flex: 要素を並列に 
+             flex-direction: column:はみ出たコンテナを横に -->
+        <div style="display: flex; flex-direction: column; min-height: 100vim;">
+            <!--
+                container は各レスポンシブブレークポイントで max-width
+                container-fluid の場合、すべてのブレークポイントで width: 100% 
+            -->
+            <div class="container">
+                <div class="container-fluid">
+                    <div class="row">
+                        <!--
+                            mdはPC
+                            smはタブレット
+                            xsはスマホ
+                        -->
+                        <div class="col-xs-2 col-sm-10 col-md-10" style="width: 50%;">
+                            <a href="/" class="btn btn-primary">top</a>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2" style="width: 50%;">
+                        {% if request.session.oauth_data %}
+                            <a href="/logout" class="btn btn-primary">Logout</a>
+                        {% else %}
+                            <a href="/register" class="btn btn-primary">Login</a>
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% block content %}
+                <!-- メインコンテンツ -->
+                {% endblock %}
+            </div>
+        </div>
+        <br>
+        <hr>
+        <footer>
+            <div align="center">
+                <p>Copyright &copy; maguro Inc. All right reserves.</p>
+                <p>Powered by FastAPI 0.88.0 &amp; starlette 0.22.0</p>
+            </div>
+        </footer>
+    </body>
 </html>

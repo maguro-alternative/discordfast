@@ -3,25 +3,7 @@
     <script src="/static/js/box_allcheck.js" type="text/javascript"></script>
   {% extends "layout.html" %}
   {% block content %}
-  <head>
-    <title>{{title}}</title>
-  </head>
   <body bgcolor="#252525" text="#ffffff">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-10">
-                <a href="/" class="btn btn-primary">top</a>
-            </div>
-            <div class="col-md-2">
-            {% if request.session.oauth_data %}
-                <a href="/logout" class="btn btn-primary">Logout</a>
-            {% else %}
-                <a href="/register" class="btn btn-primary">Login</a>
-            {% endif %}
-            </div>
-        </div>
-    </div>
-    
 
     <h1>LINEへの送信設定</h1>
     <h4>チェックマークがついている条件を満たしている場合、そのメッセージは送信されません。</h4>
