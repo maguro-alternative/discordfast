@@ -29,6 +29,7 @@ class Audio_Files:
                 executor=None,
                 func=self.detect_audio_file
             )
+            self.loop.run_until_complete(extension)
             self.filename = filename + extension.result()
         else:
             self.filename = filename
