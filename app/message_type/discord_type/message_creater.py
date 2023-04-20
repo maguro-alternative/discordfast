@@ -290,7 +290,7 @@ class ReqestDiscord:
             mpwriter.append(
                 obj=fileobj.byte, 
                 headers={
-                    'Content-Type': magic.from_file(fileobj.byte, mime=True)
+                    'Content-Type': magic.from_file(fileobj.byte.read(), mime=True)
                 }
             ).set_content_disposition(
                 disptype='form-data', 
