@@ -29,7 +29,7 @@ class Audio_Files:
                 executor=None,
                 func=self.detect_audio_file
             )
-            self.filename = filename + extension
+            self.filename = filename + extension.result()
         else:
             self.filename = filename
             
