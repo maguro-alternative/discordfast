@@ -92,6 +92,10 @@ class Audio_Files:
         # GSMファイルのマジックナンバー
         if header.startswith(b'\x00\x01\x00\x01'):
             return '.gsm'
+        
+        # M4Aのマジックナンバー(LINEボイスメッセージの標準規格)
+        if header.startswith(b'\x00\x00\x00\x1c') and header[8:12] == b'M4A ':
+            return 'm4a'
 
         # マジックナンバーに該当するファイル形式が見つからなかった場合はNoneを返す
         return None
