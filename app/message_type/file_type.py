@@ -1,10 +1,9 @@
 import io
 import asyncio
 import os
-import magic
 
 class Audio_Files:
-    def __init__(
+    async def __init__(
         self,
         byte:bytes,
         filename:str = None

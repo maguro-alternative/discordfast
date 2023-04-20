@@ -560,7 +560,7 @@ class LineBotAPI:
                 voice_bytes = await bytes.read()
 
                 # アップロードするファイルを指定する
-                return Audio_Files(
+                return await Audio_Files(
                     byte=voice_bytes,
                     filename='line_audio'
                 )
