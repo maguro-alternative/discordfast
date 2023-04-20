@@ -299,12 +299,7 @@ class ReqestDiscord:
             )
 
             # テキストメッセージを送付
-            mpwriter.append(
-                obj=message
-            ).set_content_disposition(
-                disptype='form-data',
-                name="content"
-            )
+            # mpwriter.append(obj=message).set_content_disposition(disptype='form-data',name="content")
 
             # Discordにファイルとメッセージを送信
             async with aiohttp.ClientSession() as session:
