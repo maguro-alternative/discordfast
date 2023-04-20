@@ -23,16 +23,18 @@ class Audio_Files:
         """
         self.byte = byte
         self.iobyte = io.BytesIO(byte)
-        
+        self.loop = asyncio.new_event_loop()
         if len(os.path.splitext(filename)[1]) == 0:
-            extension = self.detect_audio_file()
+            extension = self.loop.run_until_complete(
+                self.detect_audio_file()
+            )
             self.filename = filename + extension
         else:
             self.filename = filename
             
         # self.content_type = magic.from_file(byte, mime=True)
         
-    def detect_audio_file(self) -> str:
+    async def detect_audio_file(self) -> str:
         """
         バイナリデータのマジックナンバーから音声ファイルの拡張子を識別する。
 
