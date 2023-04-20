@@ -290,8 +290,8 @@ class ReqestDiscord:
         with aiohttp.MultipartWriter("form-data") as mpwriter:
             # ファイルを送付
             mpwriter.append(
-                obj=fileobj.iobyte
-                #headers={'Content-Type': ''}
+                obj=fileobj.iobyte,
+                headers={'Content-Type': fileobj.content_type}
             ).set_content_disposition(
                 disptype='form-data', 
                 name=fileobj.filename, 
@@ -299,7 +299,12 @@ class ReqestDiscord:
             )
 
             # テキストメッセージを送付
-            # mpwriter.append(obj=message).set_content_disposition(disptype='form-data',name="content")
+            mpwriter.append(
+                obj=message
+            ).set_content_disposition(
+                disptype='form-data',
+                name="content"
+            )
 
             # Discordにファイルとメッセージを送信
             async with aiohttp.ClientSession() as session:

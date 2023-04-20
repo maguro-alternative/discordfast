@@ -29,6 +29,7 @@ class Audio_Files:
             self.filename = filename + extension.capitalize()
         else:
             self.filename = filename
+            self.content_type = 'audio/*'
             
         # self.content_type = magic.from_file(byte, mime=True)
         
