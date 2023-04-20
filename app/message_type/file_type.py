@@ -3,7 +3,7 @@ import asyncio
 import os
 
 class Audio_Files:
-    async def __init__(
+    def __init__(
         self,
         byte:bytes,
         filename:str = None
@@ -25,14 +25,14 @@ class Audio_Files:
         self.iobyte = io.BytesIO(byte)
         
         if len(os.path.splitext(filename)[1]) == 0:
-            extension = await self.detect_audio_file()
+            extension = self.detect_audio_file()
             self.filename = filename + extension
         else:
             self.filename = filename
             
         # self.content_type = magic.from_file(byte, mime=True)
         
-    async def detect_audio_file(self) -> str:
+    def detect_audio_file(self) -> str:
         """
         バイナリデータのマジックナンバーから音声ファイルの拡張子を識別する。
 
