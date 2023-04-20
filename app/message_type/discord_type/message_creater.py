@@ -285,6 +285,8 @@ class ReqestDiscord:
             テキストメッセージ
         """
 
+        print(fileobj.filename)
+
         with aiohttp.MultipartWriter("form-data") as mpwriter:
             # ファイルを送付
             mpwriter.append(

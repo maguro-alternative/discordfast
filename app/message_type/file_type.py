@@ -47,10 +47,6 @@ class Audio_Files:
         拡張子の文字列:str
         """
         header = self.iobyte.read(12)
-
-        print(header)
-        print(self.byte)
-        print(self.iobyte)
             
         # AIFFファイルのマジックナンバー
         if header.startswith(b'FORM') and header[8:12] == b'AIFF':
