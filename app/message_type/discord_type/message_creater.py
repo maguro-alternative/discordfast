@@ -289,9 +289,7 @@ class ReqestDiscord:
             # ファイルを送付
             mpwriter.append(
                 obj=fileobj.byte, 
-                headers={
-                    'Content-Type': magic.from_file(fileobj.byte, mime=True)
-                }
+                #headers={'Content-Type': ''}
             ).set_content_disposition(
                 disptype='form-data', 
                 name=fileobj.filename, 
