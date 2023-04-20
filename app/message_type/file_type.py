@@ -32,7 +32,7 @@ class Audio_Files:
         else:
             self.filename = filename
             
-        self.content_type = magic.from_file(byte, mime=True)
+        self.content_type = magic.from_file(byte.read(), mime=True)
         
     async def detect_audio_file(self) -> str:
         """
