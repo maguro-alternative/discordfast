@@ -561,7 +561,7 @@ class LineBotAPI:
 
                 # アップロードするファイルを指定する
                 return Audio_Files(
-                    byte=io.BytesIO(voice_bytes),
+                    byte=voice_bytes,
                     filename='line_audio'
                 )
 

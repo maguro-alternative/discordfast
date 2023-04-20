@@ -6,14 +6,14 @@ import magic
 class Audio_Files:
     def __init__(
         self,
-        byte:io.BytesIO,
+        byte:bytes,
         filename:str = None
     )-> None:
         """
         Discordのファイルの送信を行う際のクラス
 
         param:
-        byte:io.Byte
+        byte:bytes
         ファイルのバイナリデータ
 
         filename:str
@@ -23,6 +23,7 @@ class Audio_Files:
         コンテンツタイプ(text/*等)
         """
         self.byte = byte
+        self.iobyte = io.BytesIO(byte)
         self.loop = asyncio.get_event_loop()
         if len(os.path.splitext(filename)) != 2:
             extension = self.loop.run_until_complete(
@@ -32,7 +33,7 @@ class Audio_Files:
         else:
             self.filename = filename
             
-        self.content_type = magic.from_file(byte.read(), mime=True)
+        self.content_type = magic.from_file(byte, mime=True)
         
     async def detect_audio_file(self) -> str:
         """
@@ -45,7 +46,7 @@ class Audio_Files:
         return
         拡張子の文字列:str
         """
-        header = self.byte.read(12)
+        header = self.iobyte.read(12)
             
         # AIFFファイルのマジックナンバー
         if header.startswith(b'FORM') and header[8:12] == b'AIFF':
