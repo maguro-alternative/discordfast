@@ -23,11 +23,9 @@ class Audio_Files:
         """
         self.byte = byte
         self.iobyte = io.BytesIO(byte)
-        self.loop = asyncio.get_event_loop()
+        
         if len(os.path.splitext(filename)[1]) == 0:
-            extension = self.loop.run_until_complete(
-                self.detect_audio_file()
-            )
+            extension = await self.detect_audio_file()
             self.filename = filename + extension
         else:
             self.filename = filename
