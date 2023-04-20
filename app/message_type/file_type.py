@@ -25,12 +25,8 @@ class Audio_Files:
         self.iobyte = io.BytesIO(byte)
         self.loop = asyncio.new_event_loop()
         if len(os.path.splitext(filename)[1]) == 0:
-            extension = self.loop.run_in_executor(
-                executor=None,
-                func=self.detect_audio_file
-            )
-            self.loop.run_until_complete(extension)
-            self.filename = filename + extension.result()
+            extension = asyncio.run(self.detect_audio_file)
+            self.filename = filename + extension
         else:
             self.filename = filename
             
