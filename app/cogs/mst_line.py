@@ -7,6 +7,15 @@ import re
 
 from base.database import PostgresDB
 
+import subprocess
+from functools import partial
+
+import io
+import asyncio
+import aiofiles
+
+from pydub import AudioSegment
+
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
 DATABASE = os.getenv('PGDATABASE')
@@ -25,10 +34,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from message_type.line_type.line_message import LineBotAPI
+    from message_type.line_type.line_message import LineBotAPI,Voice_File
     from core.start import DBot
 except:
-    from app.message_type.line_type.line_message import LineBotAPI
+    from app.message_type.line_type.line_message import LineBotAPI,Voice_File
     from app.core.start import DBot
 
 class mst_line(commands.Cog):
@@ -93,17 +102,17 @@ class mst_line(commands.Cog):
         if not bool('line_bot_api' in locals()):
             return 
 
-        # LINEに送信する動画、画像ファイルのリスト
+        # LINEに送信する動画、画像、音声ファイルのリスト
         imagelist = []
         videolist = []
+        voicelist = []
 
         # ユーザーネームの空白文字を削除
-        # message.author.name = message.author.name.replace("[\u3000 \t]", "", regex=True)
         user_name = re.sub("[\u3000 \t]", "",message.author.name)
 
 
         # テキストメッセージ
-        messagetext=f"{message.channel.name}にて、{user_name}"
+        messagetext = f"{message.channel.name}にて、{user_name}"
 
         if message.type == discord.MessageType.new_member:
             messagetext=f"{user_name}が参加しました。"
@@ -115,35 +124,39 @@ class mst_line(commands.Cog):
             messagetext=f"{user_name}がサーバーブーストし、レベル1になりました！！！！！！！！"
 
         if message.type == discord.MessageType.premium_guild_tier_2:
-            messagetext=f"{user_name}がサーバーブーストし、レベル2になりました！！！！！！！！！"
+            messagetext = f"{user_name}がサーバーブーストし、レベル2になりました！！！！！！！！！"
 
         if message.type == discord.MessageType.premium_guild_tier_3:
-            messagetext=f"{user_name}がサーバーブーストし、レベル3になりました！！！！！！！！！！！"
+            messagetext = f"{user_name}がサーバーブーストし、レベル3になりました！！！！！！！！！！！"
 
         # 送付ファイルがあった場合
         if message.attachments:
             # 画像か動画であるかをチェック
             imagelist, message.attachments = await image_checker(message.attachments)
             videolist, message.attachments = await video_checker(message.attachments)
+            voicelist, message.attachments = await voice_checker(message.attachments,message)
 
             messagetext+="が、"
 
             # 送信された動画と画像の数を格納
-            if len(imagelist)>0:
+            if len(imagelist) > 0:
                 messagetext += f"画像を{len(imagelist)}枚、"
 
-            if len(videolist)>0:
-                messagetext += f"動画を{len(videolist)}個"
+            if len(videolist) > 0:
+                messagetext += f"動画を{len(videolist)}個、"
+
+            if len(voicelist) > 0:
+                messagetext += f"音声を{len(voicelist)}個、"
 
             # 画像と動画以外のファイルがある場合、urlを直接書き込む
             if message.attachments:
                 for attachment in message.attachments:
                     messagetext += f"\n{attachment.url} "
 
-            messagetext+="送信しました。"
+            messagetext += "送信しました。"
 
         # メッセージ本文を書き込む
-        messagetext+=f"「 {message.clean_content} 」"
+        messagetext += f"「 {message.clean_content} 」"
 
         # スタンプが送付されている場合
         if message.stickers:
@@ -170,8 +183,13 @@ class mst_line(commands.Cog):
             await line_bot_api.push_message_notify(message=messagetext)
             await line_bot_api.push_movie(preview_image=icon_url,movie_urls=videolist)
 
+        # 音声を送信
+        if len(voicelist) > 0:
+            await line_bot_api.push_message_notify(message=messagetext)
+            await line_bot_api.push_voice(voice_file=voicelist)
+
         # ファイルなしの場合、テキストを送信
-        if len(imagelist) + len(videolist) == 0:
+        if len(imagelist) + len(videolist) + len(voicelist) == 0:
             await line_bot_api.push_message_notify(message=messagetext)
 
 
@@ -224,7 +242,9 @@ class mst_line(commands.Cog):
         await ctx.respond('LINEが登録されていません。')
 
 # 画像を識別
-async def image_checker(attachments:List[discord.Attachment]) -> Tuple[List[str],Union[List[discord.Attachment],List[discord.StickerItem]]]:
+async def image_checker(
+    attachments:List[discord.Attachment]
+) -> Tuple[List[str],Union[List[discord.Attachment],List[discord.StickerItem]]]:
     """
     Discordの送付ファイルから、画像を抜き出す。
     引数:      attachments:    Discordの送付ファイル
@@ -242,7 +262,9 @@ async def image_checker(attachments:List[discord.Attachment]) -> Tuple[List[str]
     return image_urls, attachments
 
 # 動画を識別
-async def video_checker(attachments:List[discord.Attachment]) -> Tuple[List[str],List[discord.Attachment]]:
+async def video_checker(
+    attachments:List[discord.Attachment]
+) -> Tuple[List[str],List[discord.Attachment]]:
     """
     Discordの送付ファイルから、動画を抜き出す。
     引数:      attachments:    Discordの送付ファイル
@@ -259,6 +281,70 @@ async def video_checker(attachments:List[discord.Attachment]) -> Tuple[List[str]
 
     return video_urls, attachments
 
+# 音声を識別
+async def voice_checker(
+    attachments:List[discord.Attachment],
+    message:discord.Message
+) -> Tuple[List[Voice_File],List[discord.Attachment]]:
+    """
+    Discordの送付ファイルから、音声を抜き出す。
+    m4a以外のファイルは、ffmpegで変換しDiscordに送信する。
+    引数:      attachments:    Discordの送付ファイル
+    戻り値:    video_urls:     音声のurlリスト
+               attachments:    音声を抜き出したDiscordの送付ファイル
+    """
+    voice = (".wav",".mp3",".flac",".aif",".m4a",".oga",".ogg")
+    voice_files = []
+    loop = asyncio.get_event_loop()
+    for attachment in attachments[:]:
+        # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
+        if attachment.url.endswith(voice):
+            # 音声ファイルをダウンロードする
+            await attachment.save(attachment.filename)
+            
+            # m4aの場合はそのまま格納
+            if attachment.url.endswith('.m4a'):
+                voice_url = attachment.url
+                attachments.remove(attachment)
+            else:
+                # ffmpegを使用して音声ファイルをm4aに変換する
+                output_filename = f"{os.path.splitext(attachment.filename)[0]}.m4a"
+                await loop.run_in_executor(
+                    None,
+                    partial(
+                        subprocess.run,['ffmpeg', '-i', attachment.filename, output_filename],
+                        check=True
+                    )
+                )
+
+                # aiofilesで非同期でファイルを開く
+                async with aiofiles.open(output_filename, 'rb') as f:
+                    m4a_data = await f.read()
+                    # Discordにファイルを送信する
+                    m4a_file = discord.File(
+                        fp=io.BytesIO(m4a_data), 
+                        filename=output_filename
+                    )
+                    m4a_file_message = await message.channel.send(f"m4aファイルに変換します。: {attachment.filename} -> {output_filename}", file=m4a_file)
+
+                voice_url = m4a_file_message.attachments[0].url
+                # 変換したoggファイルのurl
+                attachments.remove(attachment)
+
+            # m4aファイルの秒数を計算
+            ogg_sound = AudioSegment.from_file(output_filename,format="m4a")
+            sound_second = ogg_sound.duration_seconds
+
+            voice_files.append(Voice_File(
+                url=voice_url,
+                second=sound_second
+            ))
+
+            # 変換したファイルを削除する
+            os.remove(output_filename)
+            os.remove(attachment.filename)
+
+    return voice_files, attachments
 
 def setup(bot:DBot):
     return bot.add_cog(mst_line(bot))

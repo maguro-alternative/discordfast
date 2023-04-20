@@ -15,10 +15,12 @@ try:
     from message_type.line_type.line_event import Line_Responses
     from message_type.discord_type.message_creater import ReqestDiscord
     from message_type.line_type.line_message import LineBotAPI
+    from message_type.file_type import Audio_Files
 except:
     from app.message_type.line_type.line_event import Line_Responses
     from app.message_type.discord_type.message_creater import ReqestDiscord
     from app.message_type.line_type.line_message import LineBotAPI
+    from app.message_type.file_type import Audio_Files
 # ./venv/Scripts/activate.bat
 
 import os
@@ -119,7 +121,10 @@ async def line_response(
 
         message = await discord_find_message.members_find(message=message)
         message = await discord_find_message.roles_find(message=message)
-        channel_id, message = await discord_find_message.channel_select(channel_id=channel_id,message=message)
+        channel_id, message = await discord_find_message.channel_select(
+            channel_id=channel_id,
+            message=message
+        )
 
     # スタンプが送信された場合
     if event.message.type == 'sticker':
@@ -136,8 +141,22 @@ async def line_response(
     # 動画が送信された場合
     if event.message.type == 'video':
         # 動画をYouTubeにアップロードし、urlを返す
-        youtube_id = await line_bot_api.movie_upload(message_id=event.message.id,display_name=profile_name.display_name)
+        youtube_id = await line_bot_api.movie_upload(
+            message_id=event.message.id,
+            display_name=profile_name.display_name
+        )
         message = f"https://youtu.be/{youtube_id}"
+
+    if event.message.type == 'audio':
+        # 音声ファイルのデータを取得し、Discordに送信
+        fileobj = await line_bot_api.voice_get(message_id=event.message.id)
+        await discord_find_message.send_discord_file(
+            channel_id=channel_id,
+            message=f'{profile_name.display_name} \n「 {message} 」',
+            fileobj=fileobj
+        )
+        # レスポンス200を返し終了
+        return HTMLResponse(content="OK")
 
 
     # LINEの名前 「メッセージ」の形式で送信

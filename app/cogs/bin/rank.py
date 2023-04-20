@@ -6,7 +6,7 @@ import numpy as np
 import wave
 from pydub import AudioSegment
 import youtube_dl
-import discord
+
 
 class Wav_Karaoke:
     def __init__(self,user_id:int) -> None:

@@ -2,20 +2,20 @@ import os
 import re
 
 import aiohttp
-import requests
 import asyncio
 import time
+
+import magic
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from functools import partial
-from typing import List,Tuple
-
-import asyncio
+from typing import List,Tuple,Dict
+import io
 
 #from discord_type import Discord_Member,Discord_Role,Discord_Channel
 from message_type.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
+from message_type.file_type import Audio_Files
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
@@ -78,6 +78,8 @@ res = await self.loop.run_in_executor(
 同期(loop未使用)
 res = requests.get(f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',headers=self.headers)
 """
+
+
 
 class ReqestDiscord:
     def __init__(self, guild_id: int, limit: int, token: str) -> None:
@@ -262,9 +264,56 @@ class ReqestDiscord:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url = f'https://discordapp.com/api/channels/{channel_id}/messages',
-                headers = self.headers,data = {'content': f'{message}'}
+                headers = self.headers,
+                data = {'content': f'{message}'}
             ) as resp:
                 return await resp.json()
+
+
+    async def send_discord_file(
+        self, 
+        channel_id: int, 
+        message: str, 
+        fileobj:Audio_Files
+    ):
+        """
+        Discordへメッセージを送信する。
+
+        channel_id  :int
+            Discordのテキストチャンネルのid
+        message     :str
+            テキストメッセージ
+        """
+
+        with aiohttp.MultipartWriter("form-data") as mpwriter:
+            # ファイルを送付
+            mpwriter.append(
+                obj=fileobj.byte, 
+                headers={
+                    'Content-Type': magic.from_file(fileobj.byte, mime=True)
+                }
+            ).set_content_disposition(
+                disptype='form-data', 
+                name=fileobj.filename, 
+                filename=fileobj.filename
+            )
+
+            # テキストメッセージを送付
+            mpwriter.append(
+                obj=message
+            ).set_content_disposition(
+                disptype='form-data',
+                name="content"
+            )
+
+            # Discordにファイルとメッセージを送信
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url = f'https://discordapp.com/api/channels/{channel_id}/messages',
+                    headers = self.headers,
+                    data = mpwriter
+                ) as resp:
+                    return await resp.json()
 
 
 
