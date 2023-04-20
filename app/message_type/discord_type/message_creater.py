@@ -306,6 +306,8 @@ class ReqestDiscord:
                 name="content"
             )
 
+            print(mpwriter)
+
             # Discordにファイルとメッセージを送信
             async with aiohttp.ClientSession() as session:
                 async with session.post(
