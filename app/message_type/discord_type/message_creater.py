@@ -89,6 +89,9 @@ class ReqestDiscord:
             'Authorization': f'Bot {token}',
             'Content-Type': 'application/x-www-form-urlencoded',
         }
+        self.no_content_headers = {
+            'Authorization': f'Bot {token}'
+        }
 
     async def member_get(self) -> List[Discord_Member]:
         """
@@ -291,7 +294,7 @@ class ReqestDiscord:
             # ファイルを送付
             mpwriter.append(
                 obj=fileobj.iobyte,
-                headers={'Content-Type': fileobj.content_type}
+                #headers={'Content-Type': fileobj.content_type}
             ).set_content_disposition(
                 disptype='form-data', 
                 name=fileobj.filename, 
@@ -312,7 +315,7 @@ class ReqestDiscord:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     url = f'https://discordapp.com/api/channels/{channel_id}/messages',
-                    headers = self.headers,
+                    headers = self.no_content_headers,
                     data = mpwriter
                 ) as resp:
                     print(await resp.json())
