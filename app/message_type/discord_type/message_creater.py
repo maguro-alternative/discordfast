@@ -284,7 +284,6 @@ class ReqestDiscord:
         message     :str
             テキストメッセージ
         """
-        print(fileobj.filename)
 
         with aiohttp.MultipartWriter("form-data") as mpwriter:
             # ファイルを送付
@@ -312,7 +311,6 @@ class ReqestDiscord:
                     headers = self.headers,
                     data = mpwriter
                 ) as resp:
-                    print(await resp.json())
                     return await resp.json()
 
 
