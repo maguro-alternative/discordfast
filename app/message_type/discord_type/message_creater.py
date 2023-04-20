@@ -290,7 +290,7 @@ class ReqestDiscord:
         with aiohttp.MultipartWriter("form-data") as mpwriter:
             # ファイルを送付
             mpwriter.append(
-                obj=fileobj.byte, 
+                obj=fileobj.iobyte
                 #headers={'Content-Type': ''}
             ).set_content_disposition(
                 disptype='form-data', 
