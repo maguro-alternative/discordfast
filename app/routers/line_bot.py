@@ -152,7 +152,7 @@ async def line_response(
         fileobj = await line_bot_api.voice_get(message_id=event.message.id)
         await discord_find_message.send_discord_file(
             channel_id=channel_id,
-            message=f'{profile_name.display_name} \n「 {message} 」',
+            message=f'{profile_name.display_name}',
             fileobj=fileobj
         )
         # レスポンス200を返し終了
