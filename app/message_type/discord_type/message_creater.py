@@ -313,6 +313,7 @@ class ReqestDiscord:
                     headers = self.headers,
                     data = mpwriter
                 ) as resp:
+                    print(await resp.json())
                     return await resp.json()
 
 
