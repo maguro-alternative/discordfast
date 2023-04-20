@@ -334,8 +334,12 @@ class YouTubeUpload():
         正常なアップロードができるまでアップロードを繰り返します。
 
         param
-        insert_request:HttpRequest
+        insert_request  :HttpRequest
         動画のアップロード情報を格納するオブジェクト
+
+        return:
+        youtube_id      :str
+        
         """
         response:dict = None
         error:str = None

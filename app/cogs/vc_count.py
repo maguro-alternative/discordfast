@@ -5,7 +5,7 @@ try:
     # Botのみ起動の場合
     from app.cogs.bin import activity
     from app.core.start import DBot
-except:
+except ModuleNotFoundError:
     from cogs.bin import activity
     from core.start import DBot
 

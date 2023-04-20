@@ -10,7 +10,7 @@ import os
 
 try:
     from app.core.start import DBot
-except:
+except ModuleNotFoundError:
     from core.start import DBot
 
 class chatgpt(commands.Cog):

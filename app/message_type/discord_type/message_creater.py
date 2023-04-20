@@ -5,13 +5,10 @@ import aiohttp
 import asyncio
 import time
 
-import magic
-
 from dotenv import load_dotenv
 load_dotenv()
 
 from typing import List,Tuple,Dict
-import io
 
 #from discord_type import Discord_Member,Discord_Role,Discord_Channel
 from message_type.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
@@ -79,16 +76,30 @@ res = await self.loop.run_in_executor(
 res = requests.get(f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',headers=self.headers)
 """
 
-
+DISCORD_BASE_URL = "https://discord.com/api"
 
 class ReqestDiscord:
     def __init__(self, guild_id: int, limit: int, token: str) -> None:
+        """
+        DiscordAPIのクラス
+
+        param:
+        guild_id    :int
+        サーバーid
+
+        limit       :int
+        一度に取得するパラメータの数
+
+        token       :str
+        DiscordBotのトークン
+        """
         self.guild_id = guild_id
         self.limit = limit
         self.headers = {
             'Authorization': f'Bot {token}',
             'Content-Type': 'application/x-www-form-urlencoded',
         }
+        # ファイルアップロードの際にContent-Typeが邪魔になるので取り除く
         self.no_content_headers = {
             'Authorization': f'Bot {token}'
         }
@@ -102,7 +113,7 @@ class ReqestDiscord:
         
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',
+                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/members?limit={self.limit}',
                 headers = self.headers
             ) as resp:
                 # 取得したユーザー情報を展開
@@ -124,7 +135,7 @@ class ReqestDiscord:
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/roles',
+                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/roles',
                 headers = self.headers
             ) as resp:
                 # 取得したロール情報を取得
@@ -145,7 +156,7 @@ class ReqestDiscord:
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/channels',
+                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/channels',
                 headers = self.headers
             ) as resp:
                 # 取得したチャンネルを展開
@@ -254,7 +265,7 @@ class ReqestDiscord:
 
         return channel_id, message
 
-    async def send_discord(self, channel_id: int, message: str):
+    async def send_discord(self, channel_id: int, message: str) -> Dict:
         """
         Discordへメッセージを送信する。
 
@@ -266,7 +277,7 @@ class ReqestDiscord:
         
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                url = f'https://discordapp.com/api/channels/{channel_id}/messages',
+                url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
                 headers = self.headers,
                 data = {'content': f'{message}'}
             ) as resp:
@@ -278,23 +289,22 @@ class ReqestDiscord:
         channel_id: int, 
         message: str, 
         fileobj:Audio_Files
-    ):
+    ) -> Dict:
         """
-        Discordへメッセージを送信する。
+        Discordへファイル付きのメッセージを送信する。
 
         channel_id  :int
             Discordのテキストチャンネルのid
         message     :str
             テキストメッセージ
+        fileobj     :Audio_Files
+            音声ファイルのオブジェクト
         """
-
-        print(fileobj.filename)
 
         with aiohttp.MultipartWriter("form-data") as mpwriter:
             # ファイルを送付
             mpwriter.append(
-                obj=fileobj.iobyte,
-                #headers={'Content-Type': fileobj.content_type}
+                obj=fileobj.iobyte
             ).set_content_disposition(
                 disptype='form-data', 
                 name=fileobj.filename, 
@@ -309,16 +319,13 @@ class ReqestDiscord:
                 name="content"
             )
 
-            print(mpwriter)
-
             # Discordにファイルとメッセージを送信
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    url = f'https://discordapp.com/api/channels/{channel_id}/messages',
+                    url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
                     headers = self.no_content_headers,
                     data = mpwriter
                 ) as resp:
-                    print(await resp.json())
                     return await resp.json()
 
 

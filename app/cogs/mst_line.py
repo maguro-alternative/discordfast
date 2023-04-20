@@ -36,7 +36,7 @@ load_dotenv()
 try:
     from message_type.line_type.line_message import LineBotAPI,Voice_File
     from core.start import DBot
-except:
+except ModuleNotFoundError:
     from app.message_type.line_type.line_message import LineBotAPI,Voice_File
     from app.core.start import DBot
 

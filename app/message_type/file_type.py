@@ -1,5 +1,4 @@
 import io
-import asyncio
 import os
 
 class Audio_Files:
@@ -17,22 +16,14 @@ class Audio_Files:
 
         filename:str
         ファイル名、拡張子も付ける
-
-        content_type:str
-        コンテンツタイプ(text/*等)
         """
         self.byte = byte
         self.iobyte = io.BytesIO(byte)
-        self.loop = asyncio.new_event_loop()
         if len(os.path.splitext(filename)[1]) == 0:
             extension = self.detect_audio_file()
             self.filename = filename + extension.capitalize()
         else:
             self.filename = filename
-        
-        self.content_type = 'audio/*'
-            
-        # self.content_type = magic.from_file(byte, mime=True)
         
     def detect_audio_file(self) -> str:
         """
