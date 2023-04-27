@@ -4,8 +4,7 @@ import os
 from typing import List,Tuple,Union
 from decimal import Decimal
 import re
-
-from base.database import PostgresDB
+import pickle
 
 import subprocess
 from functools import partial
@@ -15,20 +14,6 @@ import asyncio
 import aiofiles
 
 from pydub import AudioSegment
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
-# 使用するデータベースのテーブル名
-TABLE = 'guilds_ng_channel'
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -48,38 +33,44 @@ class mst_line(commands.Cog):
     @commands.Cog.listener(name='on_message')
     async def on_message(self, message:discord.Message):
 
-        # データベースへ接続
-        await db.connect()
+        # 使用するデータベースのテーブル名
+        TABLE = f'guilds_line_channel_{message.guild.id}'
 
-        # テーブルの中身を取得
-        table_fetch = await db.select_rows(
-            table_name=TABLE,
-            columns=None,
-            where_clause={'guild_id':message.guild.id}
-        )
-
-        await db.disconnect()
+        # 読み取り
+        async with aiofiles.open(
+            file=f'{TABLE}.pickle',
+            mode='rb'
+        ) as f:
+            pickled_bytes = await f.read()
+            with io.BytesIO() as f:
+                f.write(pickled_bytes)
+                f.seek(0)
+                line_fetch = pickle.load(f)
 
         bot_message = False
-        nsfw_channel = False
+        ng_channel = False
+
+        key_channel = [
+            g 
+            for g in line_fetch 
+            if int(g.get('channel_id')) == message.channel.id
+        ]
 
         # メッセージがbotの場合
-        if (bool(table_fetch[0].get('message_bot')) == True and
+        if (bool(key_channel[0].get('message_bot')) == True and
             message.author.bot == True):
             # 禁止されていた場合終了
             bot_message = True
 
-        # 閲覧注意チャンネルが禁止されていた場合終了
-        if (bool(table_fetch[0].get('channel_nsfw')) == True and
-            message.channel.nsfw == True):
-            nsfw_channel = True
+        # 送信が禁止されていた場合終了
+        if (bool(key_channel[0].get('line_ng_channel')) == True):
+            ng_channel = True
 
         # ピン止め、ボイスチャンネルの場合終了
         # 送信NGのチャンネル名の場合、終了
-        if (bot_message or nsfw_channel or
-            Decimal(message.channel.id) in table_fetch[0].get('channel_id') or
-            str(message.type) in table_fetch[0].get('message_type') or
-            str(message.channel.type) in table_fetch[0].get('channel_type')):
+        if (bot_message or ng_channel or
+            str(message.type) in key_channel[0].get('ng_message_type') or
+            Decimal(message.author.id) in key_channel[0].get('ng_users')):
             return
         
 
@@ -115,13 +106,13 @@ class mst_line(commands.Cog):
         messagetext = f"{message.channel.name}にて、{user_name}"
 
         if message.type == discord.MessageType.new_member:
-            messagetext=f"{user_name}が参加しました。"
+            messagetext = f"{user_name}が参加しました。"
 
         if message.type == discord.MessageType.premium_guild_subscription:
-            messagetext=f"{user_name}がサーバーブーストしました。"
+            messagetext = f"{user_name}がサーバーブーストしました。"
 
         if message.type == discord.MessageType.premium_guild_tier_1:
-            messagetext=f"{user_name}がサーバーブーストし、レベル1になりました！！！！！！！！"
+            messagetext = f"{user_name}がサーバーブーストし、レベル1になりました！！！！！！！！"
 
         if message.type == discord.MessageType.premium_guild_tier_2:
             messagetext = f"{user_name}がサーバーブーストし、レベル2になりました！！！！！！！！！"
@@ -136,7 +127,7 @@ class mst_line(commands.Cog):
             videolist, message.attachments = await video_checker(message.attachments)
             voicelist, message.attachments = await voice_checker(message.attachments,message)
 
-            messagetext+="が、"
+            messagetext += "が、"
 
             # 送信された動画と画像の数を格納
             if len(imagelist) > 0:

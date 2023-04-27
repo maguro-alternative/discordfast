@@ -117,7 +117,7 @@ class ReqestDiscord:
                 headers = self.headers
             ) as resp:
                 # 取得したユーザー情報を展開
-                res = await resp.json()
+                res:Dict = await resp.json()
                 member_list = []
                 for member in res:
                     r = Discord_Member.new_from_json_dict(member)
@@ -320,6 +320,7 @@ class ReqestDiscord:
             )
 
             # Discordにファイルとメッセージを送信
+            # 'Content-Type': 'application/x-www-form-urlencoded'が邪魔なので取り除く
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',

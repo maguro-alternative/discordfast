@@ -2,18 +2,25 @@ from fastapi import APIRouter
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
+import aiofiles
+import asyncio
+
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List
+from typing import List,Dict,Any
 from itertools import groupby,chain
+import pickle
+import io
 
 from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
     check_permission
 )
+
+from message_type.discord_type.message_creater import ReqestDiscord
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -41,11 +48,21 @@ async def line_post(
     guild_id:int
 ):
     # 使用するデータベースのテーブル名
-    TABLE = 'guilds_ng_channel'
+    TABLE = f'guilds_line_channel_{guild_id}'
 
     # サーバのチャンネル一覧を取得
     all_channel = await aio_get_request(
         url = DISCORD_BASE_URL + f'/guilds/{guild_id}/channels',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    limit = os.environ.get('USER_LIMIT',default=100)
+
+    # サーバのメンバー一覧を取得
+    guild_members = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members?limit={limit}',
         headers = {
             'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
         }
@@ -151,116 +168,36 @@ async def line_post(
     if permission_bool == True:
         user_permission = 'admin'
 
-    # データベースへ接続
-    await db.connect()
+    # キャッシュ読み取り
+    async with aiofiles.open(
+        file=f'{TABLE}.pickle',
+        mode='rb'
+    ) as f:
+        pickled_bytes = await f.read()
+        with io.BytesIO() as f:
+            f.write(pickled_bytes)
+            f.seek(0)
+            table_fetch:List[Dict[str,Any]] = pickle.load(f)
 
-    # テーブルの中身を取得
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=['guild_id'],
-        where_clause={'guild_id':guild_id}
-    )
+    line_row = {}
 
-    # リストが空でなく、テーブルが存在しない場合は作成
-    if len(table_fetch) != 0:
-        if table_fetch[0] == f"{TABLE} does not exist":
-            await db.create_table(
-                table_name=TABLE,
-                columns={
-                    'guild_id': 'NUMERIC PRIMARY KEY', 
-                    'channel_id': 'NUMERIC[]', 
-                    'channel_type': 'VARCHAR(50)[]',
-                    'message_type': 'VARCHAR(50)[]',
-                    'message_bot': 'boolean',
-                    'channel_nsfw': 'boolean'
+    for table in table_fetch:
+        channel_id:int = table.get('channel_id')
+        line_ng_channel:bool = table.get('line_ng_channel')
+        ng_message_type:List[str] = table.get('ng_message_type')
+        message_bot:bool = table.get('message_bot')
+        ng_users:List[int] = table.get('ng_users')
+
+        line_row.update(
+            {
+                str(channel_id):{
+                    'line_ng_channel':line_ng_channel,
+                    'ng_message_type':ng_message_type,
+                    'message_bot':message_bot,
+                    'ng_users':ng_users
                 }
-            )
-
-            row_values = {
-                'guild_id': guild_id, 
-                'channel_id': [], 
-                'channel_type': [],
-                'message_type': [],
-                'message_bot': True,
-                'channel_nsfw': False
             }
-
-            # サーバー用に新たにカラムを作成
-            await db.insert_row(
-                table_name=TABLE,
-                row_values=row_values
-            )
-
-            await db.disconnect()
-            return templates.TemplateResponse(
-                "linepost.html",
-                {
-                    "request": request, 
-                    "guild": guild,
-                    "guild_id": guild_id,
-                    "all_channel": all_channel_sort,
-                    "ng_channel": [],
-                    'channel_type': [],
-                    'message_type': [],
-                    'message_bot': False,
-                    'channel_nsfw': False,
-                    "user_permission":user_permission,
-                    "title": request.session["user"]['username']
-                }
-            )
-
-    # テーブルはあるが中身が空の場合
-    if len(table_fetch) == 0:
-        row_values = {
-            'guild_id': guild_id, 
-            'channel_id': [], 
-            'channel_type': [],
-            'message_type': [],
-            'message_bot': True,
-            'channel_nsfw': False
-        }
-
-        # サーバー用に新たにカラムを作成
-        await db.insert_row(
-            table_name=TABLE,
-            row_values=row_values
         )
-        channel_type = []
-        message_type = []
-        message_bot = False
-        channel_nsfw = False
-
-        ng_channel = []
-    else:
-        # 指定したサーバーのカラムを取得する
-        table_fetch = await db.select_rows(
-            table_name=TABLE,
-            columns=None,
-            where_clause={'guild_id':guild_id}
-        )
-        if ('channel_type' in table_fetch[0]):
-            channel_type = table_fetch[0]['channel_type']
-        else:
-            channel_type = []
-
-        if ('message_type' in table_fetch[0]):
-            message_type = table_fetch[0]['message_type']
-        else:
-            message_type = []
-
-        if ('message_bot' in table_fetch[0]):
-            message_bot = table_fetch[0]['message_bot']
-        else:
-            message_bot = False
-
-        if ('channel_nsfw' in table_fetch[0]):
-            channel_nsfw = table_fetch[0]['channel_nsfw']
-        else:
-            channel_nsfw = False
-
-        ng_channel = [str(i) for i in table_fetch[0]['channel_id']]
-
-    await db.disconnect()
 
     return templates.TemplateResponse(
         "linepost.html",
@@ -268,12 +205,9 @@ async def line_post(
             "request": request, 
             "guild": guild,
             "guild_id": guild_id,
+            "guild_members":guild_members,
             "all_channel": all_channel_sort,
-            "ng_channel": ng_channel,
-            'channel_type': channel_type,
-            'message_type': message_type,
-            'message_bot': message_bot,
-            'channel_nsfw': channel_nsfw,
+            "line_row":line_row,
             "user_permission":user_permission,
             "title": request.session["user"]['username']
         }

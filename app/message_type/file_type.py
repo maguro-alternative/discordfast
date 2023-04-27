@@ -2,6 +2,18 @@ import io
 import os
 
 class Audio_Files:
+    """
+    ファイルのバイナリのデータを格納するクラス
+    
+    param:
+    byte:bytes
+    ファイルのバイトデータ
+
+    filename:str
+    ファイル名、拡張子は付けても付けなくてもいい
+
+    付かなかった場合マジックナンバーから推測する
+    """
     def __init__(
         self,
         byte:bytes,
@@ -14,8 +26,13 @@ class Audio_Files:
         byte:bytes
         ファイルのバイナリデータ
 
+        iobyte:io.BytesIO
+        ファイルのバイナリデータ
+
         filename:str
         ファイル名、拡張子も付ける
+
+        ついていない場合はマジックナンバーから推測する
         """
         self.byte = byte
         self.iobyte = io.BytesIO(byte)
