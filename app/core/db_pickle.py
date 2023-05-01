@@ -178,6 +178,8 @@ async def db_pickle_save(guilds:List[Guild]):
                 for record in table_fetch
             ]
 
+            print(table_fetch)
+
             # 書き込み
             async with aiofiles.open(
                 file=f'{table_name}.pickle',
