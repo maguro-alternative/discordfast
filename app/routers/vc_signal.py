@@ -5,9 +5,14 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 load_dotenv()
 
+import aiofiles
+
 import os
 from typing import List
 from itertools import groupby,chain
+import pickle
+import io
+from typing import List,Dict,Any
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -174,18 +179,21 @@ async def line_post(
     if permission_bool == True:
         user_permission = 'admin'
 
-    vc_set = []
+    # キャッシュ読み取り
+    async with aiofiles.open(
+        file=f'{TABLE}.pickle',
+        mode='rb'
+    ) as f:
+        pickled_bytes = await f.read()
+        with io.BytesIO() as f:
+            f.write(pickled_bytes)
+            f.seek(0)
+            table_fetch:List[Dict[str,Any]] = pickle.load(f)
 
     # データベースへ接続
     await db.connect()
 
-    
-    # 指定したサーバーのカラムを取得する
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=None,
-        where_clause={}
-    )
+    vc_set = []
 
     # ボイスチャンネルのみを代入
     app_vc = [int(x['id']) for x in vc_cate_sort if x['type'] == 2]
@@ -228,6 +236,7 @@ async def line_post(
                 for item in all_channels 
                 if item not in table_fetch
             ]
+            
             # 削除されたチャンネルをテーブルから削除
             for vc in missing_items:
                 await db.delete_row(
@@ -247,6 +256,24 @@ async def line_post(
 
     else:
         vc_set = table_fetch
+
+        # データベースの状況を取得
+        db_check_fetch = await db.select_rows(
+            table_name=TABLE,
+            columns=[],
+            where_clause={}
+        )
+        # データベースに登録されたが、削除されずに残っているチャンネルを削除
+        check = [int(c['vc_id']) for c in db_check_fetch]
+        del_check = set(check) - set(app_vc)
+
+        for chan_id in list(del_check):
+            await db.delete_row(
+                table_name=TABLE,
+                where_clause={
+                    'channel_id':chan_id
+                }
+            )
 
     await db.disconnect()
 

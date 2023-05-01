@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from main_server import keep_alive
+from server_router import keep_alive
 
 # サーバー立ち上げ
 keep_alive()

@@ -139,7 +139,7 @@
                     </select>
                     <br/>
 
-                    {% set j = 1 %}
+                    {% set j = [1] %}
                     <div id="{{all.id}}" class="selected-items">
                         {% for ng_user_id in line_row[all.id]["ng_users"] %}
                             <div id="{{ng_user}}" class="selected-item">
@@ -148,8 +148,9 @@
                                     {% if member.user.id|int == ng_user_id|int %}
                                         {{member.user.username}}
                                         <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                        <input type="hidden" name="member_{{all.id}}_{{j}}" value="{{member.user.id}}"/>
-                                        {% set j = j + 1 %}
+                                        <input type="hidden" name="member_{{all.id}}_{{j[0]}}" value="{{member.user.id}}"/>
+                                        {% set _ = j.append(j[0] + 1) %}
+                                        {% set _ = j.pop(0) %}
                                     {% endif %}
                                 {% endfor %}
                             </div>

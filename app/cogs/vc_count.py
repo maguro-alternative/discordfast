@@ -78,8 +78,11 @@ class vc_count(commands.Cog):
         send_channel_id = int(key_vc[0].get('send_channel_id'))
 
         # ない場合システムチャンネルのidを代入
-        if send_channel_id == None:
-            send_channel_id = member.guild.system_channel.id
+        if send_channel_id == None or send_channel_id == 0:
+            if hasattr(member.guild.system_channel,'id'):
+                send_channel_id = member.guild.system_channel.id
+            else:
+                return
 
         client = self.bot.get_channel(send_channel_id)
 

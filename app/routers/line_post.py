@@ -181,6 +181,7 @@ async def line_post(
 
     line_row = {}
 
+    # 各項目をフロント部分に渡す
     for table in table_fetch:
         channel_id:int = table.get('channel_id')
         line_ng_channel:bool = table.get('line_ng_channel')
@@ -198,6 +199,90 @@ async def line_post(
                 }
             }
         )
+    
+    # ローカルに保存されているチャンネルの数
+    table_ids = [int(tid["channel_id"]) for tid in table_fetch]
+    # Discord側の現時点でのチャンネルの数(カテゴリーチャンネルを除く)
+    guild_ids = [
+        int(aid["id"]) 
+        for aid in all_channel_sort 
+        if aid['type'] != 4
+    ]
+    # 新規で作られたチャンネルを取得
+    new_channel = [
+        c 
+        for c in all_channel_sort 
+        if int(c['id']) not in table_ids and c['type'] != 4
+    ]
+    # 消されたチャンネルを取得
+    del_channel = set(table_ids) - set(guild_ids)
+
+    # チャンネルの新規作成、削除があった場合
+    if len(new_channel) > 0 or len(del_channel) > 0:
+        # データベースへ接続
+        await db.connect()
+        new_values = []
+        # 新規作成された場合
+        if len(new_channel) > 0:
+            for new in new_channel:
+                new_row = {
+                    'channel_id': new['id'],
+                    'guild_id':guild_id,
+                    'line_ng_channel':False,
+                    'ng_message_type':[],
+                    'message_bot':False,
+                    'ng_users':[]
+                }
+                new_values.append(new_row)
+
+                line_row.update(
+                    {
+                        str(new['id']):{
+                            'line_ng_channel':False,
+                            'ng_message_type':[],
+                            'message_bot':False,
+                            'ng_users':[]
+                        }
+                    }
+                )
+
+            # バッジで一気に作成
+            await db.batch_insert_row(
+                table_name=TABLE,
+                row_values=new_values
+            )
+
+        # 削除された場合
+        if len(del_channel) > 0:
+            for chan_id in list(del_channel):
+                await db.delete_row(
+                    table_name=TABLE,
+                    where_clause={
+                        'channel_id':chan_id
+                    }
+                )
+
+        # データベースの状況を取得
+        db_check_fetch = await db.select_rows(
+            table_name=TABLE,
+            columns=[],
+            where_clause={}
+        )
+
+        # データベースに登録されたが、削除されずに残っているチャンネルを削除
+        check = [int(c['channel_id']) for c in db_check_fetch]
+        del_check = set(check) - set(guild_ids)
+
+        for chan_id in list(del_check):
+            await db.delete_row(
+                table_name=TABLE,
+                where_clause={
+                    'channel_id':chan_id
+                }
+            )
+
+        await db.disconnect()
+
 
     return templates.TemplateResponse(
         "linepost.html",

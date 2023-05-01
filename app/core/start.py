@@ -2,11 +2,15 @@ import discord
 from discord.ext import tasks
 from discord import Intents
 import os
-import datetime
+import json
 import traceback
 import requests,json
+import pickle
+import io
+from typing import List,Dict,Any
 
 import aiohttp
+import aiofiles
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -20,12 +24,19 @@ class DBot(discord.AutoShardedBot):
         self.load_cogs()
 
     async def on_ready(self) -> None:
+        await self.change_presence(
+            status=discord.Status.invisible,
+            activity=discord.Activity(name='起動中....',type=discord.ActivityType.watching)
+        )
         await self.db_get()
         print('起動しました')
         game_name = os.environ.get('GAME_NAME')
         if game_name == None:
             game_name = 'senran kagura'
-        await self.change_presence(activity = discord.Game(name = game_name))
+        await self.change_presence(
+            status=discord.Status.online,
+            activity=discord.Game(name = game_name)
+        )
 
     def load_cogs(self) -> None:
         for file in os.listdir("./cogs"): 
@@ -38,9 +49,8 @@ class DBot(discord.AutoShardedBot):
         # データベースへ接続
         await db_pickle_save(guilds=self.guilds)
 
-    @tasks.loop(seconds=90)
-    async def signal(self) -> None:
-        now = datetime.datetime.now().strftime('%H:%M')
+    
+
         
 
     # 起動用の補助関数です

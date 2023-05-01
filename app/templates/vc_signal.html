@@ -141,7 +141,7 @@
                                         {% endfor %}
                                     </select>
                                     <br/>
-                                    {% set i = 1 %}
+                                    {% set i = [1] %}
                                     <!-- 
                                         既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
                                         xをクリックすることで削除できる
@@ -154,8 +154,9 @@
                                                     {% if role.id|int == role_mention|int %}
                                                         {{role.name}}
                                                         <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                                        <input type="hidden" name="role_{{vc_cate.id}}_{{i}}" value="{{role.id}}"/>
-                                                        {% set i = i + 1 %}
+                                                        <input type="hidden" name="role_{{vc_cate.id}}_{{i[0]}}" value="{{role.id}}"/>
+                                                        {% set _ = i.append(i[0] + 1) %}
+                                                        {% set _ = i.pop(0) %}
                                                     {% endif %}
                                                 {% endfor %}
                                             </div>

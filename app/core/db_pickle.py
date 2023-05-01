@@ -40,6 +40,18 @@ VC_COLUMNS = {
     'everyone_mention': 'boolean',
     'mention_role_id':'NUMERIC[]'
 }
+WEBHOOK_COLUMNS = {
+    'uuid':'UUID PRIMARY KEY',
+    'guild_id': 'NUMERIC', 
+    'webhook_id':'NUMERIC',
+    'subscription_id': 'VARCHAR(50)',
+    'subscription_type':'VARCHAR(50)',
+    'mention_roles':'NUMERIC[]',
+    'search_or_word':'VARCHAR(50)[]',
+    'search_and_word':'VARCHAR(50)[]',
+    'mention_or_word':'VARCHAR(50)[]',
+    'mention_and_word':'VARCHAR(50)[]'
+}
 
 # 各テーブルのカラムの初期値
 LINE_NEW_COLUMNS = {
@@ -70,9 +82,6 @@ COLUMNS = (LINE_COLUMNS,VC_COLUMNS)
 NEW_COLUMNS = (LINE_NEW_COLUMNS,VC_NEW_COLUMNS)
 CHANNEL_TYPE = (LINE_TYPE,VC_TYPE)
 
-# チャンネルidが主キーのテーブル名
-CHANNEL_ID_PRIMARY_KEY_TABLE = (LINE_TABLE,VC_TABLE)
-
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
 DATABASE = os.getenv('PGDATABASE')
@@ -97,7 +106,6 @@ async def db_pickle_save(guilds:List[Guild]):
     
     # サーバごとにテーブルのキャッシュデータを作成
     for guild in guilds:
-        guild.members
         for table,column,new_column,channel_type in zip(
             TABLES,
             COLUMNS,
@@ -165,7 +173,6 @@ async def db_pickle_save(guilds:List[Guild]):
                         row_values=row_values
                     )
 
-        
             dict_row = [
                 dict(zip(record.keys(), record)) 
                 for record in table_fetch
@@ -177,6 +184,39 @@ async def db_pickle_save(guilds:List[Guild]):
                 mode='wb'
             ) as f:
                 await f.write(pickle.dumps(obj=dict_row))
+
+        table_fetch = await db.select_rows(
+            table_name=f"webhook_{guild.id}",
+            columns=[],
+            where_clause={}
+        )
+
+        if len(table_fetch) == 1:
+            if table_fetch[0] == f"webhook_{guild.id} does not exist":
+                await db.create_table(
+                    table_name=f"webhook_{guild.id}",
+                    columns=WEBHOOK_COLUMNS
+                )
+                table_fetch = await db.select_rows(
+                    table_name=f"webhook_{guild.id}",
+                    columns=[],
+                    where_clause={}
+                )
+
+        dict_row = [
+            dict(zip(record.keys(), record)) 
+            for record in table_fetch
+        ]
+
+        # 書き込み
+        async with aiofiles.open(
+            file=f'webhook_{guild.id}.pickle',
+            mode='wb'
+        ) as f:
+            await f.write(pickle.dumps(obj=dict_row))
+
+
+    await db.disconnect()
 
 
 async def get_discord_channel(

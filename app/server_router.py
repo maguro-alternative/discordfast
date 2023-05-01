@@ -19,7 +19,10 @@ from routers import (
     line_post_sucess,
     logout,
     vc_signal,
-    vc_count_success
+    vc_count_success,
+    webhook,
+    webhook_success,
+    test_success
 )
 
 app = FastAPI(
@@ -51,9 +54,14 @@ app.include_router(guilds.router)
 app.include_router(line_post.router)
 app.include_router(line_post_sucess.router)
 app.include_router(logout.router)
-
 app.include_router(vc_signal.router)
 app.include_router(vc_count_success.router)
+app.include_router(webhook.router)
+app.include_router(webhook_success.router)
+
+
+# フォーム送信テスト用
+app.include_router(test_success.router)
 
 # ローカル実行
 def local_run():
@@ -67,7 +75,7 @@ def local_run():
 # 本番環境
 def run():
     uvicorn.run(
-        "main_server:app",
+        "server_router:app",
         host="0.0.0.0", 
         port=int(os.getenv("PORT", default=8080)), 
         log_level="info"
