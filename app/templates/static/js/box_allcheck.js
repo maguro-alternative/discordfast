@@ -5,3 +5,11 @@ function check(targetForm,flag,name){
       }
     }
 }
+
+function classChack(targetForm,flag,className){
+  for (let i = 0;n < targetForm.length - 1;i++){
+    if(targetForm.elements[i].type == "checkbox" && targetForm.elements[i].className.indexOf(className) >= 0){
+      targetForm.elements[i].checked = flag;
+    }
+  }
+}

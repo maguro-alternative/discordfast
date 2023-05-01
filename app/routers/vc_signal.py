@@ -5,9 +5,14 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 load_dotenv()
 
+import aiofiles
+
 import os
 from typing import List
 from itertools import groupby,chain
+import pickle
+import io
+from typing import List,Dict,Any
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -41,7 +46,7 @@ async def line_post(
     guild_id:int
 ):
     # 使用するデータベースのテーブル名
-    TABLE = 'guilds_vc_signal'
+    TABLE = f'guilds_vc_signal_{guild_id}'
 
     # サーバのチャンネル一覧を取得
     all_channel = await aio_get_request(
@@ -174,39 +179,43 @@ async def line_post(
     if permission_bool == True:
         user_permission = 'admin'
 
-    vc_set = []
+    # キャッシュ読み取り
+    async with aiofiles.open(
+        file=f'{TABLE}.pickle',
+        mode='rb'
+    ) as f:
+        pickled_bytes = await f.read()
+        with io.BytesIO() as f:
+            f.write(pickled_bytes)
+            f.seek(0)
+            table_fetch:List[Dict[str,Any]] = pickle.load(f)
 
     # データベースへ接続
     await db.connect()
 
-    # テーブルの中身を取得
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=['guild_id'],
-        where_clause={'guild_id':guild_id}
-    )
+    vc_set = []
 
-    # リストが空でなく、テーブルが存在しない場合は作成
-    if len(table_fetch) != 0:
-        if table_fetch[0] == f"{TABLE} does not exist":
-            await db.create_table(
-                table_name=TABLE,
-                columns={
-                    'vc_id': 'NUMERIC PRIMARY KEY', 
-                    'guild_id': 'NUMERIC', 
-                    'send_channel_id': 'NUMERIC', 
-                    'join_bot': 'boolean',
-                    'everyone_mention': 'boolean',
-                    'mention_role_id':'NUMERIC[]'
-                }
-            )
+    # ボイスチャンネルのみを代入
+    app_vc = [int(x['id']) for x in vc_cate_sort if x['type'] == 2]
 
-            # カラムも作成
-            for vc in vc_cate_sort:#all_channel_sort:
+    # テータベース側のボイスチャンネルを代入
+    db_vc = [int(x['vc_id']) for x in table_fetch]
+    if set(app_vc) != set(db_vc):
+        # データベース側で欠けているチャンネルを取得
+        missing_items = [
+            item 
+            for item in table_fetch 
+            if item not in vc_cate_sort
+        ]
+
+        # 新しくボイスチャンネルが作成されていた場合
+        if len(missing_items) > 0:
+            for vc in missing_items:
                 if vc['type'] == 2:
                     row_values = {
                         'vc_id': vc['id'], 
                         'guild_id': guild_id, 
+                        'send_signal': True,
                         'send_channel_id': guild.get('system_channel_id'), 
                         'join_bot': False,
                         'everyone_mention': True,
@@ -218,109 +227,53 @@ async def line_post(
                         table_name=TABLE,
                         row_values=row_values
                     )
-
                     vc_set.append(row_values)
-
-            await db.disconnect()
-            return templates.TemplateResponse(
-                "vc_signal.html",
-                {
-                    "request": request, 
-                    "vc_cate_channel": vc_cate_sort,
-                    "text_channel": text_channel_sort,
-                    "guild": guild,
-                    "guild_id": guild_id,
-                    'vc_set' : vc_set,
-                    "user_permission":user_permission,
-                    "title": request.session["user"]['username']
-                }
-            )
-
-    # テーブルはあるが中身が空の場合
-    if len(table_fetch) == 0:
-        for vc in vc_cate_sort:
-            if vc['type'] == 2:
-                row_values = {
-                    'vc_id': vc['id'], 
-                    'guild_id': guild_id, 
-                    'send_channel_id': guild.get('system_channel_id'), 
-                    'join_bot': False,
-                    'everyone_mention': True,
-                    'mention_role_id':[]
-                }
-
-                # サーバー用に新たにカラムを作成
-                await db.insert_row(
-                    table_name=TABLE,
-                    row_values=row_values
-                )
-                
-                vc_set.append(row_values)
-
-    else:
-        # 指定したサーバーのカラムを取得する
-        table_fetch = await db.select_rows(
-            table_name=TABLE,
-            columns=None,
-            where_clause={'guild_id':guild_id}
-        )
-
-        app_vc = [int(x['id']) for x in vc_cate_sort if x['type'] == 2]
-        db_vc = [int(x['vc_id']) for x in table_fetch]
-        if set(app_vc) != set(db_vc):
-            # データベース側で欠けているチャンネルを取得
+        # ボイスチャンネルがいくつか削除されていた場合
+        else:
+            # 削除されたチャンネルを取得
             missing_items = [
                 item 
-                for item in table_fetch 
-                if item not in vc_cate_sort
+                for item in all_channels 
+                if item not in table_fetch
+            ]
+            
+            # 削除されたチャンネルをテーブルから削除
+            for vc in missing_items:
+                await db.delete_row(
+                    table_name=TABLE,
+                    where_clause={
+                        'vc_id':vc['vc_id']
+                    }
+                )
+
+            # 削除後のチャンネルを除き、残りのチャンネルを取得
+            vc_set = [
+                d for d in table_fetch 
+                if not (d.get('vc_id') in [
+                    e.get('vc_id') for e in missing_items
+                ] )
             ]
 
-            # 新しくボイスチャンネルが作成されていた場合
-            if len(missing_items) > 0:
-                for vc in missing_items:
-                    if vc['type'] == 2:
-                        row_values = {
-                            'vc_id': vc['id'], 
-                            'guild_id': guild_id, 
-                            'send_channel_id': guild.get('system_channel_id'), 
-                            'join_bot': False,
-                            'everyone_mention': True,
-                            'mention_role_id':[]
-                        }
+    else:
+        vc_set = table_fetch
 
-                        # サーバー用に新たにカラムを作成
-                        await db.insert_row(
-                            table_name=TABLE,
-                            row_values=row_values
-                        )
-                        vc_set.append(row_values)
-            # ボイスチャンネルがいくつか削除されていた場合
-            else:
-                # 削除されたチャンネルを取得
-                missing_items = [
-                    item 
-                    for item in all_channels 
-                    if item not in table_fetch
-                ]
-                # 削除されたチャンネルをテーブルから削除
-                for vc in missing_items:
-                    await db.delete_row(
-                        table_name=TABLE,
-                        where_clause={
-                            'vc_id':vc['vc_id']
-                        }
-                    )
+        # データベースの状況を取得
+        db_check_fetch = await db.select_rows(
+            table_name=TABLE,
+            columns=[],
+            where_clause={}
+        )
+        # データベースに登録されたが、削除されずに残っているチャンネルを削除
+        check = [int(c['vc_id']) for c in db_check_fetch]
+        del_check = set(check) - set(app_vc)
 
-                # 削除後のチャンネルを除き、残りのチャンネルを取得
-                vc_set = [
-                    d for d in table_fetch 
-                    if not (d.get('vc_id') in [
-                        e.get('vc_id') for e in missing_items
-                    ] )
-                ]
-
-        else:
-            vc_set = table_fetch
+        for chan_id in list(del_check):
+            await db.delete_row(
+                table_name=TABLE,
+                where_clause={
+                    'channel_id':chan_id
+                }
+            )
 
     await db.disconnect()
 

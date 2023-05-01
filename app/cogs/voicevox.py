@@ -13,7 +13,7 @@ import requests
 import asyncio
 try:
     from app.core.start import DBot
-except:
+except ModuleNotFoundError:
     from core.start import DBot
 
 Speaker = [ '四国めたん', '四国めたんあまあま', '四国めたんツンツン', '四国めたんセクシー',

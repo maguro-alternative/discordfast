@@ -2,20 +2,17 @@ import os
 import re
 
 import aiohttp
-import requests
 import asyncio
 import time
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from functools import partial
-from typing import List,Tuple
-
-import asyncio
+from typing import List,Tuple,Dict
 
 #from discord_type import Discord_Member,Discord_Role,Discord_Channel
 from message_type.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
+from message_type.file_type import Audio_Files
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
@@ -79,13 +76,32 @@ res = await self.loop.run_in_executor(
 res = requests.get(f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',headers=self.headers)
 """
 
+DISCORD_BASE_URL = "https://discord.com/api"
+
 class ReqestDiscord:
     def __init__(self, guild_id: int, limit: int, token: str) -> None:
+        """
+        DiscordAPIのクラス
+
+        param:
+        guild_id    :int
+        サーバーid
+
+        limit       :int
+        一度に取得するパラメータの数
+
+        token       :str
+        DiscordBotのトークン
+        """
         self.guild_id = guild_id
         self.limit = limit
         self.headers = {
             'Authorization': f'Bot {token}',
             'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        # ファイルアップロードの際にContent-Typeが邪魔になるので取り除く
+        self.no_content_headers = {
+            'Authorization': f'Bot {token}'
         }
 
     async def member_get(self) -> List[Discord_Member]:
@@ -97,11 +113,11 @@ class ReqestDiscord:
         
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',
+                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/members?limit={self.limit}',
                 headers = self.headers
             ) as resp:
                 # 取得したユーザー情報を展開
-                res = await resp.json()
+                res:Dict = await resp.json()
                 member_list = []
                 for member in res:
                     r = Discord_Member.new_from_json_dict(member)
@@ -119,7 +135,7 @@ class ReqestDiscord:
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/roles',
+                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/roles',
                 headers = self.headers
             ) as resp:
                 # 取得したロール情報を取得
@@ -140,7 +156,7 @@ class ReqestDiscord:
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'https://discordapp.com/api/guilds/{self.guild_id}/channels',
+                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/channels',
                 headers = self.headers
             ) as resp:
                 # 取得したチャンネルを展開
@@ -249,7 +265,7 @@ class ReqestDiscord:
 
         return channel_id, message
 
-    async def send_discord(self, channel_id: int, message: str):
+    async def send_discord(self, channel_id: int, message: str) -> Dict:
         """
         Discordへメッセージを送信する。
 
@@ -261,10 +277,57 @@ class ReqestDiscord:
         
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                url = f'https://discordapp.com/api/channels/{channel_id}/messages',
-                headers = self.headers,data = {'content': f'{message}'}
+                url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
+                headers = self.headers,
+                data = {'content': f'{message}'}
             ) as resp:
                 return await resp.json()
+
+
+    async def send_discord_file(
+        self, 
+        channel_id: int, 
+        message: str, 
+        fileobj:Audio_Files
+    ) -> Dict:
+        """
+        Discordへファイル付きのメッセージを送信する。
+
+        channel_id  :int
+            Discordのテキストチャンネルのid
+        message     :str
+            テキストメッセージ
+        fileobj     :Audio_Files
+            音声ファイルのオブジェクト
+        """
+
+        with aiohttp.MultipartWriter("form-data") as mpwriter:
+            # ファイルを送付
+            mpwriter.append(
+                obj=fileobj.iobyte
+            ).set_content_disposition(
+                disptype='form-data', 
+                name=fileobj.filename, 
+                filename=fileobj.filename
+            )
+
+            # テキストメッセージを送付
+            mpwriter.append(
+                obj=message
+            ).set_content_disposition(
+                disptype='form-data',
+                name="content"
+            )
+
+            # Discordにファイルとメッセージを送信
+            # 'Content-Type': 'application/x-www-form-urlencoded'が邪魔なので取り除く
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
+                    headers = self.no_content_headers,
+                    data = mpwriter
+                ) as resp:
+                    return await resp.json()
 
 
 

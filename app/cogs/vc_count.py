@@ -1,11 +1,13 @@
 import discord
 from discord.ext import commands
 
+import aiofiles
+
 try:
     # Botのみ起動の場合
     from app.cogs.bin import activity
     from app.core.start import DBot
-except:
+except ModuleNotFoundError:
     from cogs.bin import activity
     from core.start import DBot
 
@@ -13,22 +15,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-
-from base.database import PostgresDB
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
-# 使用するデータベースのテーブル名
-TABLE = 'guilds_vc_signal'
+import io
+import pickle
 
 # ボイスチャンネルの入退室を通知
 class vc_count(commands.Cog):
@@ -49,40 +37,63 @@ class vc_count(commands.Cog):
             # 退出した場合のボイスチャンネルのid
             vc_channel_id = before.channel.id
 
-        # データベースへ接続
-        await db.connect()
+        # 使用するデータベースのテーブル名
+        TABLE = f'guilds_vc_signal_{member.guild.id}'
 
-        # テーブルの中身を取得
-        table_fetch = await db.select_rows(
-            table_name=TABLE,
-            columns=None,
-            where_clause={'vc_id':vc_channel_id}
-        )
+         # 読み取り
+        async with aiofiles.open(
+            file=f'{TABLE}.pickle',
+            mode='rb'
+        ) as f:
+            pickled_bytes = await f.read()
+            with io.BytesIO() as f:
+                f.write(pickled_bytes)
+                f.seek(0)
+                vc_fetch = pickle.load(f)
 
-        await db.disconnect()
+        key_vc = [
+            g 
+            for g in vc_fetch 
+            if int(g.get('vc_id')) == vc_channel_id
+        ]
+
+        # 通知が拒否されていた場合、終了
+        if hasattr(before.channel,'id'):
+            if int(key_vc[0].get('vc_id')) == before.channel.id:
+                if bool(key_vc[0].get('send_signal')) == False:
+                    return
+
+        # 通知が拒否されていた場合、終了
+        if hasattr(after.channel,'id'):
+            if int(key_vc[0].get('vc_id')) == after.channel.id:
+                if bool(key_vc[0].get('send_signal')) == False:
+                    return
 
         # Botの場合終了
-        if (bool(table_fetch[0].get('join_bot')) == False and
+        if (bool(key_vc[0].get('join_bot')) == False and
             member.bot == True):
             return
         
         # Discordのシステムチャンネル(welcomeメッセージが送られる場所)を取得
-        send_channel_id = int(table_fetch[0].get('send_channel_id'))
+        send_channel_id = int(key_vc[0].get('send_channel_id'))
 
         # ない場合システムチャンネルのidを代入
-        if send_channel_id == None:
-            send_channel_id = member.guild.system_channel.id
+        if send_channel_id == None or send_channel_id == 0:
+            if hasattr(member.guild.system_channel,'id'):
+                send_channel_id = member.guild.system_channel.id
+            else:
+                return
 
         client = self.bot.get_channel(send_channel_id)
 
         # メンションするロールの取り出し
         mentions = [
             f"<@&{int(role_id)}> " 
-            for role_id in table_fetch[0].get('mention_role_id')
+            for role_id in key_vc[0].get('mention_role_id')
         ]
 
         # 全体メンションが有効の場合@everyoneを追加
-        if (bool(table_fetch[0].get('everyone_mention')) == True):
+        if (bool(key_vc[0].get('everyone_mention')) == True):
             mentions.insert(0,"@everyone")
         
         # listをstrに変換

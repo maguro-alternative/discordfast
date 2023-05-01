@@ -7,11 +7,9 @@ import datetime
 import os
 import io
 import asyncio
-from functools import partial
 
 import aiohttp
-import subprocess
-from typing import List
+from typing import List,Dict
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -19,17 +17,34 @@ load_dotenv()
 try:
     from message_type.line_type.line_type import Profile,GyazoJson
     from message_type.youtube_upload import YouTubeUpload
-except:
+    from message_type.file_type import Audio_Files
+except ModuleNotFoundError:
     from app.message_type.line_type.line_type import Profile,GyazoJson
     from app.message_type.youtube_upload import YouTubeUpload
+    from app.message_type.file_type import Audio_Files
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
 LINE_CONTENT_URL = 'https://api-data.line.me/v2/bot'
 
+class Voice_File:
+    """
+    Discordの音声ファイルのURLと秒数を格納するクラス
+
+    param:
+    url     :str
+    音声ファイルのURL
+
+    second  :float
+    音声ファイルの秒数(秒)
+    """
+    def __init__(self,url:str,second:float) -> None:
+        self.url = url
+        self.second = second
+
 # LINEのgetリクエストを行う
-async def line_get_request(url: str, token: str) -> json:
+async def line_get_request(url: str, token: str) -> Dict:
     """
     GETリクエストを送る。
     param
@@ -51,7 +66,7 @@ async def line_get_request(url: str, token: str) -> json:
             return await resp.json()
 
 # LINEのpostリクエストを行う
-async def line_post_request(url: str, headers: dict, data: dict) -> json:
+async def line_post_request(url: str, headers: dict, data: dict) -> Dict:
     """
     POSTリクエストを送る。
     param
@@ -77,32 +92,32 @@ async def line_post_request(url: str, headers: dict, data: dict) -> json:
             return await resp.json()
 
 class LineBotAPI:
+    """
+    LINEBotのオブジェクト
+
+    param
+    notify_token: str
+    LINE Notifyのトークン
+
+    line_bot_token: str 
+    LINEBotのトークン
+
+    line_group_id: str
+    LINEグループのid
+    """
     def __init__(
         self, 
         notify_token: str, 
         line_bot_token: str, 
         line_group_id: str
     ) -> None:
-        """
-        LINEBotのオブジェクト
-
-        param
-        notify_token: str
-        LINE Notifyのトークン
-
-        line_bot_token: str 
-        LINEBotのトークン
-
-        line_group_id: str
-        LINEグループのid
-        """
         self.notify_token = notify_token
         self.line_bot_token = line_bot_token
         self.line_group_id = line_group_id
         self.loop = asyncio.get_event_loop()
 
     # LINE Notifyでテキストメッセージを送信
-    async def push_message_notify(self, message: str) -> json:
+    async def push_message_notify(self, message: str) -> Dict:
         """
         LINE Notifyでテキストメッセージを送信
 
@@ -122,7 +137,7 @@ class LineBotAPI:
         )
         
     # LINE Notifyで画像を送信
-    async def push_image_notify(self, message: str, image_url: str) -> json:
+    async def push_image_notify(self, message: str, image_url: str) -> Dict:
         """
         LINE Notifyで画像を送信
 
@@ -151,7 +166,7 @@ class LineBotAPI:
         )
 
     # LINE Messageing APIでテキストメッセージを送信
-    async def push_message(self,message_text:str) -> json:
+    async def push_message(self,message_text:str) -> Dict:
         """
         LINE Messageing APIでテキストメッセージを送信
 
@@ -182,7 +197,7 @@ class LineBotAPI:
         )
 
     # LINE Messageing APIで画像を送信
-    async def push_image(self,message_text:str,image_urls:List[str]) -> json:
+    async def push_image(self,message_text:str,image_urls:List[str]) -> Dict:
         """
         LINE Messageing APIで画像を送信
 
@@ -226,7 +241,7 @@ class LineBotAPI:
         )
 
     # 動画の送信(動画のみ)
-    async def push_movie(self, preview_image: str, movie_urls: List[str]) -> json:
+    async def push_movie(self, preview_image: str, movie_urls: List[str]) -> Dict:
         """
         LINEBotで動画の送信(動画のみ)
 
@@ -252,6 +267,38 @@ class LineBotAPI:
         datas = {
             "to": self.line_group_id,
             "messages": data
+        }
+        return await line_post_request(
+            url = LINE_BOT_URL + "/message/push",
+            headers = {
+                'Authorization': 'Bearer ' + self.line_bot_token,
+                'Content-Type': 'application/json'
+            },
+            data = json.dumps(datas)
+        )
+    
+    async def push_voice(self,voice_file:List[Voice_File]) -> Dict:
+        """
+        LINEBotで音声の送信
+
+        param
+        voice_file:List[Voice_File]
+        送信する音声ファイルのクラス
+
+        return
+        Dict
+        レスポンス
+        """
+        data = []
+        for voice in voice_file:
+            data.append({
+                'type':'audio',
+                'originalContentUrl':voice.url,
+                'duration':int(voice.second * 1000)
+            })
+        datas = {
+            'to': self.line_group_id,
+            'messages': data
         }
         return await line_post_request(
             url = LINE_BOT_URL + "/message/push",
@@ -494,6 +541,26 @@ class LineBotAPI:
                 return await youtube_video.byte_upload(
                     video_bytes=io.BytesIO(video_bytes),
                     youtube=youtube
+                )
+    
+    #
+    async def voice_get(self ,message_id: int) -> Audio_Files:
+        """"""
+        # 音声のバイナリデータを取得
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                    url = LINE_CONTENT_URL + f'/message/{message_id}/content',
+                    headers={
+                        'Authorization': 'Bearer ' + self.line_bot_token
+                    }
+            ) as bytes:
+
+                voice_bytes = await bytes.read()
+
+                # アップロードするファイルを指定する
+                return Audio_Files(
+                    byte=voice_bytes,
+                    filename='line_audio'
                 )
 
 

@@ -250,7 +250,7 @@ class YouTubeUpload():
 
 
         """
-        chunksizeパラメータは、一度にアップロードされるデータの各チャンクのサイズをバ イト単位で指定します。
+        chunksizeパラメータは、一度にアップロードされるデータの各チャンクのサイズをバイト単位で指定します。
         より少ないチャンクでより高速なアップロードを行うため、信頼性の高い接続のために高い値を設定します。
         信頼性の低い接続での回復を良くするためには、低い値を設定してください。
         以下のコードで「chunksize」を -1 に設定すると、
@@ -334,8 +334,12 @@ class YouTubeUpload():
         正常なアップロードができるまでアップロードを繰り返します。
 
         param
-        insert_request:HttpRequest
+        insert_request  :HttpRequest
         動画のアップロード情報を格納するオブジェクト
+
+        return:
+        youtube_id      :str
+        
         """
         response:dict = None
         error:str = None

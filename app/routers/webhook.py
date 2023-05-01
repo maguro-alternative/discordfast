@@ -5,11 +5,17 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 load_dotenv()
 
+import aiofiles
+
 import os
+import io
+import pickle
+from typing import List,Dict,Any
 
 from base.database import PostgresDB
 from base.aio_req import (
-    aio_get_request
+    aio_get_request,
+    check_permission
 )
 
 USER = os.getenv('PGUSER')
@@ -37,38 +43,66 @@ async def webhook(
     request:Request,
     guild_id:int    
 ):
-    TABLE = 'guild_webhook'
+    TABLE = f'webhook_{guild_id}'
 
-    # データベースへ接続
-    await db.connect()
-
-    # テーブルの中身を取得
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=[],
-        where_clause={}
+    # Discordサーバー内での権限をチェック(この場合管理者かどうか)
+    permission_bool = await check_permission(
+        guild_id=guild_id,
+        user_id=request.session["user"]["id"],
+        access_token=request.session["oauth_data"]["access_token"],
+        permission_16=0x00000008
     )
 
-    if len(table_fetch) != 0:
-        if table_fetch[0] == f"{TABLE} does not exist":
-            await db.create_table(
-                table_name=TABLE,
-                columns={
-                    'webhook_id': 'NUMERIC PRIMARY KEY', 
-                    'channel_id': 'NUMERIC[]', 
-                    'channel_type': 'VARCHAR(50)[]',
-                    'message_type': 'VARCHAR(50)[]',
-                    'message_bot': 'boolean',
-                    'channel_nsfw': 'boolean'
-                }
-            )
-            await db.disconnect()
-            return templates.TemplateResponse(
-                "webhook.html",
-                {
-                    "request": request, 
-                    "title": request.session["user"]['username']
-                }
-            )
-        
-    await db.disconnect()
+    user_permission:str = 'normal'
+
+    # 管理者の場合adminを代入
+    if permission_bool == True:
+        user_permission = 'admin'
+
+    # キャッシュ読み取り
+    async with aiofiles.open(
+        file=f'{TABLE}.pickle',
+        mode='rb'
+    ) as f:
+        pickled_bytes = await f.read()
+        with io.BytesIO() as f:
+            f.write(pickled_bytes)
+            f.seek(0)
+            table_fetch:List[Dict[str,Any]] = pickle.load(f)
+
+    all_webhook = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/webhooks',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    # サーバの情報を取得
+    guild = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    # サーバのチャンネル一覧を取得
+    all_channel = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/channels',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    return templates.TemplateResponse(
+        "webhook.html",
+        {
+            "request": request, 
+            "guild": guild,
+            "guild_webhooks":all_webhook,
+            "table_webhooks":table_fetch,
+            "channels":all_channel,
+            "guild_id": guild_id,
+            "user_permission":user_permission,
+            "title": request.session["user"]['username']
+        }
+    )

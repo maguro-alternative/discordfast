@@ -4,7 +4,7 @@ from asyncpg.exceptions import DuplicateTableError
 import asyncio
 import os
 
-from typing import List
+from typing import List,Dict,Any
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -82,7 +82,7 @@ class PostgresDB:
         except DuplicateTableError:
             return "DuplicateTableError"
         
-    async def drop_table(self, table_name:str):
+    async def drop_table(self, table_name:str) -> None:
         """
         テーブルの削除
 
@@ -106,7 +106,7 @@ class PostgresDB:
         columns     :List[str]
             参照する列、指定がない場合すべてを参照
         where_clause:dict
-            条件
+            条件、指定しない場合はすべて取得
 
         return:
 
@@ -168,13 +168,37 @@ class PostgresDB:
             return True
         except asyncpg.exceptions.UniqueViolationError:
             return False
+        
+    async def batch_insert_row(
+        self, 
+        table_name: str, 
+        row_values: List[Dict[str, Any]]
+    ) -> None:
+        if self.conn == None:
+            raise DataBaseNotConnect
+        
+        columns = row_values[0].keys()
+
+        values = [
+            tuple(
+                row[col] 
+                for col in columns
+            ) 
+            for row in row_values
+        ]
+        
+        #print(table_name,values)
+        await self.conn.copy_records_to_table(
+            table_name=table_name,
+            records=values
+        )
 
     async def update_row(
         self, 
         table_name:str, 
         row_values:dict, 
         where_clause:dict
-    ):
+    ) -> None:
         """
         行の更新
         
@@ -226,18 +250,124 @@ class PostgresDB:
             sql += ";"
         await self.conn.execute(sql, *values)
 
+    async def primary_batch_update_rows(
+        self, 
+        table_name: str, 
+        set_values_and_where_columns: List[Dict],
+        table_colum:Dict
+    ) -> None:
+        """
+        updateを複数行う
+
+        param:
+        tabel_name                  : str
+            更新するテーブル名
+
+        set_values_and_where_columns: List[Dict],
+            更新する値と条件の辞書型配列
+            それぞれに更新する行と、更新する内容を記述する
+            必ず以下のような構造にすること
+            また、where_clauseは主キーを指定し、重複させないこと
+
+            set_values_and_where_columns = [
+                {
+                    'where_clause': {'channel_id': 0},
+                    'row_values': {'カラム名': '値'},
+                },
+                {
+                    'where_clause': {'channel_id': 1},
+                    'row_values': {'カラム名': '値'},
+                },
+                {
+                    'where_clause': {'channel_id': 2},
+                    'row_values': {'カラム名': '値', 'カラム名': '値'},
+                },
+            ]
+
+        table_colum                 : Dict
+            テーブルのカラム一覧
+            Postgresでcreateしたときのものを辞書型で表現すること
+
+            table_colum = {
+                'channel_id': 'NUMERIC PRIMARY KEY', 
+                'guild_id': 'NUMERIC', 
+                'line_ng_channel': 'boolean',
+                'ng_message_type': 'VARCHAR(50)[]',
+                'message_bot': 'boolean',
+                'ng_users':'NUMERIC[]'
+            }
+
+        """
+        # テーブル名と列名のリストを取得
+        columns = table_colum.keys()
+
+        # 主キーを取り出す
+        primary_key = [
+            key 
+            for key,value in table_colum.items() 
+            if 'PRIMARY KEY' in value
+        ]
+
+        updates = set_values_and_where_columns
+
+        # SET 句の文字列を構築
+        set_clauses = []
+        # はじめに条件となる主キーを代入
+        values = [w['where_clause'][primary_key[0]] for w in updates]
+        values_len = [w['where_clause'][primary_key[0]] for w in updates]
+
+        # 主キーの数でパラメータの初期値を決める
+        param_count = len(values_len) + 1
+
+        for i, column in enumerate(columns):
+            set_clause = f"{column} = CASE "
+            # case文に入るカラムがあるかのフラグ
+            set_clause_flag = False
+
+            for j, update in enumerate(updates):
+                
+                # 更新するカラムがあった場合
+                if update['row_values'].get(column) is not None:
+                    # フラグを挙げる
+                    set_clause_flag = True
+                    # $param_count $param_count + 1
+                    set_clause += f"WHEN {primary_key[0]} = ${param_count} THEN ${param_count + 1} "
+                    # 上記の数だけ2足す
+                    param_count += 2
+                    values.append(update['where_clause'][primary_key[0]])
+                    values.append(update['row_values'][column])
+
+                    #print(update['where_clause'][primary_key[0]],column,update['row_values'][column])
+
+            set_clause += f"ELSE {column} END"
+            # case文が書かれていた場合、配列に追加
+            if set_clause_flag:
+                set_clauses.append(set_clause)
+
+        # WHERE 句の文字列を構築
+        where_clause = f"{primary_key[0]} IN (" + ", ".join(
+            f"${i + 1}" for i in range(len(values_len))
+        ) + ")"
+
+        # SQL 文の構築
+        sql = f"UPDATE {table_name} SET \n{', '.join(set_clauses)} WHERE {where_clause}"
+
+        await self.conn.execute(sql, *values)
+
     async def delete_row(
         self, 
         table_name:str, 
         where_clause:dict
-    ):
+    ) -> None:
         """
         行の削除
         
+        param:
         table_name  :str 
             テーブルの名前
         where_clause:dict
             条件
+        
         """
         if self.conn == None:
             raise DataBaseNotConnect
@@ -255,6 +385,22 @@ class PostgresDB:
         else:
             sql += ";"
         await self.conn.execute(sql, *where_clause_values)
+
+    async def free_sql(self,sql_syntax:str)-> List:
+        """
+        PostgreSQLの構文を文字列にしてそのまま実行する
+
+        param:
+        sql_syntax:str
+        sqlの構文
+
+        return:
+        List
+        selectは結果が帰ってくる
+        """
+        if self.conn == None:
+            raise DataBaseNotConnect
+        return await self.conn.fetch(sql_syntax)
 
 async def main():
     user = os.getenv('PGUSER')

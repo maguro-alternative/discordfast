@@ -11,7 +11,7 @@ import youtube_dl
 try:
     from app.cogs.bin.rank import Wav_Karaoke
     from app.core.start import DBot
-except:
+except ModuleNotFoundError:
     from cogs.bin.rank import Wav_Karaoke
     from core.start import DBot
 
