@@ -173,12 +173,14 @@ async def db_pickle_save(guilds:List[Guild]):
                         row_values=row_values
                     )
 
-            print(table_fetch)
+            dict_row = list()
 
-            dict_row = [
-                dict(zip(record.keys(), record)) 
-                for record in table_fetch
-            ]
+            if len(table_fetch) > 0:
+                if table_fetch[0] != f"{table_name} does not exist":
+                    dict_row = [
+                        dict(zip(record.keys(), record)) 
+                        for record in table_fetch
+                    ]
 
 
             # 書き込み
