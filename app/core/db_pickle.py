@@ -173,12 +173,13 @@ async def db_pickle_save(guilds:List[Guild]):
                         row_values=row_values
                     )
 
+            print(table_fetch)
+
             dict_row = [
                 dict(zip(record.keys(), record)) 
                 for record in table_fetch
             ]
 
-            print(table_fetch)
 
             # 書き込み
             async with aiofiles.open(
