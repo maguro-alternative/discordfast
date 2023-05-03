@@ -8,6 +8,7 @@ load_dotenv()
 import os
 import re
 import uuid
+from datetime import datetime,timezone
 
 from base.database import PostgresDB
 from core.db_pickle import *
@@ -49,6 +50,7 @@ async def line_post(
         "subscType_",
         "subscId_",
         "role_role_select_",
+        "member_member_select_",
         "searchOrText",
         "searchAndText",
         "mentionOrText",
@@ -57,7 +59,8 @@ async def line_post(
         "webhookChange_",
         "subscTypeChange_",
         "subscIdChange_",
-        "change_role_select_",
+        "role_role_change_",
+        "member_member_change_",
         "changeSearchOrText",
         "changeSearchAndText",
         "changeMentionOrText",
@@ -73,9 +76,9 @@ async def line_post(
 
     # "webhookChange_"で始まるキーのみを抽出し、数字部分を取得する
     change_webhook_number = [
-        int(key.replace(FORM_NAMES[8], "")) 
+        int(key.replace(FORM_NAMES[9], "")) 
         for key in form.keys() 
-        if key.startswith(FORM_NAMES[8])
+        if key.startswith(FORM_NAMES[9])
     ]
 
     create_webhook_list = []
@@ -98,8 +101,8 @@ async def line_post(
             'uuid':uuid_val,
             'guild_id': int(form.get("guild_id")), 
             'webhook_id':int(form.get(f"{FORM_NAMES[0]}{webhook_num}")),
-            'subscription_id': form.get(f"{FORM_NAMES[1]}{webhook_num}"),
-            'subscription_type':form.get(f"{FORM_NAMES[2]}{webhook_num}"),
+            'subscription_type':form.get(f"{FORM_NAMES[1]}{webhook_num}"),
+            'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
         }
 
         # 入力漏れがあった場合
@@ -109,13 +112,13 @@ async def line_post(
 
         for row_name,form_name in {
             'mention_roles':FORM_NAMES[3],
-            'search_or_word':FORM_NAMES[4],
-            'search_and_word':FORM_NAMES[5],
-            'mention_or_word':FORM_NAMES[6],
-            'mention_and_word':FORM_NAMES[7]
+            'mention_members':FORM_NAMES[4],
+            'search_or_word':FORM_NAMES[5],
+            'search_and_word':FORM_NAMES[6],
+            'mention_or_word':FORM_NAMES[7],
+            'mention_and_word':FORM_NAMES[8]
         }.items():
             row_list = list()
-            role_list = list()
 
             # キーの数字を取り除いたキー名を格納するリストを作成
             key_list = list()
@@ -126,26 +129,25 @@ async def line_post(
                     # print(key)
 
             for key in key_list:
-                # print(key,form.get(f'{form_name}{webhook_num}_{key}'))
-                if form_name == 'mention_roles':
-                    role_list.append(int(form.get(f'{form_name}{webhook_num}_{key}')))
-                    # 最後の要素の場合、dictに代入
-                    if key == key_list[-1]:
-                        row_list.append(role_list)
-                else:
-                    row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
+                row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
+                #print(f'{form_name}{webhook_num}_{key}',form.get(f'{form_name}{webhook_num}_{key}'))
 
             row.update({
                 row_name:row_list
             })
 
-            # print(row)
+            #print(row)
+        
+        # 登録した時刻を登録
+        now_time = datetime.now(timezone.utc)
+        now_str = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
+        row.update({
+            'created_at':now_str
+        })
 
         # 必須のものに抜けがない場合、テーブルに追加
         if none_flag == False:
             create_webhook_list.append(row)
-
-    #print(create_webhook_list)
 
     # まとめて追加
     if len(create_webhook_list) > 0:
@@ -154,23 +156,25 @@ async def line_post(
             row_values=create_webhook_list
         )
 
+    # 更新
     for webhook_num in change_webhook_number:
         row = {
             'guild_id': int(form.get("guild_id")), 
-            'webhook_id':int(form.get(f"{FORM_NAMES[8]}{webhook_num}")),
-            'subscription_id': form.get(f"{FORM_NAMES[9]}{webhook_num}"),
-            'subscription_type':form.get(f"{FORM_NAMES[10]}{webhook_num}"),
+            'webhook_id':int(form.get(f"{FORM_NAMES[9]}{webhook_num}")),
+            'subscription_id': form.get(f"{FORM_NAMES[10]}{webhook_num}"),
+            'subscription_type':form.get(f"{FORM_NAMES[11]}{webhook_num}"),
         }
 
         for row_name,form_name in {
-            'mention_roles':FORM_NAMES[11],
-            'search_or_word':FORM_NAMES[12],
-            'search_and_word':FORM_NAMES[13],
-            'mention_or_word':FORM_NAMES[14],
-            'mention_and_word':FORM_NAMES[15]
+            'mention_roles':FORM_NAMES[12],
+            'mention_members':FORM_NAMES[13],
+            'search_or_word':FORM_NAMES[14],
+            'search_and_word':FORM_NAMES[15],
+            'mention_or_word':FORM_NAMES[16],
+            'mention_and_word':FORM_NAMES[17]
         }.items():
             row_list = list()
-            role_list = list()
+
             # キーの数字を取り除いたキー名を格納するリストを作成
             key_list = list()
             for key in form.keys():
@@ -179,22 +183,21 @@ async def line_post(
                     key_list.append(int(key_name.group()))
 
             for key in key_list:
-                if form_name == 'mention_roles':
-                    role_list.append(int(form.get(f'{form_name}{webhook_num}_{key}')))
-                    # 最後の要素の場合、dictに代入
-                    if key == key_list[-1]:
-                        row_list.append(role_list)
-                else:
-                    row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
+                row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
 
             row.update({
                 row_name:row_list
             })
 
-            change_webhook_list.append({
-                'where_clause':{'uuid':form.get(f'uuid_{webhook_num}')},
-                'row_values':row
-            })
+        # 時刻を引き継ぐ(csv形式への対応のため)
+        row.update({
+            'created_at':form.get(f"created_time_{webhook_num}")
+        })
+
+        change_webhook_list.append({
+            'where_clause':{'uuid':form.get(f'uuid_{webhook_num}')},
+            'row_values':row
+        })
 
     # まとめて更新
     if len(change_webhook_list) > 0:

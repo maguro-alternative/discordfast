@@ -4,7 +4,7 @@ from asyncpg.exceptions import DuplicateTableError
 import asyncio
 import os
 
-from typing import List,Dict,Any
+from typing import List,Dict,Any,Union
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -97,7 +97,7 @@ class PostgresDB:
         table_name:str, 
         columns:List[str]=None, 
         where_clause:dict=None
-    ) -> list:
+    ) -> List:
         """
         テーブルの参照
         

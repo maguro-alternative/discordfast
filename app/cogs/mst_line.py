@@ -56,22 +56,23 @@ class mst_line(commands.Cog):
             if int(g.get('channel_id')) == message.channel.id
         ]
 
-        # メッセージがbotの場合
-        if (bool(key_channel[0].get('message_bot')) == True and
-            message.author.bot == True):
-            # 禁止されていた場合終了
-            bot_message = True
+        if len(key_channel) > 0:
+            # メッセージがbotの場合
+            if (bool(key_channel[0].get('message_bot')) == True and
+                message.author.bot == True):
+                # 禁止されていた場合終了
+                bot_message = True
 
-        # 送信が禁止されていた場合終了
-        if (bool(key_channel[0].get('line_ng_channel')) == True):
-            ng_channel = True
+            # 送信が禁止されていた場合終了
+            if (bool(key_channel[0].get('line_ng_channel')) == True):
+                ng_channel = True
 
-        # ピン止め、ボイスチャンネルの場合終了
-        # 送信NGのチャンネル名の場合、終了
-        if (bot_message or ng_channel or
-            str(message.type) in key_channel[0].get('ng_message_type') or
-            Decimal(message.author.id) in key_channel[0].get('ng_users')):
-            return
+            # ピン止め、ボイスチャンネルの場合終了
+            # 送信NGのチャンネル名の場合、終了
+            if (bot_message or ng_channel or
+                str(message.type) in key_channel[0].get('ng_message_type') or
+                Decimal(message.author.id) in key_channel[0].get('ng_users')):
+                return
         
 
         # FIVE_SECONDs,FIVE_HOUR

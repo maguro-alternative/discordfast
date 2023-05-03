@@ -47,10 +47,12 @@ WEBHOOK_COLUMNS = {
     'subscription_id': 'VARCHAR(50)',
     'subscription_type':'VARCHAR(50)',
     'mention_roles':'NUMERIC[]',
+    'mention_members':'NUMERIC[]',
     'search_or_word':'VARCHAR(50)[]',
     'search_and_word':'VARCHAR(50)[]',
     'mention_or_word':'VARCHAR(50)[]',
-    'mention_and_word':'VARCHAR(50)[]'
+    'mention_and_word':'VARCHAR(50)[]',
+    'created_at':'VARCHAR(50)'
 }
 
 # 各テーブルのカラムの初期値
@@ -122,14 +124,24 @@ async def db_pickle_save(guilds:List[Guild]):
                 where_clause={}
             )
 
-            if len(table_fetch) == 1:
-                if table_fetch[0] == f"{table_name} does not exist":
+            # テーブルがなかった場合、作成
+            if len(table_fetch) > 0:
+                table_colums = [key for key in table_fetch[0].keys()]
+                webhook_colums = [key for key in WEBHOOK_COLUMNS.keys()]
+
+                # カラムの構成が変更されていた場合、削除し作り直す
+                if (table_fetch[0] == f"{table_name} does not exist" or
+                    set(table_colums) != set(column)
+                    ):
+                    if set(table_colums) != set(webhook_colums):
+                        await db.drop_table(table_name=table_name)
+
                     await db.create_table(
                         table_name=f"{table_name}",
                         columns=column
                     )
 
-            # テーブルがなかった場合、もしくは中身が空の場合
+            # 中身が空の場合
             if len(table_fetch) == 0:
 
                 # Discordのチャンネルを取得
@@ -173,6 +185,13 @@ async def db_pickle_save(guilds:List[Guild]):
                         row_values=row_values
                     )
 
+                    # テーブルの要素を取得
+                    table_fetch = await db.select_rows(
+                        table_name=f"{table_name}",
+                        columns=[],
+                        where_clause={}
+                    )
+
             dict_row = list()
 
             if len(table_fetch) > 0:
@@ -190,14 +209,24 @@ async def db_pickle_save(guilds:List[Guild]):
             ) as f:
                 await f.write(pickle.dumps(obj=dict_row))
 
+        # Webhookのテーブル
         table_fetch = await db.select_rows(
             table_name=f"webhook_{guild.id}",
             columns=[],
             where_clause={}
         )
 
-        if len(table_fetch) == 1:
-            if table_fetch[0] == f"webhook_{guild.id} does not exist":
+        if len(table_fetch) > 0:
+            table_colums = [key for key in table_fetch[0].keys()]
+            webhook_colums = [key for key in WEBHOOK_COLUMNS.keys()]
+
+            if (table_fetch[0] == f"webhook_{guild.id} does not exist" or
+                set(table_colums) != set(webhook_colums)
+                ):
+                # カラムの構成が変更されていた場合、削除し新たに作成する
+                if set(table_colums) != set(webhook_colums):
+                    await db.drop_table(table_name=f"webhook_{guild.id}")
+
                 await db.create_table(
                     table_name=f"webhook_{guild.id}",
                     columns=WEBHOOK_COLUMNS

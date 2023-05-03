@@ -4,22 +4,6 @@
     {% extends "layout.html" %}
     {% block content %}
     <body bgcolor="#252525" text="#ffffff">
-        {% set guildhooks = [] %}
-        {% set guild_channel_ids = [] %}
-        {% set guild_webhook_names = [] %}
-        <!-- webhookのidと投稿するチャンネルidをそれぞれ格納 -->
-        {% for guildhook in guild_webhooks %}
-            {% set _ = guildhooks.append(guildhook.id|int) %}
-            {% set _ = guild_channel_ids.append(guildhook.channel_id|int) %}
-            {% set _ = guild_webhook_names.append(guildhook.name) %}
-        {% endfor %}
-
-        {% set channel_names = [] %}
-        {% set channel_ids = [] %}
-        {% for channel in channels %}
-            {% set _ = channel_names.append(channel.name) %}
-            {% set _ = channel_ids.append(channel.id|int) %}
-        {% endfor %}
 
         <h1>WebHookの送信設定</h1>
         <h4>チェックマークがついている条件を満たしている場合、そのメッセージは送信されません。</h4>
@@ -63,17 +47,13 @@
                         <h6>サブスクリプションタイプ(例:twitter,niconico)</h6>
                         <input type="text" id="subscType_1" name="subscType_1" maxlength="50" />
 
-                        <h6>サブスクリプションid(例:twitter:@ユーザ名(@は含まない),niconico:www.nicovideo.jp/user/{userId})</h6>
+                        <h6>サブスクリプションid(例:twitter:@ユーザ名(@は含まない),niconico:/user/{userId})</h6>
                         <input type="text" id="subscId_1" name="subscId_1" maxlength="50" />
 
                         <br/>
 
-                        <!-- 既にロールが設定されていた場合、その数を代入 -->
-                        {% if table_webhooks.mention_roles|length > 0 %}
-                            {% set role_len = table_webhooks.mention_roles|length %}
-                        {% else %}
-                            {% set role_len = 0 %}
-                        {% endif %}
+                        
+                        {% set role_len = 0 %}
                         
 
                         <h6>メンションするロールの選択</h6>
@@ -87,68 +67,90 @@
                             {% endfor %}
                         </select>
                         <br/>
-                        {% set i = 1 %}
+                        
                         <!-- 
                             既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
                             xをクリックすることで削除できる
                         -->
                         <div id="role_select_1" class="selected-items">
                             {% for role_mention in table_webhooks.mention_roles %}
-                                <div id="{{role_mention}}" class="selected-item">
-                                    {% for role in guild.roles %}
-                                        <!-- すでに通知するロールが設定されていた場合、表示 -->
-                                        {% if role.id|int == role_mention|int %}
-                                            {{role.name}}
-                                            <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                            <input type="hidden" name="role_{{i[0]}}" value="{{role.id}}"/>
-                                            {% set i = i + 1 %}
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
+                                <div id="{{role_mention}}" class="selected-item"></div>
                             {% endfor %}
                         </div>
                         <br/><br/>
 
+                        {% set member_len = 0 %}
 
-                        <h6>キーワードOR検索</h6>
+                        <h6>メンションするメンバーの選択</h6>
+                        <!-- サーバ内のロール一覧をselectできるようにする -->
+                        <select id="memberSelect_1" onchange="selectWebhookMemberAddEvent('{{member_len}}',this)" size="1">
+                            <option hidden disabled>選択してください</option>
+                            {% for member in guild_members %}
+                                <option value="{{member.user.id}}">
+                                    {{member.user.username}}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <br/>
+                        
+                        <!-- 
+                            既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                            xをクリックすることで削除できる
+                        -->
+                        <div id="member_select_1" class="selected-items">
+                            {% for member_mention in table_webhooks.mention_members %}
+                                <div id="{{member_mention}}" class="selected-item"></div>
+                            {% endfor %}
+                        </div>
+                        <br/><br/>
+
+                        ワードカスタム(niconicoには反映されません)
+                        <h6>キーワードOR検索(いずれかの言葉が含まれている場合、送信)</h6>
                         <div id="searchOrWord_1">
                             <button type="button" id="searchOrAdd_1" onclick="addTextButton(this,'searchOrText')">入力欄を増やす</button>
+                            <br/>
                         </div>
 
 
-                        <h6>キーワードAND検索</h6>
+                        <h6>キーワードAND検索(すべての単語が含まれている場合、送信)</h6>
                         <div id="searchAndWord_1">
                             <button type="button" id="searchAndAdd_1" onclick="addTextButton(this,'searchAndText')">入力欄を増やす</button>
+                            <br/>
                         </div>
 
 
-                        <h6>メンションOR検索</h6>
+                        <h6>メンションOR検索(いずれかの言葉が含まれている場合、メンションを付けて送信)</h6>
                         <div id="mentionOrWord_1">
                             <button type="button" id="mentionOrAdd_1" onclick="addTextButton(this,'mentionOrText')">入力欄を増やす</button>
+                            <br/>
                         </div>
 
 
-                        <h6>メンションAND検索</h6>
+                        <h6>メンションAND検索(すべての単語が含まれている場合、メンションを付けて送信)</h6>
                         <div id="mentionAndWord_1">
                             <button type="button" id="mentionAndAdd_1" onclick="addTextButton(this,'mentionAndText')">入力欄を増やす</button>
+                            <br/>
                         </div>
 
 
                     </div>
                 </div>
             </details>
+            <br/><br/>
 
             <h1>変更</h1>
             {% set k = [1] %}
             <details>
-                <summary>展開</summary>
+                <summary>
+                    <strong>展開</strong>
+                </summary>
                 {% for webhook in table_webhooks %}
                     <details>
                         <summary>
                             {{webhook.subscription_id}}:{{webhook.subscription_type}}
                         </summary>        
                         <h6>WebHook</h6>
-                        削除する
+                        <strong class="text-danger">削除する</strong>
                         <input type="checkbox" name="delWebhook_{{k[0]}}"><br/>
                         <input type="hidden" name="uuid_{{k[0]}}" value="{{webhook.uuid}}"/>
 
@@ -170,7 +172,7 @@
                         <h6>サブスクリプションタイプ(例:twitter,niconico)</h6>
                         <input type="text" id="subscTypeChange_{{k[0]}}" value="{{webhook.subscription_id}}" maxlength="50" required/>
 
-                        <h6>サブスクリプションid(例:twitter:@ユーザ名(@は含まない),niconico:www.nicovideo.jp/user/{userId})</h6>
+                        <h6>サブスクリプションid(例:twitter:@ユーザ名(@は含まない),niconico:/user/{userId})</h6>
                         <input type="text" id="subscIdChange_{{k[0]}}" value="{{webhook.subscription_type}}" maxlength="50" required/>
 
                         <br/>
@@ -202,14 +204,52 @@
                             xをクリックすることで削除できる
                         -->
                         <div id="role_change_{{k[0]}}" class="selected-items">
-                            {% for role_mention in webhook.mention_roles %}
-                                <div id="{{role_mention}}" class="selected-item">
+                            {% for role_id in webhook.mention_roles %}
+                                <div id="{{role_id}}" class="selected-item">
                                     {% for role in guild.roles %}
                                         <!-- すでに通知するロールが設定されていた場合、表示 -->
-                                        {% if role.id|int == role_mention|int %}
+                                        {% if role.id|int == role_id|int %}
                                             {{role.name}}
                                             <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                            <input type="hidden" name="change_{{i[0]}}" value="{{role.id}}"/>
+                                            <input type="hidden" name="role_role_change_{{k[0]}}_{{i[0]}}" value="{{role.id}}"/>
+                                            {% set _ = i.append(i[0] + 1) %}
+                                            {% set _ = i.pop(0) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <br/><br/>
+
+
+                        <!-- 既にロールが設定されていた場合、その数を代入 -->
+                        {% set member_len = table_webhooks.mention_members|length %}
+                        
+
+                        <h6>メンションするメンバーの選択</h6>
+                        <!-- サーバ内のロール一覧をselectできるようにする -->
+                        <select id="memberChange_{{k[0]}}" onchange="changeWebhookMemberAddEvent('{{member_len}}',this)" size="1">
+                            <option hidden disabled>選択してください</option>
+                            {% for member in guild_members %}
+                                <option value="{{member.user.id}}">
+                                    {{member.user.username}}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <br/>
+                        
+                        <!-- 
+                            既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                            xをクリックすることで削除できる
+                        -->
+                        <div id="member_change_{{k[0]}}" class="selected-items">
+                            {% for member_id in webhook.mention_members %}
+                                <div id="{{member_id}}" class="selected-item">
+                                    {% for member in guild_members %}
+                                        {% if member_id|int == member.user.id|int %}
+                                            {{member.user.username}}
+                                            <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                            <input type="hidden" name="member_member_change_{{k[0]}}_{{i[0]}}" value="{{member.user.id}}"/>
                                             {% set _ = i.append(i[0] + 1) %}
                                             {% set _ = i.pop(0) %}
                                         {% endif %}
@@ -221,9 +261,11 @@
 
                         {% set j = [1] %}
 
-                        <h6>キーワードOR検索</h6>
+                        ワードカスタム(niconicoには反映されません)
+                        <h6>キーワードOR検索(いずれかの言葉が含まれている場合、送信)</h6>
                         <div id="changeSearchOrWord_{{k[0]}}">
                             <button type="button" id="changeSearchOrAdd_{{k[0]}}" onclick="addTextButton(this,'changeSearchOrText')">入力欄を増やす</button>
+                            <br/>
                             {% for or_word in webhook.search_or_word %}
                                 <label id="keychangeSOr{{k[0]}}_{{j[0]}}">
                                     キーワード({{k[0]}}-{{j[0]}})<input name="changeSearchOrText{{k[0]}}_{{j[0]}}" type="text" value="{{or_word}}" maxlength="50" required/>
@@ -236,9 +278,10 @@
 
                         {% set j = [1] %}
 
-                        <h6>キーワードAND検索</h6>
+                        <h6>キーワードAND検索(すべての単語が含まれている場合、送信)</h6>
                         <div id="changeSearchAndWord_{{k[0]}}">
                             <button type="button" id="changeSearchAndAdd_{{k[0]}}" onclick="addTextButton(this,'changeSearchAndText')">入力欄を増やす</button>
+                            <br/>
                             {% for and_word in webhook.search_and_word %}
                                 <label id="keychangeSAnd{{k[0]}}_{{j[0]}}">
                                     キーワード({{k[0]}}-{{j[0]}})<input name="changeSearchAndText{{k[0]}}_{{j[0]}}" type="text" value="{{and_word}}" maxlength="50" required/>
@@ -251,9 +294,10 @@
 
                         {% set j = [1] %}
 
-                        <h6>メンションOR検索</h6>
+                        <h6>メンションOR検索(いずれかの言葉が含まれている場合、メンションを付けて送信)</h6>
                         <div id="changeMentionOrWord_{{k[0]}}">
                             <button type="button" id="changeMentionOrAdd_{{k[0]}}" onclick="addTextButton(this,'changeMentionOrText')">入力欄を増やす</button>
+                            <br/>
                             {% for or_word in webhook.mention_or_word %}
                                 <label id="keychangeMOr{{k[0]}}_{{j[0]}}">
                                     キーワード({{k[0]}}-{{j[0]}})<input name="changeMentionOrText{{k[0]}}_{{j[0]}}" type="text" value="{{or_word}}" maxlength="50" required/>
@@ -266,9 +310,10 @@
 
                         {% set j = [1] %}
 
-                        <h6>メンションAND検索</h6>
+                        <h6>メンションAND検索(すべての単語が含まれている場合、メンションを付けて送信)</h6>
                         <div id="changeMentionAndWord_{{k[0]}}">
                             <button type="button" id="changeMentionAndAdd_{{k[0]}}" onclick="addTextButton(this,'changeMentionAndText')">入力欄を増やす</button>
+                            <br/>
                             {% for and_word in webhook.mention_and_word %}
                                 <label id="keychangeMAnd{{k[0]}}_{{j[0]}}">
                                     キーワード({{k[0]}}-{{j[0]}})<input name="changeMentionAndText{{k[0]}}_{{j[0]}}" type="text" value="{{and_word}}" maxlength="50" required/>
@@ -279,13 +324,16 @@
                             {% endfor %}
                         </div>
 
-
+                        <!-- 更新日時 -->
+                        <input type="hidden" name="created_time_{{k[0]}}" value="{{webhook.created_at}}"/>
+                        <br/><br/>
                     </details>
                     {% set _ = k.append(k[0] + 1) %}
                     {% set _ = k.pop(0) %}
                 {% endfor %}
             </details>
             <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+            <br/><br/>
             <input type="submit" value="送信"/>
         </form>
 

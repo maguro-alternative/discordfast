@@ -70,6 +70,7 @@ async def webhook(
             f.seek(0)
             table_fetch:List[Dict[str,Any]] = pickle.load(f)
 
+    # webhook一覧を取得
     all_webhook = await aio_get_request(
         url = DISCORD_BASE_URL + f'/guilds/{guild_id}/webhooks',
         headers = {
@@ -93,11 +94,23 @@ async def webhook(
         }
     )
 
+    # 取得上限を定める
+    limit = os.environ.get('USER_LIMIT',default=100)
+
+    # サーバのメンバー一覧を取得
+    guild_members = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members?limit={limit}',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
     return templates.TemplateResponse(
         "webhook.html",
         {
             "request": request, 
             "guild": guild,
+            "guild_members":guild_members,
             "guild_webhooks":all_webhook,
             "table_webhooks":table_fetch,
             "channels":all_channel,

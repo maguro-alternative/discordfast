@@ -40,7 +40,7 @@ class vc_count(commands.Cog):
         # 使用するデータベースのテーブル名
         TABLE = f'guilds_vc_signal_{member.guild.id}'
 
-         # 読み取り
+        # 読み取り
         async with aiofiles.open(
             file=f'{TABLE}.pickle',
             mode='rb'
