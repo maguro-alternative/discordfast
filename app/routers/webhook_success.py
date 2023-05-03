@@ -161,8 +161,8 @@ async def line_post(
         row = {
             'guild_id': int(form.get("guild_id")), 
             'webhook_id':int(form.get(f"{FORM_NAMES[9]}{webhook_num}")),
-            'subscription_id': form.get(f"{FORM_NAMES[10]}{webhook_num}"),
-            'subscription_type':form.get(f"{FORM_NAMES[11]}{webhook_num}"),
+            'subscription_type':form.get(f"{FORM_NAMES[10]}{webhook_num}"),
+            'subscription_id': form.get(f"{FORM_NAMES[11]}{webhook_num}")
         }
 
         for row_name,form_name in {
