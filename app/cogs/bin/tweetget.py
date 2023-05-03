@@ -101,7 +101,7 @@ class Twitter_Get_Tweet:
                     strTime = datetime.strptime(
                         webhook_fetch.get('created_at'), 
                         '%a %b %d %H:%M:%S %z %Y'
-                    )#.replace(tzinfo=timezone.utc)
+                    )
                     # 最新ツイート
                     lastUpdate = datetime.strptime(
                         tweet_value.get('created_at'), 
@@ -141,7 +141,6 @@ class Twitter_Get_Tweet:
                             if word not in tweet_value.get('text'):
                                 mention_flag = False
 
-                        print(upload_flag,mention_flag)
                         text = ""
                         if upload_flag:
                             if mention_flag:
