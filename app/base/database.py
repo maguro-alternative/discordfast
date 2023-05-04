@@ -187,7 +187,7 @@ class PostgresDB:
             for row in row_values
         ]
         
-        #print(table_name,values)
+        print(table_name,values)
         await self.conn.copy_records_to_table(
             table_name=table_name,
             records=values

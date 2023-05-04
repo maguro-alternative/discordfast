@@ -48,7 +48,7 @@ async def line_post(
     FORM_NAMES = (
         "webhookSelect_",
         "subscType_",
-        "subscId_",
+        "subscId_",             #2
         "role_role_select_",
         "member_member_select_",
         "searchOrText",
@@ -58,7 +58,7 @@ async def line_post(
 
         "webhookChange_",
         "subscTypeChange_",
-        "subscIdChange_",
+        "subscIdChange_",       #11
         "role_role_change_",
         "member_member_change_",
         "changeSearchOrText",
@@ -105,6 +105,8 @@ async def line_post(
             'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
         }
 
+        print(row)
+
         # 入力漏れがあった場合
         if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or 
             len(form.get(f"{FORM_NAMES[2]}{webhook_num}")) == 0):
@@ -136,7 +138,7 @@ async def line_post(
                 row_name:row_list
             })
 
-            #print(row)
+            # print(row)
         
         # 登録した時刻を登録
         now_time = datetime.now(timezone.utc)
@@ -155,6 +157,7 @@ async def line_post(
             table_name=TABLE,
             row_values=create_webhook_list
         )
+    print(create_webhook_list)
 
     # 更新
     for webhook_num in change_webhook_number:
