@@ -4,7 +4,7 @@ from asyncpg.exceptions import DuplicateTableError
 import asyncio
 import os
 
-from typing import List,Dict,Any
+from typing import List,Dict,Any,Union
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -97,7 +97,7 @@ class PostgresDB:
         table_name:str, 
         columns:List[str]=None, 
         where_clause:dict=None
-    ) -> list:
+    ) -> List:
         """
         テーブルの参照
         
@@ -187,7 +187,7 @@ class PostgresDB:
             for row in row_values
         ]
         
-        #print(table_name,values)
+        print(table_name,values)
         await self.conn.copy_records_to_table(
             table_name=table_name,
             records=values

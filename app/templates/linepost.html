@@ -144,7 +144,7 @@
                         {% for ng_user_id in line_row[all.id]["ng_users"] %}
                             <div id="{{ng_user}}" class="selected-item">
                                 {% for member in guild_members %}
-                                    <!-- すでに通知するロールが設定されていた場合、表示 -->
+                                    <!-- すでに送信NGにしているユーザが設定されていた場合、表示 -->
                                     {% if member.user.id|int == ng_user_id|int %}
                                         {{member.user.username}}
                                         <span class="remove-item" onclick="removeAdd(this)">x</span>

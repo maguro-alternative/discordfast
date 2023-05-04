@@ -5,7 +5,8 @@ Discordの多機能Botです。
 - ボイスチャンネルの入退室通知
 - Web版VOICEVOXによる読み上げ機能
 - カラオケ(動作不安定)
-- ChatGPTへの質問
+- ChatGPTへの質問(現在使用不可)
+- Twitter,niocnicoの通知
 - PostgreSQLを使用したLINEと入退室の管理
 
 # ボイスチャンネルの入退室通知
@@ -47,14 +48,19 @@ LINE側でメンションも可能です。
 ```
 <img src="https://cdn.discordapp.com/attachments/964819280845766699/991514732114739250/2022-06-29_102454.png" width="65%"/>
 
+# WebHookの投稿機能
+![](img/webhooktwitter.png)
 
-# chatgtp
-AIに質問できます。
+# chatgtp(使用不可)
+AIに質問できます。API更新前なので現在使用できるかわかりません。
 ```
 /chatgtp
     AIに質問できます。
 ```
 ![chat](img/172655.png)
+
+# Postgresqlを使用したカスタマイズ機能
+![](img/psqlwebhook.png)
 
 # 使い方
 本botはrailwayというサービスでのホストを想定しています。  
@@ -64,9 +70,9 @@ railway側でLINEとDiscordBotをホストできるようにしています。
 
 ## 使用するサービス  
 以下のAPI、サービスを使用します。  
-|[![gyazo](img/gyazoicon.png)](https://gyazo.com/api/docs)|[![line](img/linedev.ico)](https://developers.line.biz/console/?status=success)|[![discord](img/discon.png)](https://discord.com/developers/docs/resources/webhook)|[![youtube](img/YouTube-logo-full_color-128x128.png)](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[![voicevox](img/175614.png)](https://voicevox.su-shiki.com/su-shikiapis/)|[![chatgpt](img/chatgtp.png)](https://beta.openai.com/account/api-keys)|[![linenotify](img/linenotify.png)](https://notify-bot.line.me/my/services/new)|
-|---|---|---|---|---|---|---|
-|[GyazoAPI](https://gyazo.com/api/docs)|[LINE Developers](https://developers.line.biz/console/?status=success)|[Discord Webhook](https://discord.com/developers/docs/resources/webhook)|[YouTube Date API](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[Web版Voicevox](https://voicevox.su-shiki.com/su-shikiapis/)|[OpenAI](https://beta.openai.com/account/api-keys)|[LINE Notify](https://notify-bot.line.me/my/services/new)|
+|[![gyazo](img/gyazoicon.png)](https://gyazo.com/api/docs)|[![line](img/linedev.ico)](https://developers.line.biz/console/?status=success)|[![discord](img/discon.png)](https://discord.com/developers/docs/resources/webhook)|[![youtube](img/YouTube-logo-full_color-128x128.png)](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[![voicevox](img/175614.png)](https://voicevox.su-shiki.com/su-shikiapis/)|[![chatgpt](img/chatgtp.png)](https://beta.openai.com/account/api-keys)|[![linenotify](img/linenotify.png)](https://notify-bot.line.me/my/services/new)|[![twitterdev](img/twitterdev.jpg)](https://developer.twitter.com/ja)|
+|---|---|---|---|---|---|---|---|
+|[GyazoAPI](https://gyazo.com/api/docs)|[LINE Developers](https://developers.line.biz/console/?status=success)|[Discord Webhook](https://discord.com/developers/docs/resources/webhook)|[YouTube Date API](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[Web版Voicevox](https://voicevox.su-shiki.com/su-shikiapis/)|[OpenAI](https://beta.openai.com/account/api-keys)|[LINE Notify](https://notify-bot.line.me/my/services/new)|[Twitter OAuth1](https://developer.twitter.com/ja)|
 |[参考(アーカイブ)](https://web.archive.org/web/20170724151212/http://yoshiyuki-hirano.hatenablog.jp/entry/2015/09/18/153155)|[参考](https://qiita.com/taka777n/items/c601421b871fd2b6a55f)|[参考](https://qiita.com/iroha71/items/b2a473898d6c9b4b4ae7)|[参考](https://qiita.com/koki_develop/items/4cd7de3898dae2c33f20)|  
 
 LINEは画像や動画のファイルがバイナリデータとして渡され、一定時間で削除されてしまうのでGyazoとYouTubeにアップロードしてDiscordに送ります。  
@@ -213,6 +219,10 @@ upload_video.py-oauth2.json
 	    "_class": "OAuth2Credentials", 
 	    "_module": "oauth2client.client"
 }
+```
+- TWITTER_BEARER_TOKEN
+```
+・TwitterのBearerトークン。
 ```
 
 - VOICEVOX_KEY
