@@ -17,6 +17,9 @@
         <li>{{ guild.name }}</li>
     </a>
     <br/>
+    {% if permission.administrator %}
+        管理者です。
+    {% endif %}
     <h4>設定する項目一覧</h4>
     
     <a href="/guild/{{guild_id}}/line-post" class="btn btn-primary">lineの送信設定</a>

@@ -10,7 +10,8 @@ import os
 
 from base.aio_req import (
     aio_get_request,
-    oauth_check
+    oauth_check,
+    return_permission
 )
 
 DISCORD_BASE_URL = "https://discord.com/api"
@@ -43,12 +44,20 @@ async def guild(
         }
     )
 
+    # サーバの権限を取得
+    permission = await return_permission(
+        guild_id=guild_id,
+        user_id=request.session["user"]["id"],
+        access_token=request.session["oauth_data"]["access_token"]
+    )
+
     return templates.TemplateResponse(
         "guild.html",
         {
             "request": request, 
             "guild": guild,
             "guild_id": guild_id,
+            "permission":vars(permission),
             "title":request.session["user"]['username']
         }
     )

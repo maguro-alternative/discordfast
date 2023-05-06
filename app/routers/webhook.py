@@ -16,6 +16,7 @@ from typing import List,Dict,Any
 from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
+    return_permission,
     check_permission,
     oauth_check
 )
@@ -55,18 +56,66 @@ async def webhook(
     # Botが所属しているサーバを取得
     TABLE = f'webhook_{guild_id}'
 
-    # Discordサーバー内での権限をチェック(この場合管理者かどうか)
-    permission_bool = await check_permission(
+    # ログインユーザの情報を取得
+    guild_user = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{request.session["user"]["id"]}',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+    role_list = [g for g in guild_user["roles"]]
+
+
+    # サーバの権限を取得
+    guild_user_permission = await return_permission(
         guild_id=guild_id,
         user_id=request.session["user"]["id"],
-        access_token=request.session["oauth_data"]["access_token"],
-        permission_16=0x00000008
+        access_token=request.session["oauth_data"]["access_token"]
     )
+
+    # パーミッションの番号を取得
+    permission_code = await guild_user_permission.get_permission_code()
+
+    # キャッシュ読み取り
+    async with aiofiles.open(
+        file=f'guild_set_permissions.pickle',
+        mode='rb'
+    ) as f:
+        pickled_bytes = await f.read()
+        with io.BytesIO() as f:
+            f.write(pickled_bytes)
+            f.seek(0)
+            guild_table_fetch:List[Dict[str,Any]] = pickle.load(f)
+            guild_table = [
+                g 
+                for g in guild_table_fetch 
+                if int(g.get('guild_id')) == guild_id
+            ]
+            guild_permission_code = 8
+            guild_permission_user = list()
+            guild_permission_role = list()
+            if len(guild_table) > 0:
+                guild_permission_code = int(guild_table[0].get('webhook_permission'))
+                guild_permission_user = [
+                    user 
+                    for user in guild_table[0].get('webhook_user_id_permission')
+                ]
+                guild_permission_role = [
+                    role
+                    for role in guild_table[0].get('webhook_role_id_permission')
+                ]
+
+    and_code = guild_permission_code & permission_code
+    admin_code = 8 & permission_code
 
     user_permission:str = 'normal'
 
-    # 管理者の場合adminを代入
-    if permission_bool == True:
+    # 許可されている場合、管理者の場合
+    if (and_code == permission_code or 
+        admin_code == 8 or
+        request.session['user']['id'] in guild_permission_user or
+        len(set(guild_permission_role) & set(role_list)) > 0
+        ):
         user_permission = 'admin'
 
     # キャッシュ読み取り

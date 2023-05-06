@@ -96,7 +96,8 @@
                         
                         :botのメッセージを送信しない
 
-                        メッセージの種類:<br/>
+                        <br/>
+                        送信しないメッセージの種類:<br/>
                         
                         <input type="checkbox" name="default_{{all.id}}" 
                         {% if "MessageType.default" in line_row[all.id]['ng_message_type'] %}
@@ -169,32 +170,38 @@
                     </details>
                 {% endif %}
             {% endfor %}
+            <br/>
             <input type="button" value="LINE全選択" onClick="check(this.form,true,'channel_')"/>
             <input type="button" value="LINE全解除" onClick="check(this.form,false,'channel_')"/>
-            <br/>
+            <br/><br/>
             <input type="button" value="LINEテキスト全選択" onClick="classCheck(this.form,true,'text_channel_line')"/>
             <input type="button" value="LINEテキスト全解除" onClick="classCheck(this.form,false,'text_channel_line')"/>
-            <br/>
+            <br/><br/>
             <input type="button" value="LINEボイス全選択" onClick="classCheck(this.form,true,'voice_channel_line')"/>
             <input type="button" value="LINEボイス全解除" onClick="classCheck(this.form,false,'voice_channel_line')"/>
-            <br/>
+            <br/><br/>
             <input type="button" value="bot全選択" onClick="check(this.form,true,'message_bot_')"/>
             <input type="button" value="bot全解除" onClick="check(this.form,false,'message_bot_')"/>
-            <br/>
+            <br/><br/>
             <input type="button" value="botテキスト全選択" onClick="classCheck(this.form,true,'text_channel_bot')"/>
             <input type="button" value="botテキスト全解除" onClick="classCheck(this.form,false,'text_channel_bot')"/>
-            <br/>
+            <br/><br/>
             <input type="button" value="botボイス全選択" onClick="classCheck(this.form,true,'voice_channel_bot')"/>
             <input type="button" value="botボイス全解除" onClick="classCheck(this.form,false,'voice_channel_bot')"/>
+            <br/>
         </details>
 
         <input type="hidden" name="count_channel" value="{{i[0]}}"/>
         <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+        <br/>
+        {% if user_permission in per %}
         <input type="submit" value="送信"/>
+        {% endif %}
     </form>
     {% if user_permission not in per %}
     </fieldset>
     {% endif %}
+    <br/>
     <a href="/guild/{{guild_id}}" class="btn btn-primary">前のページに戻る</a>
     <a href="/guilds" class="btn btn-primary">サーバ一覧に戻る</a>
     <br/>

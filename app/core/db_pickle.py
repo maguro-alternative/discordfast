@@ -21,6 +21,8 @@ DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 # 後ろにサーバidがつく
 LINE_TABLE = 'guilds_line_channel_'
 VC_TABLE = 'guilds_vc_signal_'
+WEBHOOK_TABLE = 'webhook_'
+GUILD_SET_TABLE = 'guild_set_permissions'
 
 # 各テーブルのカラム
 LINE_COLUMNS = {
@@ -54,6 +56,18 @@ WEBHOOK_COLUMNS = {
     'mention_and_word':'VARCHAR(50)[]',
     'created_at':'VARCHAR(50)'
 }
+GUILD_SET_COLUMNS = {
+    'guild_id': 'NUMERIC PRIMARY KEY', 
+    'line_permission':'NUMERIC',
+    'line_user_id_permission':'NUMERIC[]',
+    'line_role_id_permission':'NUMERIC[]',
+    'vc_permission':'NUMERIC',
+    'vc_user_id_permission':'NUMERIC[]',
+    'vc_role_id_permission':'NUMERIC[]',
+    'webhook_permission':'NUMERIC',
+    'webhook_user_id_permission':'NUMERIC[]',
+    'webhook_role_id_permission':'NUMERIC[]'
+}
 
 # 各テーブルのカラムの初期値
 LINE_NEW_COLUMNS = {
@@ -72,6 +86,19 @@ VC_NEW_COLUMNS = {
     'join_bot': True,
     'everyone_mention': True,
     'mention_role_id':[]
+}
+
+GUILD_SET_NEW_COLUMNS = {
+    'guild_id': 0, 
+    'line_permission':8,
+    'line_user_id_permission':[],
+    'line_role_id_permission':[],
+    'vc_permission':8,
+    'vc_user_id_permission':[],
+    'vc_role_id_permission':[],
+    'webhook_permission':8,
+    'webhook_user_id_permission':[],
+    'webhook_role_id_permission':[]
 }
 
 # 取得するチャンネルのタイプ
@@ -124,7 +151,7 @@ async def db_pickle_save(guilds:List[Guild]):
                 where_clause={}
             )
 
-            webhook_colums = [key for key in column.keys()]
+            channel_colums = [key for key in column.keys()]
             table_colums = list()
 
             # テーブルをつくるか、カラムを取得するかのフラグ
@@ -147,7 +174,7 @@ async def db_pickle_save(guilds:List[Guild]):
             elif len(table_fetch) == 0:
                 print(f'テーブル:{table_name}の要素は空です')
                 # 中身が空かつ、要素が変更されていた場合
-                if table_colums != webhook_colums:
+                if table_colums != channel_colums:
                     drop_table_flag = True
                 else:
                     table_colums = [key for key in column.keys()]
@@ -158,7 +185,7 @@ async def db_pickle_save(guilds:List[Guild]):
                 table_colums = [key for key in table_fetch[0].keys()]
                 
             # カラムの構成が変更されていた場合、削除し新たに作成する
-            if table_colums != webhook_colums or drop_table_flag:
+            if table_colums != channel_colums or drop_table_flag:
                 print(f'テーブル:{table_name}を削除します')
                 create_table_flag = True
                 await db.drop_table(table_name=table_name)
@@ -244,8 +271,9 @@ async def db_pickle_save(guilds:List[Guild]):
             print(f'{table_name}.pickleの書き込みが終了しました')
 
         # Webhookのテーブル
+        table_name = f"{WEBHOOK_TABLE}{guild.id}"
         table_fetch = await db.select_rows(
-            table_name=f"webhook_{guild.id}",
+            table_name=table_name,
             columns=[],
             where_clause={}
         )
@@ -263,14 +291,14 @@ async def db_pickle_save(guilds:List[Guild]):
 
         if len(table_fetch) > 0:
             # テーブルが存在する場合、カラムを格納
-            if (table_fetch[0] != f"webhook_{guild.id} does not exist"):
+            if (table_fetch[0] != f"{table_name} does not exist"):
                 create_colum_flag = True
             # テーブルが存在しない場合、作成
-            elif (table_fetch[0] == f"webhook_{guild.id} does not exist"):
+            elif (table_fetch[0] == f"{table_name} does not exist"):
                 create_table_flag = True
         # テーブルが存在している
         elif len(table_fetch) == 0:
-            print(f'テーブル:webhook_{guild.id}の要素は空です')
+            print(f'テーブル:{table_name}の要素は空です')
             # 中身が空かつ、要素が変更されていた場合
             if table_colums != webhook_colums:
                 drop_table_flag = True
@@ -279,31 +307,31 @@ async def db_pickle_save(guilds:List[Guild]):
             
         # データベース側のカラムを格納
         if create_colum_flag:
-            print(f'テーブル:webhook_{guild.id}のカラム名一覧を作成します')
+            print(f'テーブル:{table_name}のカラム名一覧を作成します')
             table_colums = [key for key in table_fetch[0].keys()]
             
         # カラムの構成が変更されていた場合、削除し新たに作成する
         if table_colums != webhook_colums or drop_table_flag:
-            print(f'テーブル:webhook_{guild.id}を削除します')
+            print(f'テーブル:{table_name}を削除します')
             create_table_flag = True
-            await db.drop_table(table_name=f"webhook_{guild.id}")
+            await db.drop_table(table_name=f"{table_name}")
 
         # テーブルの作成
         if create_table_flag:
-            print(f'テーブル:webhook_{guild.id}を作成します')
+            print(f'テーブル:{table_name}を作成します')
             await db.create_table(
-                table_name=f"webhook_{guild.id}",
+                table_name=table_name,
                 columns=WEBHOOK_COLUMNS
             )
         
         # テーブルの要素を取得
         table_fetch = await db.select_rows(
-            table_name=f"webhook_{guild.id}",
+            table_name=f"{table_name}",
             columns=[],
             where_clause={}
         )
         
-        print(f'webhook_{guild.id}.pickleの書き込みをはじめます')
+        print(f'{table_name}.pickleの書き込みをはじめます')
     
         # pickleに書き込むためdictに変換
         dict_row = [
@@ -313,12 +341,107 @@ async def db_pickle_save(guilds:List[Guild]):
 
         # 書き込み
         async with aiofiles.open(
-            file=f'webhook_{guild.id}.pickle',
+            file=f'{table_name}.pickle',
             mode='wb'
         ) as f:
             await f.write(pickle.dumps(obj=dict_row))
 
-        print(f'webhook_{guild.id}.pickleの書き込みが終了しました')
+        print(f'{table_name}.pickleの書き込みが終了しました')
+
+
+
+
+
+        # guildのテーブル
+        table_name = f"{GUILD_SET_TABLE}"
+        table_fetch = await db.select_rows(
+            table_name=table_name,
+            columns=[],
+            where_clause={}
+        )
+
+        # カラム一覧
+        guild_colums = [key for key in GUILD_SET_COLUMNS.keys()]
+        table_colums = list()
+
+        # テーブルをつくるか、カラムを取得するかのフラグ
+        create_colum_flag = False
+        create_table_flag = False
+
+        # テーブルを削除するかのフラグ
+        drop_table_flag = False
+
+        if len(table_fetch) > 0:
+            # テーブルが存在する場合、カラムを格納
+            if (table_fetch[0] != f"{table_name} does not exist"):
+                create_colum_flag = True
+            # テーブルが存在しない場合、作成
+            elif (table_fetch[0] == f"{table_name} does not exist"):
+                create_table_flag = True
+        # テーブルが存在している
+        elif len(table_fetch) == 0:
+            print(f'テーブル:{table_name}の要素は空です')
+            # 中身が空かつ、要素が変更されていた場合
+            if table_colums != guild_colums:
+                drop_table_flag = True
+            else:
+                table_colums = [key for key in GUILD_SET_COLUMNS.keys()]
+
+        # データベース側のカラムを格納
+        if create_colum_flag:
+            print(f'テーブル:{table_name}のカラム名一覧を作成します')
+            table_colums = [key for key in table_fetch[0].keys()]
+            
+        # カラムの構成が変更されていた場合、削除し新たに作成する
+        if table_colums != guild_colums or drop_table_flag:
+            print(f'テーブル:{table_name}を削除します')
+            create_table_flag = True
+            await db.drop_table(table_name=table_name)
+
+        # テーブルの作成
+        if create_table_flag:
+            print(f'テーブル:{table_name}を作成します')
+            await db.create_table(
+                table_name=table_name,
+                columns=GUILD_SET_COLUMNS
+            )
+        
+        # テーブルの要素を取得
+        table_fetch = await db.select_rows(
+            table_name=table_name,
+            columns=[],
+            where_clause={
+                'guild_id':guild.id
+            }
+        )
+
+        # ない場合は新規で登録
+        if len(table_fetch) == 0:
+            guild_new_colum = GUILD_SET_NEW_COLUMNS
+            guild_new_colum.update({
+                'guild_id':guild.id
+            })
+            await db.insert_row(
+                table_name=table_name,
+                row_values=guild_new_colum
+            )
+        
+        print(f'{table_name}.pickleの書き込みをはじめます')
+    
+        # pickleに書き込むためdictに変換
+        dict_row = [
+            dict(zip(record.keys(), record)) 
+            for record in table_fetch
+        ]
+
+        # 書き込み
+        async with aiofiles.open(
+            file=f'{table_name}.pickle',
+            mode='wb'
+        ) as f:
+            await f.write(pickle.dumps(obj=dict_row))
+
+        print(f'{table_name}.pickleの書き込みが終了しました')
 
 
     await db.disconnect()
