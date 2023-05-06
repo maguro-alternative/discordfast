@@ -25,8 +25,8 @@ class DBot(discord.AutoShardedBot):
 
     async def on_ready(self) -> None:
         await self.change_presence(
-            status=discord.Status.invisible,
-            activity=discord.Activity(name='起動中....',type=discord.ActivityType.watching)
+            status=discord.Status.do_not_disturb,
+            activity=discord.Activity(name='起動中...................',type=discord.ActivityType.watching)
         )
         await self.db_get()
         print('起動しました')
