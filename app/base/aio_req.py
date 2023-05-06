@@ -154,3 +154,29 @@ async def check_permission(
             break
 
     return user_permission
+
+async def oauth_check(
+    access_token:str
+) -> bool:
+    """
+    OAuth2のトークンが有効か判断する
+
+    param:
+    access_token:str
+        OAuth2のトークン
+
+    return:
+    bool
+        トークンが有効な場合、True
+        無効の場合、Falseが返される
+    """
+    oauth_data:dict = await aio_get_request(
+        url = DISCORD_BASE_URL + '/users/@me', 
+        headers = { 
+            'Authorization': f'Bearer {access_token}' 
+        }
+    )
+    if oauth_data.get('message') == '401: Unauthorized':
+        return False
+    else:
+        return True

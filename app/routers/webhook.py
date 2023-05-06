@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -15,7 +16,8 @@ from typing import List,Dict,Any
 from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
-    check_permission
+    check_permission,
+    oauth_check
 )
 
 USER = os.getenv('PGUSER')
@@ -30,6 +32,7 @@ db = PostgresDB(
 )
 
 DISCORD_BASE_URL = "https://discord.com/api"
+REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
@@ -43,6 +46,13 @@ async def webhook(
     request:Request,
     guild_id:int    
 ):
+    # OAuth2トークンが有効かどうか判断
+    try:
+        if not await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+            return RedirectResponse(url=REDIRECT_URL,status_code=302)
+    except KeyError:
+        return RedirectResponse(url=REDIRECT_URL,status_code=302)
+    # Botが所属しているサーバを取得
     TABLE = f'webhook_{guild_id}'
 
     # Discordサーバー内での権限をチェック(この場合管理者かどうか)

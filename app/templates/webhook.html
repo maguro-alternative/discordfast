@@ -159,7 +159,11 @@
                                 {% for channel in channels %}
                                     {% if guild_webhook.channel_id|int == channel.id|int %}
 
-                                        <option value="{{guild_webhook.id}}">
+                                        <option value="{{guild_webhook.id}}"
+                                        {% if webhook.webhook_id|int == guild_webhook.id|int %}
+                                            selected
+                                        {% endif %}
+                                        >
                                             {{channel.name}}:{{guild_webhook.name}}
                                         </option>
 
