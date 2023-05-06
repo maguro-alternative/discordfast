@@ -169,14 +169,22 @@
                         </details>
                     {% endif %}
                 {% endfor %}
+            <br/>
             <input type="button" value="全選択" onClick="check(this.form,true,'channel_')"/>
             <input type="button" value="全解除" onClick="check(this.form,false,'channel_')"/>
             </details>
             <br/>
             <br/>
             <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+            {% if user_permission in per %}
             <input type="submit" value="送信"/>
+            {% endif %}
         </form>
+        {% if user_permission not in per %}
+        </fieldset>
+        {% endif %}
+        
+        <br/>
         <a href="/guild/{{guild_id}}" class="btn btn-primary">前のページに戻る</a>
         <a href="/guilds" class="btn btn-primary">サーバ一覧に戻る</a>
         <br/>

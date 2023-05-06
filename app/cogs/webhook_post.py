@@ -186,11 +186,11 @@ class Webhook_Post(commands.Cog):
                                                 # メンションするロールの取り出し
                                                 mentions = [
                                                     f"<@&{int(role_id)}> " 
-                                                    for role_id in webhook_fetch.get('mention_roles')
+                                                    for role_id in webhook.get('mention_roles')
                                                 ]
                                                 members = [
                                                     f"<@{int(member_id)}> " 
-                                                    for member_id in webhook_fetch.get('mention_members')
+                                                    for member_id in webhook.get('mention_members')
                                                 ]
                                                 text = " ".join(mentions) + " " + " ".join(members)
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -9,10 +10,13 @@ import os
 
 from base.aio_req import (
     aio_get_request,
-    search_guild
+    search_guild,
+    oauth_check
 )
 
 DISCORD_BASE_URL = "https://discord.com/api"
+REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
@@ -23,6 +27,12 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get('/guilds')
 async def guilds(request:Request):
+    # OAuth2トークンが有効かどうか判断
+    try:
+        if not  await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+            return RedirectResponse(url=REDIRECT_URL,status_code=302)
+    except KeyError:
+        return RedirectResponse(url=REDIRECT_URL,status_code=302)
     # Botが所属しているサーバを取得
     bot_in_guild_get = await aio_get_request(
         url = DISCORD_BASE_URL + '/users/@me/guilds',
