@@ -197,6 +197,7 @@ async def niconico_subsc(
     created_at = webhook.get('created_at')
     update_at = ''
 
+
     async with aiohttp.ClientSession() as sessions:
         # 最新の動画を一つ一つ処理
         for entry in niconico.entries:
@@ -255,41 +256,40 @@ async def niconico_subsc(
                             'content':text
                         }
                     ) as re:
-                        # 最後の要素の場合
-                        if entry == niconico.entries[-1]:
-                            # データベースに接続し、最終更新日を更新
-                            await db.connect()
-                            await db.update_row(
-                                table_name=table_name,
-                                row_values={
-                                    'created_at':update_at
-                                },
-                                where_clause={
-                                    'uuid':webhook.get('uuid')
-                                }
-                            )
-                            table_fetch = await db.select_rows(
-                                table_name=table_name,
-                                columns=[],
-                                where_clause={}
-                            )
+                        # データベースに接続し、最終更新日を更新
+                        await db.connect()
+                        await db.update_row(
+                            table_name=table_name,
+                            row_values={
+                                'created_at':update_at
+                            },
+                            where_clause={
+                                'uuid':webhook.get('uuid')
+                            }
+                        )
+                        table_fetch = await db.select_rows(
+                            table_name=table_name,
+                            columns=[],
+                            where_clause={}
+                        )
 
-                            await db.disconnect()
+                        await db.disconnect()
 
-                            # 取り出して書き込み
-                            dict_row = [
-                                dict(zip(record.keys(), record)) 
-                                for record in table_fetch
-                            ]
+                        # 取り出して書き込み
+                        dict_row = [
+                            dict(zip(record.keys(), record)) 
+                            for record in table_fetch
+                        ]
 
-                            # 書き込み
-                            async with aiofiles.open(
-                                file=f'{table_name}.pickle',
-                                mode='wb'
-                            ) as f:
-                                await f.write(pickle.dumps(obj=dict_row))
+                        # 書き込み
+                        async with aiofiles.open(
+                            file=f'{table_name}.pickle',
+                            mode='wb'
+                        ) as f:
+                            await f.write(pickle.dumps(obj=dict_row))
 
-                            return await re.json()
+                        return await re.json()
+                        
 
 
                 
