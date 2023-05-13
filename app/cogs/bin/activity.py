@@ -1,5 +1,4 @@
 import discord
-from discord.embeds import _EmptyEmbed,EmptyEmbed
 
 async def activity(
     after:discord.VoiceState,
