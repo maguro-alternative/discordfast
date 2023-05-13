@@ -1,16 +1,10 @@
 import discord
-from discord.ext import tasks
 from discord import Intents
 import os
 import json
 import traceback
 import requests,json
-import pickle
-import io
-from typing import List,Dict,Any
 
-import aiohttp
-import aiofiles
 
 from dotenv import load_dotenv
 load_dotenv()

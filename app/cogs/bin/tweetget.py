@@ -16,10 +16,10 @@ TWITTER_BEARER_TOKEN = os.environ.get('TWITTER_BEARER_TOKEN')
 
 class Twitter_Get_Tweet:
     def __init__(
-            self,
-            screen_name:str,
-            search_word:str
-        ) -> None:
+        self,
+        screen_name:str,
+        search_word:str
+    ) -> None:
         """
         Twitterのツイート取得のクラス
         param:
@@ -36,7 +36,7 @@ class Twitter_Get_Tweet:
         count:int = 5
     ) -> Dict[str,Any]:
         """
-        ツイートをOAUth1で取得する
+        ツイートをOAuth1で取得する
         param:
         count:int
             取得するツイートの数
@@ -135,11 +135,13 @@ class Twitter_Get_Tweet:
                         for word in webhook_fetch.get('mention_or_word'):
                             if word in tweet_value.get('text'):
                                 mention_flag = True
+                                upload_flag = True
 
                         # ANDでメンションするかどうか判断
                         for word in webhook_fetch.get('mention_and_word'):
                             if word not in tweet_value.get('text'):
                                 mention_flag = False
+                                upload_flag = True
 
                         text = ""
                         if upload_flag:
