@@ -48,6 +48,15 @@ LINE側でメンションも可能です。
 ```
 <img src="https://cdn.discordapp.com/attachments/964819280845766699/991514732114739250/2022-06-29_102454.png" width="65%"/>
 
+# Web版VoiceVoxのよる読み上げ機能
+```
+/zunda
+	Botがボイスチャンネルに入室し、VoiceVoxでしゃべります。
+/stop_zunda
+	Botをボイスチャンネルから切断します。
+```
+<img src="img/zundacommand.png" width="65%"/>
+
 # WebHookの投稿機能
 ![](img/webhooktwitter.png)
 
@@ -152,6 +161,30 @@ DiscordのサーバーとLINEのグループを識別するための名前。
 ```bash
 ・画像保存サービス「GYAZO」のAPIトークン。
 LINEからDiscordへ画像を送信する際に使用。
+```
+
+DISCORD_CALLBACK_URL
+```bash
+・Discordログインの認証時に遷移するURL。
+Developサイトにも同様に登録しておくこと。
+```
+
+DISCORD_CLIENT_ID
+```bash
+DiscordアプリのID。
+BotのユーザIDと同じ。
+```
+
+DISCORD_CLIENT_SECRET
+```bash
+Discordのシークレットキー
+認証時に使用する。Developサイトから発行すること。
+```
+
+DISCORD_SCOPE
+```bash
+Discordアプリに許可する権限一覧。
+.env.sampleの権限通りにすること。
 ```
 
 - DISCORD_BOT_TOKEN 
