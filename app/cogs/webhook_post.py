@@ -199,6 +199,8 @@ async def niconico_subsc(
 
 
     async with aiohttp.ClientSession() as sessions:
+        upload_flag = True
+        mention_flag = True
         # 最新の動画を一つ一つ処理
         for entry in niconico.entries:
             # Webhookに最後にアップロードした時刻
@@ -228,67 +230,68 @@ async def niconico_subsc(
                     for img in soup.find_all('img')
                 ]
 
-                upload_flag = True
-                mention_flag = True
-
                 text = ""
-                if upload_flag:
-                    if mention_flag:
-                        # メンションするロールの取り出し
-                        mentions = [
-                            f"<@&{int(role_id)}> " 
-                            for role_id in webhook.get('mention_roles')
-                        ]
-                        members = [
-                            f"<@{int(member_id)}> " 
-                            for member_id in webhook.get('mention_members')
-                        ]
-                        text = " ".join(mentions) + " " + " ".join(members)
+                if mention_flag:
+                    # メンションするロールの取り出し
+                    mentions = [
+                        f"<@&{int(role_id)}> " 
+                        for role_id in webhook.get('mention_roles')
+                    ]
+                    members = [
+                        f"<@{int(member_id)}> " 
+                        for member_id in webhook.get('mention_members')
+                    ]
+                    text = " ".join(mentions) + " " + " ".join(members)
 
-                    # タイトルとリンクをテキストにする
-                    text += f' {entry.title}\n{entry.link}' 
-                
-                    async with sessions.post(
-                        url=webhook_url,
-                        data={
-                            'username':niconico.feed.title,
-                            'avatar_url':img_src_list[0],
-                            'content':text
-                        }
-                    ) as re:
-                        # データベースに接続し、最終更新日を更新
-                        await db.connect()
-                        await db.update_row(
-                            table_name=table_name,
-                            row_values={
-                                'created_at':update_at
-                            },
-                            where_clause={
-                                'uuid':webhook.get('uuid')
-                            }
-                        )
-                        table_fetch = await db.select_rows(
-                            table_name=table_name,
-                            columns=[],
-                            where_clause={}
-                        )
+                # タイトルとリンクをテキストにする
+                text += f' {entry.title}\n{entry.link}' 
+            
+                # webhookに投稿
+                async with sessions.post(
+                    url=webhook_url,
+                    data={
+                        'username':niconico.feed.title,
+                        'avatar_url':img_src_list[0],
+                        'content':text
+                    }
+                ) as re:
+                    upload_flag = True
 
-                        await db.disconnect()
+        # 投稿があった場合、投稿日時を更新
+        if upload_flag:
+            # データベースに接続し、最終更新日を更新
+            await db.connect()
+            await db.update_row(
+                table_name=table_name,
+                row_values={
+                    'created_at':update_at
+                },
+                where_clause={
+                    'uuid':webhook.get('uuid')
+                }
+            )
+            table_fetch = await db.select_rows(
+                table_name=table_name,
+                columns=[],
+                where_clause={}
+            )
 
-                        # 取り出して書き込み
-                        dict_row = [
-                            dict(zip(record.keys(), record)) 
-                            for record in table_fetch
-                        ]
+            await db.disconnect()
 
-                        # 書き込み
-                        async with aiofiles.open(
-                            file=f'{table_name}.pickle',
-                            mode='wb'
-                        ) as f:
-                            await f.write(pickle.dumps(obj=dict_row))
+            # 取り出して書き込み
+            dict_row = [
+                dict(zip(record.keys(), record)) 
+                for record in table_fetch
+            ]
 
-                        return await re.json()
+            # 書き込み
+            async with aiofiles.open(
+                file=f'{table_name}.pickle',
+                mode='wb'
+            ) as f:
+                await f.write(pickle.dumps(obj=dict_row))
+
+        return await re.json()
                         
 
 
