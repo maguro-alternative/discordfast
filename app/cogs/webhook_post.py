@@ -97,7 +97,7 @@ async def twitter_subsc(
     webhook:Dict,
     webhook_url:str,
     table_name:str
-):
+) -> None:
     """
     twitterの最新ツイートを取得し、WebHookで投稿する
 
@@ -167,14 +167,13 @@ async def twitter_subsc(
                     ) as f:
                         await f.write(pickle.dumps(obj=dict_row))
 
-                    return await re.json()
                 
 
 async def niconico_subsc(
     webhook:Dict,
     webhook_url:str,
     table_name:str
-):
+) -> None:
     """
     niconicoの最新動画を取得し、webhookに送信
 
@@ -290,8 +289,6 @@ async def niconico_subsc(
                 mode='wb'
             ) as f:
                 await f.write(pickle.dumps(obj=dict_row))
-
-        return await re.json()
                         
 
 
