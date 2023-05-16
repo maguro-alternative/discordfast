@@ -20,7 +20,8 @@ load_dotenv()
 import os
 import io
 import pickle
-from datetime import datetime
+from datetime import datetime,timezone
+from typing import Dict,List
 
 from base.database import PostgresDB
 
@@ -60,7 +61,7 @@ class Webhook_Post(commands.Cog):
                 with io.BytesIO() as f:
                     f.write(pickled_bytes)
                     f.seek(0)
-                    webhook_fetch = pickle.load(f)
+                    webhook_fetch:List[Dict] = pickle.load(f)
 
             # 登録してあるwebhookを一つ一つ処理
             for webhook in webhook_fetch:
@@ -77,170 +78,224 @@ class Webhook_Post(commands.Cog):
 
                         # twitterの場合
                         if webhook.get('subscription_type') == 'twitter':
-                            # クラスを宣言
-                            twitter = Twitter_Get_Tweet(
-                                screen_name=webhook.get('subscription_id'),
-                                search_word=""
+                            await twitter_subsc(
+                                webhook=webhook,
+                                webhook_url=webhook_url,
+                                table_name=table_name
                             )
-                            # アイコンurl,ユーザ名を取得
-                            image_url, username = await twitter.get_image_and_name()
-                            # 最新ツイートと更新日時を取得(ない場合はそのまま)
-                            tweetlist, create_at = await twitter.mention_tweet_make(
-                                webhook_fetch=webhook
-                            )
-                            
-                            async with aiohttp.ClientSession() as sessions:
-                                # 取得したツイートを一つ一つwebhookで送信
-                                for tweet in tweetlist:
-                                    async with sessions.post(
-                                        url=webhook_url,
-                                        data={
-                                            'username':username,
-                                            'avatar_url':image_url,
-                                            'content':tweet
-                                        }
-                                    ) as re:
-                                        # 最後の要素の場合
-                                        if tweet == tweetlist[-1]:
-                                            # データベースに接続し、最終更新日を更新
-                                            await db.connect()
-
-                                            await db.update_row(
-                                                table_name=table_name,
-                                                row_values={
-                                                    'created_at':create_at
-                                                },
-                                                where_clause={
-                                                    'uuid':webhook.get('uuid')
-                                                }
-                                            )
-                                            table_fetch = await db.select_rows(
-                                                table_name=table_name,
-                                                columns=[],
-                                                where_clause={}
-                                            )
-
-                                            await db.disconnect()
-
-                                            # 取り出して書き込み
-                                            dict_row = [
-                                                dict(zip(record.keys(), record)) 
-                                                for record in table_fetch
-                                            ]
-
-                                            # 書き込み
-                                            async with aiofiles.open(
-                                                file=f'{table_name}.pickle',
-                                                mode='wb'
-                                            ) as f:
-                                                await f.write(pickle.dumps(obj=dict_row))
-
-                                            return await re.json()
 
                         # niconicoの場合
                         if webhook.get('subscription_type') == 'niconico':
-                            # rssのurl
-                            niconico_rss_url = f"https://www.nicovideo.jp/user/{webhook.get('subscription_id')}/video?rss=2.0"
-                            # rssを取得し展開
-                            niconico = feedparser.parse(
-                                url_file_stream_or_string=niconico_rss_url
+                            await niconico_subsc(
+                                webhook=webhook,
+                                webhook_url=webhook_url,
+                                table_name=table_name
                             )
-                            
-                            # 最終更新日を格納
-                            create_at = webhook.get('created_at')
 
-                            async with aiohttp.ClientSession() as sessions:
-                                # 最新の動画を一つ一つ処理
-                                for entry in niconico.entries:
-                                    # Webhookに最後にアップロードした時刻
-                                    strTime = datetime.strptime(
-                                        webhook.get('created_at'), 
-                                        '%a %b %d %H:%M:%S %z %Y'
-                                    )
-                                    # 動画の投稿時刻
-                                    lastUpdate = datetime.strptime(
-                                        entry.published,
-                                        '%a, %d %b %Y %H:%M:%S %z'
-                                    )
-                                    # 最初の要素の場合(最新の要素)
-                                    if entry == niconico.entries[0]:
-                                        create_at = entry.published
-                                    
-                                    # htmlとしてパース
-                                    soup = BeautifulSoup(entry.summary, 'html.parser')
-                                    
-                                    # 最新の動画が投稿されていた場合
-                                    if strTime < lastUpdate:
-                                        # すべてのimgタグのsrcを取得する
-                                        img_src_list = [
-                                            img['src'] 
-                                            for img in soup.find_all('img')
-                                        ]
 
-                                        upload_flag = True
-                                        mention_flag = True
+async def twitter_subsc(
+    webhook:Dict,
+    webhook_url:str,
+    table_name:str
+):
+    """
+    twitterの最新ツイートを取得し、WebHookで投稿する
 
-                                        text = ""
-                                        if upload_flag:
-                                            if mention_flag:
-                                                # メンションするロールの取り出し
-                                                mentions = [
-                                                    f"<@&{int(role_id)}> " 
-                                                    for role_id in webhook.get('mention_roles')
-                                                ]
-                                                members = [
-                                                    f"<@{int(member_id)}> " 
-                                                    for member_id in webhook.get('mention_members')
-                                                ]
-                                                text = " ".join(mentions) + " " + " ".join(members)
+    pream:
+    webhook:Dict
+        webhookの情報を示す辞書型オブジェクト
+    webhook_url
+        webhookのurl
+    table_name
+        webhookの情報が登録されているテーブル名
+    """
+    # クラスを宣言
+    twitter = Twitter_Get_Tweet(
+        screen_name=webhook.get('subscription_id'),
+        search_word=""
+    )
+    # アイコンurl,ユーザ名を取得
+    image_url, username = await twitter.get_image_and_name()
+    # 最新ツイートと更新日時を取得(ない場合はそのまま)
+    tweetlist, create_at = await twitter.mention_tweet_make(
+        webhook_fetch=webhook
+    )
+    
+    async with aiohttp.ClientSession() as sessions:
+        # 取得したツイートを一つ一つwebhookで送信
+        for tweet in tweetlist:
+            async with sessions.post(
+                url=webhook_url,
+                data={
+                    'username':username,
+                    'avatar_url':image_url,
+                    'content':tweet
+                }
+            ) as re:
+                # 最後の要素の場合
+                if tweet == tweetlist[-1]:
+                    # データベースに接続し、最終更新日を更新
+                    await db.connect()
 
-                                            # タイトルとリンクをテキストにする
-                                            text += f' {entry.title}\n{entry.link}' 
-                                        
-                                            async with sessions.post(
-                                                url=webhook_url,
-                                                data={
-                                                    'username':'ニコニコ新作',
-                                                    'avatar_url':img_src_list[0],
-                                                    'content':text
-                                                }
-                                            ) as re:
-                                                # 最後の要素の場合
-                                                if entry == niconico.entries[-1]:
-                                                    # データベースに接続し、最終更新日を更新
-                                                    await db.connect()
-                                                    await db.update_row(
-                                                        table_name=table_name,
-                                                        row_values={
-                                                            'created_at':create_at
-                                                        },
-                                                        where_clause={
-                                                            'uuid':webhook.get('uuid')
-                                                        }
-                                                    )
-                                                    table_fetch = await db.select_rows(
-                                                        table_name=table_name,
-                                                        columns=[],
-                                                        where_clause={}
-                                                    )
+                    await db.update_row(
+                        table_name=table_name,
+                        row_values={
+                            'created_at':create_at
+                        },
+                        where_clause={
+                            'uuid':webhook.get('uuid')
+                        }
+                    )
+                    table_fetch = await db.select_rows(
+                        table_name=table_name,
+                        columns=[],
+                        where_clause={}
+                    )
 
-                                                    await db.disconnect()
+                    await db.disconnect()
 
-                                                    # 取り出して書き込み
-                                                    dict_row = [
-                                                        dict(zip(record.keys(), record)) 
-                                                        for record in table_fetch
-                                                    ]
+                    # 取り出して書き込み
+                    dict_row = [
+                        dict(zip(record.keys(), record)) 
+                        for record in table_fetch
+                    ]
 
-                                                    # 書き込み
-                                                    async with aiofiles.open(
-                                                        file=f'{table_name}.pickle',
-                                                        mode='wb'
-                                                    ) as f:
-                                                        await f.write(pickle.dumps(obj=dict_row))
+                    # 書き込み
+                    async with aiofiles.open(
+                        file=f'{table_name}.pickle',
+                        mode='wb'
+                    ) as f:
+                        await f.write(pickle.dumps(obj=dict_row))
 
-                                                    return await re.json()
+                    return await re.json()
+                
 
+async def niconico_subsc(
+    webhook:Dict,
+    webhook_url:str,
+    table_name:str
+):
+    """
+    niconicoの最新動画を取得し、webhookに送信
+
+    param:
+    webhook:Dict
+        webhookの情報を示す辞書型オブジェクト
+    webhook_url
+        webhookのurl
+    table_name
+        webhookの情報が登録されているテーブル名
+    """
+    # rssのurl
+    niconico_rss_url = f"https://www.nicovideo.jp/user/{webhook.get('subscription_id')}/video?rss=2.0"
+    # rssを取得し展開
+    niconico = feedparser.parse(
+        url_file_stream_or_string=niconico_rss_url
+    )
+    
+    # 最終更新日を格納
+    created_at = webhook.get('created_at')
+    update_at = ''
+
+
+    async with aiohttp.ClientSession() as sessions:
+        upload_flag = True
+        mention_flag = True
+        # 最新の動画を一つ一つ処理
+        for entry in niconico.entries:
+            # Webhookに最後にアップロードした時刻
+            strTime = datetime.strptime(
+                created_at, 
+                '%a %b %d %H:%M:%S %z %Y'
+            )
+            # 動画の投稿時刻
+            lastUpdate = datetime.strptime(
+                entry.published,
+                '%a, %d %b %Y %H:%M:%S %z'
+            )
+            # 最初の要素の場合(最新の要素)
+            if entry == niconico.entries[0]:
+                # 現在時刻の取得
+                now_time = datetime.now(timezone.utc)
+                update_at = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
+            
+            # htmlとしてパース
+            soup = BeautifulSoup(entry.summary, 'html.parser')
+            
+            # 最新の動画が投稿されていた場合
+            if strTime < lastUpdate:
+                # すべてのimgタグのsrcを取得する
+                img_src_list = [
+                    img['src'] 
+                    for img in soup.find_all('img')
+                ]
+
+                text = ""
+                if mention_flag:
+                    # メンションするロールの取り出し
+                    mentions = [
+                        f"<@&{int(role_id)}> " 
+                        for role_id in webhook.get('mention_roles')
+                    ]
+                    members = [
+                        f"<@{int(member_id)}> " 
+                        for member_id in webhook.get('mention_members')
+                    ]
+                    text = " ".join(mentions) + " " + " ".join(members)
+
+                # タイトルとリンクをテキストにする
+                text += f' {entry.title}\n{entry.link}' 
+            
+                # webhookに投稿
+                async with sessions.post(
+                    url=webhook_url,
+                    data={
+                        'username':niconico.feed.title,
+                        'avatar_url':img_src_list[0],
+                        'content':text
+                    }
+                ) as re:
+                    upload_flag = True
+
+        # 投稿があった場合、投稿日時を更新
+        if upload_flag:
+            # データベースに接続し、最終更新日を更新
+            await db.connect()
+            await db.update_row(
+                table_name=table_name,
+                row_values={
+                    'created_at':update_at
+                },
+                where_clause={
+                    'uuid':webhook.get('uuid')
+                }
+            )
+            table_fetch = await db.select_rows(
+                table_name=table_name,
+                columns=[],
+                where_clause={}
+            )
+
+            await db.disconnect()
+
+            # 取り出して書き込み
+            dict_row = [
+                dict(zip(record.keys(), record)) 
+                for record in table_fetch
+            ]
+
+            # 書き込み
+            async with aiofiles.open(
+                file=f'{table_name}.pickle',
+                mode='wb'
+            ) as f:
+                await f.write(pickle.dumps(obj=dict_row))
+
+        return await re.json()
+                        
+
+
+                
 
 async def date_change():
     await db.connect()

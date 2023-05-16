@@ -1,11 +1,12 @@
 import discord
-from discord.embeds import _EmptyEmbed,EmptyEmbed
+from discord import Embed
+from typing import Tuple
 
 async def activity(
     after:discord.VoiceState,
     member:discord.Member,
     mention_str:str
-):
+) -> Tuple[str,Embed]:
     try:
         embed = discord.Embed(
             title='配信タイトル', 
@@ -44,7 +45,7 @@ async def activity(
         return f" {mention_str} <@{member.id}> が、{after.channel.name}で画面共有を始めました。",await stream(after,member,title="画面共有")
 
 # 通話開始時の埋め込み作成
-async def callemb(after:discord.VoiceState,member:discord.Member):
+async def callemb(after:discord.VoiceState,member:discord.Member) -> Embed:
     embed=discord.Embed(
         title="通話開始",
         description=f"{member.guild.name}\n<#{after.channel.id}>"
@@ -63,7 +64,7 @@ async def callemb(after:discord.VoiceState,member:discord.Member):
     return embed
 
 # 配信開始時の埋め込み作成
-async def stream(after:discord.VoiceState,member:discord.Member,title:str):
+async def stream(after:discord.VoiceState,member:discord.Member,title:str) -> Embed:
     embed=discord.Embed(
         title=title,
         description=f"{member.guild.name}\n<#{after.channel.id}>"
