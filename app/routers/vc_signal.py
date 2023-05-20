@@ -114,7 +114,7 @@ async def line_post(
     permission_code = await guild_user_permission.get_permission_code()
 
     # キャッシュ読み取り
-    guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions.pickle')
+    guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
     guild_table = [
         g 
         for g in guild_table_fetch 
