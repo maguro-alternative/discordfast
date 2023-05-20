@@ -3,10 +3,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from threading import Thread
 import uvicorn
 import os
+
+from dotenv import load_dotenv
+load_dotenv()
 
 from routers import (
     line_bot,
@@ -34,6 +38,15 @@ app = FastAPI(
     version='0.9 beta'
 )
 
+callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
+
+origins = [
+    "http://localhost:5000",
+    "http://localhost",
+    callback_url,
+    "http://localhost:8000",
+]
+
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 jinja_env = templates.env  #Jinja2.Environment : filterやglobalの設定用
@@ -43,6 +56,14 @@ app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
 # session使用
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+# オリジン間のリソースを共有
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 各パス
 app.include_router(index.router)

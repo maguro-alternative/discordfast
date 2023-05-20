@@ -88,6 +88,14 @@ class Webhook_Post(commands.Cog):
                                 table_name=table_name
                             )
 
+                        # youtubeの場合
+                        if webhook.get('subscription_type') == 'youtube':
+                            await youtube_subsc(
+                                webhook=webhook,
+                                webhook_url=webhook_url,
+                                table_name=table_name
+                            )
+
 
 async def twitter_subsc(
     webhook:Dict,
@@ -420,7 +428,7 @@ async def date_change():
         table_fetch=table_fetch
     )
     # 読み取り
-    webhook_fetch = await pickle_read(filename='webhook_854350169055297576.pickle')
+    webhook_fetch = await pickle_read(filename='webhook_854350169055297576')
 
 def setup(bot:DBot):
     return bot.add_cog(Webhook_Post(bot))

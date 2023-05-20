@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -9,8 +10,12 @@ import os
 
 from base.database import PostgresDB
 from base.aio_req import pickle_write
-import aiofiles
-import pickle
+from base.aio_req import (
+    return_permission,
+    oauth_check
+)
+REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+
 
 from core.db_pickle import *
 
@@ -41,6 +46,18 @@ async def line_post(
     request:Request
 ):
     form = await request.form()
+
+    # OAuth2トークンが有効かどうか判断
+    try:
+        await return_permission(
+            guild_id=form["guild_id"],
+            user_id=request.session["user"]["id"],
+            access_token=request.session["oauth_data"]["access_token"]
+        )
+        if not await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+            return RedirectResponse(url=REDIRECT_URL,status_code=302)
+    except KeyError:
+        return RedirectResponse(url=REDIRECT_URL,status_code=302)
 
     # 使用するデータベースのテーブル名
     TABLE = f'guilds_vc_signal_{form.get("guild_id")}'
