@@ -58,11 +58,32 @@ class DBot(discord.AutoShardedBot):
             self.loop.run_until_complete(self.close())
         except discord.HTTPException as e:
             traceback.print_exc()
-            if e.status == 429:
+            if e.status == 429 and os.environ.get("WEBHOOK") != None:
                 main_content = {'content': 'DiscordBot 429エラー\n直ちにDockerファイルを再起動してください。'}
                 headers      = {'Content-Type': 'application/json'}
 
-                response     = requests.post(os.environ["WEBHOOK"], json.dumps(main_content), headers=headers)
+                response     = requests.post(
+                    url=os.environ.get("WEBHOOK"), 
+                    data=json.dumps(main_content), 
+                    headers=headers
+                )
                 
-        except:
+        except Exception as e:
             traceback.print_exc()
+            if os.environ.get("WEBHOOK") != None:
+                if os.environ.get("ADMIN_ID") != None:
+                    admin_id = os.environ.get("ADMIN_ID")
+                    text = f"<@{int(admin_id)}> {e}"
+                else:
+                    text = str(e)
+                main_content = {
+                    'content':text
+                }
+                headers = {
+                    'Content-Type': 'application/json'
+                }
+                response = requests.post(
+                    url=os.environ.get("WEBHOOK"), 
+                    data=json.dumps(main_content), 
+                    headers=headers
+                )

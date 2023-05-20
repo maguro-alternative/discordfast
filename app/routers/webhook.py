@@ -6,18 +6,14 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 load_dotenv()
 
-import aiofiles
-
 import os
-import io
-import pickle
 from typing import List,Dict,Any
 
 from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
+    pickle_read,
     return_permission,
-    check_permission,
     oauth_check
 )
 
@@ -77,33 +73,25 @@ async def webhook(
     permission_code = await guild_user_permission.get_permission_code()
 
     # キャッシュ読み取り
-    async with aiofiles.open(
-        file=f'guild_set_permissions.pickle',
-        mode='rb'
-    ) as f:
-        pickled_bytes = await f.read()
-        with io.BytesIO() as f:
-            f.write(pickled_bytes)
-            f.seek(0)
-            guild_table_fetch:List[Dict[str,Any]] = pickle.load(f)
-            guild_table = [
-                g 
-                for g in guild_table_fetch 
-                if int(g.get('guild_id')) == guild_id
-            ]
-            guild_permission_code = 8
-            guild_permission_user = list()
-            guild_permission_role = list()
-            if len(guild_table) > 0:
-                guild_permission_code = int(guild_table[0].get('webhook_permission'))
-                guild_permission_user = [
-                    user 
-                    for user in guild_table[0].get('webhook_user_id_permission')
-                ]
-                guild_permission_role = [
-                    role
-                    for role in guild_table[0].get('webhook_role_id_permission')
-                ]
+    guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions.pickle')
+    guild_table = [
+        g 
+        for g in guild_table_fetch 
+        if int(g.get('guild_id')) == guild_id
+    ]
+    guild_permission_code = 8
+    guild_permission_user = list()
+    guild_permission_role = list()
+    if len(guild_table) > 0:
+        guild_permission_code = int(guild_table[0].get('webhook_permission'))
+        guild_permission_user = [
+            user 
+            for user in guild_table[0].get('webhook_user_id_permission')
+        ]
+        guild_permission_role = [
+            role
+            for role in guild_table[0].get('webhook_role_id_permission')
+        ]
 
     and_code = guild_permission_code & permission_code
     admin_code = 8 & permission_code
@@ -119,15 +107,7 @@ async def webhook(
         user_permission = 'admin'
 
     # キャッシュ読み取り
-    async with aiofiles.open(
-        file=f'{TABLE}.pickle',
-        mode='rb'
-    ) as f:
-        pickled_bytes = await f.read()
-        with io.BytesIO() as f:
-            f.write(pickled_bytes)
-            f.seek(0)
-            table_fetch:List[Dict[str,Any]] = pickle.load(f)
+    table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
     # webhook一覧を取得
     all_webhook = await aio_get_request(

@@ -220,7 +220,8 @@ class YouTubeUpload():
             http=credentials.authorize(httplib2.Http())
         )
 
-    async def initialize_upload(self,youtube:Resource):
+    # 使用していません。本Botは下記のbyte_uploadを使用しバイナリデータから直接YouTubeにアップロードします。
+    async def initialize_upload(self,youtube:Resource) -> None:
         """
         動画ファイルからYouTubeにアップロードする。
 
@@ -265,7 +266,7 @@ class YouTubeUpload():
             part=",".join(body.keys()),
             body=body,
             media_body=MediaFileUpload(
-                self.file_path, 
+                filename=self.file_path, 
                 chunksize=-1, 
                 resumable=True
             )
@@ -274,7 +275,11 @@ class YouTubeUpload():
         await self.resumable_upload(insert_request)
 
 
-    async def byte_upload(self,video_bytes:io.BytesIO,youtube:Resource) -> str:
+    async def byte_upload(
+        self,
+        video_bytes:io.BytesIO,
+        youtube:Resource
+    ) -> str:
         """
         動画のバイナリデータから直接YouTubeにアップロードする。
 

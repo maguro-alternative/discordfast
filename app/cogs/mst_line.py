@@ -18,6 +18,8 @@ from pydub import AudioSegment
 from dotenv import load_dotenv
 load_dotenv()
 
+from base.aio_req import pickle_read
+
 try:
     from message_type.line_type.line_message import LineBotAPI,Voice_File
     from core.start import DBot
@@ -37,15 +39,7 @@ class mst_line(commands.Cog):
         TABLE = f'guilds_line_channel_{message.guild.id}'
 
         # 読み取り
-        async with aiofiles.open(
-            file=f'{TABLE}.pickle',
-            mode='rb'
-        ) as f:
-            pickled_bytes = await f.read()
-            with io.BytesIO() as f:
-                f.write(pickled_bytes)
-                f.seek(0)
-                line_fetch = pickle.load(f)
+        line_fetch = await pickle_read(filename=TABLE)
 
         bot_message = False
         ng_channel = False
@@ -236,7 +230,10 @@ class mst_line(commands.Cog):
 # 画像を識別
 async def image_checker(
     attachments:List[discord.Attachment]
-) -> Tuple[List[str],Union[List[discord.Attachment],List[discord.StickerItem]]]:
+) -> Tuple[
+    List[str],
+    Union[List[discord.Attachment],List[discord.StickerItem]]
+]:
     """
     Discordの送付ファイルから、画像を抜き出す。
     引数:      attachments:    Discordの送付ファイル
@@ -256,7 +253,10 @@ async def image_checker(
 # 動画を識別
 async def video_checker(
     attachments:List[discord.Attachment]
-) -> Tuple[List[str],List[discord.Attachment]]:
+) -> Tuple[
+    List[str],
+    List[discord.Attachment]
+]:
     """
     Discordの送付ファイルから、動画を抜き出す。
     引数:      attachments:    Discordの送付ファイル
@@ -277,7 +277,10 @@ async def video_checker(
 async def voice_checker(
     attachments:List[discord.Attachment],
     message:discord.Message
-) -> Tuple[List[Voice_File],List[discord.Attachment]]:
+) -> Tuple[
+    List[Voice_File],
+    List[discord.Attachment]
+]:
     """
     Discordの送付ファイルから、音声を抜き出す。
     m4a以外のファイルは、ffmpegで変換しDiscordに送信する。

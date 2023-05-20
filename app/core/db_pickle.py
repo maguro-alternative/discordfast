@@ -10,7 +10,8 @@ import os
 
 from base.database import PostgresDB
 from base.aio_req import (
-    aio_get_request
+    aio_get_request,
+    pickle_write
 )
 
 DISCORD_BASE_URL = "https://discord.com/api"
@@ -23,6 +24,7 @@ LINE_TABLE = 'guilds_line_channel_'
 VC_TABLE = 'guilds_vc_signal_'
 WEBHOOK_TABLE = 'webhook_'
 GUILD_SET_TABLE = 'guild_set_permissions'
+BOT_ADMIN_TABLE = 'bot_admin'
 
 # 各テーブルのカラム
 LINE_COLUMNS = {
@@ -333,18 +335,11 @@ async def db_pickle_save(guilds:List[Guild]):
         
         print(f'{table_name}.pickleの書き込みをはじめます')
     
-        # pickleに書き込むためdictに変換
-        dict_row = [
-            dict(zip(record.keys(), record)) 
-            for record in table_fetch
-        ]
-
-        # 書き込み
-        async with aiofiles.open(
-            file=f'{table_name}.pickle',
-            mode='wb'
-        ) as f:
-            await f.write(pickle.dumps(obj=dict_row))
+        # pickleファイルに書き込み
+        await pickle_write(
+            filename=table_name,
+            table_fetch=table_fetch
+        )
 
         print(f'{table_name}.pickleの書き込みが終了しました')
 
@@ -428,18 +423,11 @@ async def db_pickle_save(guilds:List[Guild]):
         
         print(f'{table_name}.pickleの書き込みをはじめます')
     
-        # pickleに書き込むためdictに変換
-        dict_row = [
-            dict(zip(record.keys(), record)) 
-            for record in table_fetch
-        ]
-
-        # 書き込み
-        async with aiofiles.open(
-            file=f'{table_name}.pickle',
-            mode='wb'
-        ) as f:
-            await f.write(pickle.dumps(obj=dict_row))
+        # pickleファイルに書き込み
+        await pickle_write(
+            filename=table_name,
+            table_fetch=table_fetch
+        )
 
         print(f'{table_name}.pickleの書き込みが終了しました')
 

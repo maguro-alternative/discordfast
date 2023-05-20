@@ -1,8 +1,6 @@
 import discord
 from discord.ext import commands
 
-import aiofiles
-
 try:
     # Botのみ起動の場合
     from app.cogs.bin import activity
@@ -14,9 +12,7 @@ except ModuleNotFoundError:
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
-import io
-import pickle
+from base.aio_req import pickle_read
 
 # ボイスチャンネルの入退室を通知
 class vc_count(commands.Cog):
@@ -41,15 +37,7 @@ class vc_count(commands.Cog):
         TABLE = f'guilds_vc_signal_{member.guild.id}'
 
         # 読み取り
-        async with aiofiles.open(
-            file=f'{TABLE}.pickle',
-            mode='rb'
-        ) as f:
-            pickled_bytes = await f.read()
-            with io.BytesIO() as f:
-                f.write(pickled_bytes)
-                f.seek(0)
-                vc_fetch = pickle.load(f)
+        vc_fetch = await pickle_read(filename=TABLE)
 
         key_vc = [
             g 

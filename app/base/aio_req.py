@@ -1,16 +1,19 @@
 from base.guild_permission import Permission
 import aiohttp
-from typing import List
+import aiofiles
+
+from typing import List,Any,Dict
 
 import os
-
+import io
+import pickle
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 # getリクエストを行う
-async def aio_get_request(url: str, headers: dict) -> dict:
+async def aio_get_request(url: str, headers: dict) -> Dict:
     async with aiohttp.ClientSession() as session:
         async with session.get(
             url = url,
@@ -19,7 +22,7 @@ async def aio_get_request(url: str, headers: dict) -> dict:
             return await resp.json()
 
 # postリクエストを行う
-async def aio_post_request(url: str, headers: dict, data: dict) -> dict:
+async def aio_post_request(url: str, headers: dict, data: dict) -> Dict:
     async with aiohttp.ClientSession() as session:
         async with session.post(
             url = url,
@@ -27,11 +30,75 @@ async def aio_post_request(url: str, headers: dict, data: dict) -> dict:
             data = data
         ) as resp:
             return await resp.json()
+        
+async def pickle_read(filename:str) -> Any:
+    """
+    pickleファイルの読み込み
+
+    param:
+    filename:str
+        pickleファイルの名前
+
+    return:
+        pickleファイルの中身
+    """
+    # 読み取り
+    async with aiofiles.open(
+        file=f'{filename}.pickle',
+        mode='rb'
+    ) as f:
+        pickled_bytes = await f.read()
+        with io.BytesIO() as f:
+            f.write(pickled_bytes)
+            f.seek(0)
+            fetch = pickle.load(f)
+            return fetch
+
+async def pickle_write(
+    filename:str,
+    table_fetch:List[Dict]
+) -> None:
+    """
+    pickleファイルの書き込み
+
+    param:
+    filename    :str
+        pickleファイルの名前
+    
+    table_fetch :List[Dict]
+        SQLから取り出したデータ
+    """
+    # 取り出して書き込み
+    dict_row = [
+        dict(zip(record.keys(), record)) 
+        for record in table_fetch
+    ]
+    # 書き込み
+    async with aiofiles.open(
+        file=f'{filename}.pickle',
+        mode='wb'
+    ) as f:
+        await f.write(pickle.dumps(obj=dict_row))
+
 
 async def search_guild(
     bot_in_guild_get:List[dict],
     user_in_guild_get:List[dict]
-):
+) -> List:
+    """
+    Botとログインしたユーザーが所属しているサーバーを調べ、同じものを返す
+
+    param:
+    bot_in_guild_get    :List[dict]
+        Botが所属しているサーバー一覧
+
+    user_in_guild_get   :List[dict]
+        ユーザーが所属しているサーバー一覧
+
+    return:
+    List
+        所属が同じサーバー一覧
+    """
 
     bot_guild_id = []
     user_guild_id = []
@@ -61,10 +128,16 @@ async def search_role(
 ) -> List[dict]:
     """
     ユーザがサーバ内で持っているロールの詳細を取得する
+
+    param:
     guild_role_get  :List[dict]
         サーバにある全てのロール
     user_role_get   :List[dict]
         ユーザ情報
+
+    return:
+    List
+        ユーザーが持っているロール一覧
     """
     guild_role_id = []
     user_role_id = []
