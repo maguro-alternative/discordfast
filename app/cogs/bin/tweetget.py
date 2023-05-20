@@ -73,9 +73,9 @@ class Twitter_Get_Tweet:
             url=image_url,
             headers=headers
         )
-        account = data.get("data")
+        account:dict = data.get("data")
 
-        return account.get("profile_image_url").replace("normal","400x400"),account.get("name")
+        return account.get("profile_image_url").replace("normal","400x400"), account.get("name")
 
     async def mention_tweet_make(
         self,
@@ -115,16 +115,16 @@ class Twitter_Get_Tweet:
                         upload_flag = False
                         mention_flag = False
 
-                        # ORでキーワード検索
-                        for word in webhook_fetch.get('search_or_word'):
-                            if word in tweet_value.get('text'):
-                                upload_flag = True
-
                         # ANDでキーワードを検索
                         for word in webhook_fetch.get('search_and_word'):
                             # 条件にそぐわない場合終了
                             if word not in tweet_value.get('text'):
                                 upload_flag = False
+
+                        # ORでキーワード検索
+                        for word in webhook_fetch.get('search_or_word'):
+                            if word in tweet_value.get('text'):
+                                upload_flag = True
 
                         # 検索条件がなかった場合、すべて送信
                         if (len(webhook_fetch.get('search_or_word')) == 0 and
@@ -155,9 +155,9 @@ class Twitter_Get_Tweet:
                                     f"<@{int(member_id)}> " 
                                     for member_id in webhook_fetch.get('mention_members')
                                 ]
-                                text = " ".join(mentions) + " " + " ".join(members)
+                                text = " ".join(mentions) + " " + " ".join(members) + "\n"
 
-                            text += f' {tweet_value.get("text")}\n{tweet_url}' 
+                            text += f'{tweet_value.get("text")}\n{tweet_url}' 
 
                             tweetlist.append(text)
 

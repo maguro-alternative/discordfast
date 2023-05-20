@@ -24,6 +24,10 @@ from datetime import datetime,timezone
 from typing import Dict,List
 
 from base.database import PostgresDB
+from base.aio_req import (
+    pickle_read,
+    pickle_write
+)
 
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
@@ -53,15 +57,7 @@ class Webhook_Post(commands.Cog):
         for guild in self.bot.guilds:
             table_name = f"webhook_{guild.id}"
             # 読み取り
-            async with aiofiles.open(
-                file=f'{table_name}.pickle',
-                mode='rb'
-            ) as f:
-                pickled_bytes = await f.read()
-                with io.BytesIO() as f:
-                    f.write(pickled_bytes)
-                    f.seek(0)
-                    webhook_fetch:List[Dict] = pickle.load(f)
+            webhook_fetch:List[Dict] = await pickle_read(filename=table_name)
 
             # 登録してあるwebhookを一つ一つ処理
             for webhook in webhook_fetch:
@@ -114,8 +110,7 @@ async def twitter_subsc(
         screen_name=webhook.get('subscription_id'),
         search_word=""
     )
-    # アイコンurl,ユーザ名を取得
-    image_url, username = await twitter.get_image_and_name()
+    
     # 最新ツイートと更新日時を取得(ない場合はそのまま)
     tweetlist, create_at = await twitter.mention_tweet_make(
         webhook_fetch=webhook
@@ -124,6 +119,10 @@ async def twitter_subsc(
     async with aiohttp.ClientSession() as sessions:
         # 取得したツイートを一つ一つwebhookで送信
         for tweet in tweetlist:
+            # 最初の要素の場合
+            if tweet == tweetlist[0]:
+                # アイコンurl,ユーザ名を取得
+                image_url, username = await twitter.get_image_and_name()
             async with sessions.post(
                 url=webhook_url,
                 data={
@@ -154,18 +153,11 @@ async def twitter_subsc(
 
                     await db.disconnect()
 
-                    # 取り出して書き込み
-                    dict_row = [
-                        dict(zip(record.keys(), record)) 
-                        for record in table_fetch
-                    ]
-
-                    # 書き込み
-                    async with aiofiles.open(
-                        file=f'{table_name}.pickle',
-                        mode='wb'
-                    ) as f:
-                        await f.write(pickle.dumps(obj=dict_row))
+                    # pickleファイルに書き込み
+                    await pickle_write(
+                        filename=table_name,
+                        table_fetch=table_fetch
+                    )
 
                 
 
@@ -198,7 +190,7 @@ async def niconico_subsc(
 
 
     async with aiohttp.ClientSession() as sessions:
-        upload_flag = True
+        upload_flag = False
         mention_flag = True
         # 最新の動画を一つ一つ処理
         for entry in niconico.entries:
@@ -277,22 +269,130 @@ async def niconico_subsc(
 
             await db.disconnect()
 
-            # 取り出して書き込み
-            dict_row = [
-                dict(zip(record.keys(), record)) 
-                for record in table_fetch
-            ]
-
-            # 書き込み
-            async with aiofiles.open(
-                file=f'{table_name}.pickle',
-                mode='wb'
-            ) as f:
-                await f.write(pickle.dumps(obj=dict_row))
+            # pickleファイルに書き込み
+            await pickle_write(
+                filename=table_name,
+                table_fetch=table_fetch
+            )
                         
 
+async def youtube_subsc(
+    webhook:Dict,
+    webhook_url:str,
+    table_name:str
+) -> None:
+    """
+    YouTubeの最新動画を取得し、Webhookで投稿する
 
-                
+    pream:
+    webhook:Dict
+        webhookの情報を示す辞書型オブジェクト
+    webhook_url
+        webhookのurl
+    table_name
+        webhookの情報が登録されているテーブル名
+    """
+    youtube_api_key = os.environ.get('YOUTUBE_API_KEY')
+    channel_url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={webhook.get('subscription_id')}&key={youtube_api_key}"
+    new_videos_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={webhook.get('subscription_id')}&order=date&type=video&key={youtube_api_key}&maxResults=5"
+
+    # 最終更新日を格納
+    created_at = webhook.get('created_at')
+    last_upload_time = datetime.strptime(
+        created_at, 
+        '%a %b %d %H:%M:%S %z %Y'
+    )
+
+    async with aiohttp.ClientSession() as sessions:
+        async with sessions.get(
+            url=new_videos_url
+        ) as resp:
+            new_videos_info:dict = await resp.json()
+            # 最新動画を取得
+            videos_item:list[Dict] = new_videos_info.get('items')
+
+        for item in videos_item:
+            # 
+            upload_time_str = item.get('snippet').get('publishTime')
+            upload_time = datetime.strptime(
+                upload_time_str,
+                '%Y-%m-%dT%H:%M:%SZ'
+            )
+            # 更新があった場合
+            if last_upload_time < upload_time:
+                if not bool('channel_info' in locals()):
+                    async with sessions.get(
+                        url=channel_url
+                    ) as re:
+                        channel_info:dict = await re.json()
+                        # チャンネルの基本情報を取得
+                        channel_item:dict = channel_info.get('items')[0]
+                        # チャンネルのアイコンを取得
+                        channel_icon_url:str = channel_item.get('snippet').get('thumbnails').get('high').get('url')
+                        # チャンネル名を取得
+                        channel_title = channel_item.get('snippet').get('title')
+
+                # YouTube動画のタイトル
+                video_title = item.get('snippet').get('title')
+                # YouTube動画のURL
+                video_url = f"https://youtu.be/{item.get('id').get('videoId')}"
+
+                if len(webhook.get('mention_roles')) > 0:
+                    # メンションするロールの取り出し
+                    mentions = [
+                        f"<@&{int(role_id)}> " 
+                        for role_id in webhook.get('mention_roles')
+                    ]
+                    text = " ".join(mentions) + " "
+
+                if len(webhook.get('mention_members')) > 0:
+                    members = [
+                        f"<@{int(member_id)}> " 
+                        for member_id in webhook.get('mention_members')
+                    ]
+                    text = " ".join(members) + " "
+
+                text += '\n' + video_title + '\n' + video_url
+
+                # webhookに投稿
+                async with sessions.post(
+                    url=webhook_url,
+                    data={
+                        'username':channel_title,
+                        'avatar_url':channel_icon_url,
+                        'content':text
+                    }
+                ) as re:
+                    if item == videos_item[-1]:
+                        # データベースに接続し、最終更新日を更新
+                        await db.connect()
+                        await db.update_row(
+                            table_name=table_name,
+                            row_values={
+                                'created_at':upload_time.strftime('%a %b %d %H:%M:%S %z %Y')
+                            },
+                            where_clause={
+                                'uuid':webhook.get('uuid')
+                            }
+                        )
+
+                        table_fetch = await db.select_rows(
+                            table_name=table_name,
+                            columns=[],
+                            where_clause={}
+                        )
+
+                        await db.disconnect()
+
+                        # pickleファイルに書き込み
+                        await pickle_write(
+                            filename=table_name,
+                            table_fetch=table_fetch
+                        )
+
+
+
+
 
 async def date_change():
     await db.connect()
@@ -314,28 +414,13 @@ async def date_change():
 
     await db.disconnect()
 
-    # 取り出して書き込み
-    dict_row = [
-        dict(zip(record.keys(), record)) 
-        for record in table_fetch
-    ]
-
-    # 書き込み
-    async with aiofiles.open(
-        file='webhook_854350169055297576.pickle',
-        mode='wb'
-    ) as f:
-        await f.write(pickle.dumps(obj=dict_row))
+    # pickleファイルに書き込み
+    await pickle_write(
+        filename='webhook_854350169055297576.pickle',
+        table_fetch=table_fetch
+    )
     # 読み取り
-    async with aiofiles.open(
-        file=f'webhook_854350169055297576.pickle',
-        mode='rb'
-    ) as f:
-        pickled_bytes = await f.read()
-        with io.BytesIO() as f:
-            f.write(pickled_bytes)
-            f.seek(0)
-            webhook_fetch = pickle.load(f)
+    webhook_fetch = await pickle_read(filename='webhook_854350169055297576.pickle')
 
 def setup(bot:DBot):
     return bot.add_cog(Webhook_Post(bot))

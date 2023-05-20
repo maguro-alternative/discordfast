@@ -8,6 +8,7 @@ load_dotenv()
 import os
 
 from base.database import PostgresDB
+from base.aio_req import pickle_write
 import aiofiles
 import pickle
 
@@ -110,18 +111,11 @@ async def line_post(
 
     #print(table_fetch)
 
-    # 取り出して書き込み
-    dict_row = [
-        dict(zip(record.keys(), record)) 
-        for record in table_fetch
-    ]
-
-    # 書き込み
-    async with aiofiles.open(
-        file=f'{TABLE}.pickle',
-        mode='wb'
-    ) as f:
-        await f.write(pickle.dumps(obj=dict_row))
+    # pickleファイルに書き込み
+    await pickle_write(
+        filename=TABLE,
+        table_fetch=table_fetch
+    )
 
     return templates.TemplateResponse(
         'vccountsuccess.html',
