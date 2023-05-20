@@ -458,7 +458,7 @@ class LineBotAPI:
                 LINE_BOT_URL + f"/group/{self.line_group_id}/member/{user_id}",
                 self.line_bot_token,
             )
-            r["user_id"]
+            print(r['displayName'])
         # グループIDが無効の場合、友達から判断
         except KeyError:
             r = await line_get_request(
