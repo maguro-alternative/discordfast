@@ -453,14 +453,14 @@ class LineBotAPI:
         LINEユーザーのプロフィールオブジェクト
         """
         # グループIDが有効かどうか判断
-        try:
-            r = await line_get_request(
-                LINE_BOT_URL + f"/group/{self.line_group_id}/member/{user_id}",
-                self.line_bot_token,
-            )
-            r["user_id"]
+        
+        r = await line_get_request(
+            LINE_BOT_URL + f"/group/{self.line_group_id}/member/{user_id}",
+            self.line_bot_token,
+        )
+        
         # グループIDが無効の場合、友達から判断
-        except KeyError:
+        if r.get('displayName') == None:
             r = await line_get_request(
                 LINE_BOT_URL + f"/profile/{user_id}",
                 self.line_bot_token,

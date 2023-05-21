@@ -142,4 +142,29 @@ class GyazoJson(Base):
         self.type = type
         super(GyazoJson,self).__init__(**kwargs)
 
+if __name__ == "__main__":
+    import os
+    
+    from dotenv import load_dotenv
+    load_dotenv()
 
+    import requests
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+
+    line_group_id = os.environ.get('FIVE_GROUP_ID')
+    line_bot_token = os.environ.get('FIVE_BOT_TOKEN')
+    user_id = os.environ.get('FIVE_USER_ID')
+    group_url = f"https://api.line.me/v2/bot/group/{line_group_id}/member/{user_id}"
+    profile_url = f"https://api.line.me/v2/bot/profile/{user_id}"
+
+    gro = requests.get(
+        url=profile_url,
+        headers = {'Authorization': 'Bearer ' + line_bot_token}
+    ).json()
+    print(gro)
+
+    l = loop.run_until_complete(Profile.new_from_json_dict(data=gro))
+    print(l.display_name)
+    

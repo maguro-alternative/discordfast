@@ -316,3 +316,14 @@ class Discord_Channel(Base):
         self.rate_limit_per_user = rate_limit_per_user
         self.nsfw = nsfw
         super().__init__(**kwargs)
+
+if __name__ == "__main__":
+    import os
+    
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    import requests
+    import asyncio
+
+    loop = asyncio.get_event_loop()
