@@ -5,8 +5,10 @@ from fastapi.templating import Jinja2Templates
 import os
 
 from base.aio_req import (
-    aio_get_request
+    aio_get_request,
+    oauth_check
 )
+from routers.session_base.user_session import OAuthData
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -19,19 +21,12 @@ DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 @router.get("/")
 async def index(request: Request):
-    # discordの認証が有効か確認
-    try:
-        oauth_data:dict = await aio_get_request(
-            url = DISCORD_BASE_URL + '/users/@me', 
-            headers = { 
-                'Authorization': f'Bearer {request.session["oauth_data"]["access_token"]}' 
-            }
-        )
-        if oauth_data.get('message') == '401: Unauthorized':
-            request.session.pop("oauth_data")
-    except KeyError:
-        if request.session.get("oauth_data") != None:
-            request.session.pop("oauth_data")
+    # Discordの認証情報が有効かどうか判断
+    if request.session.get('oauth_data'):
+        oauth_session = OAuthData(**request.session.get('oauth_data'))
+        # トークンの有効期限が切れていた場合、認証情報を削除
+        if not await oauth_check(access_token=oauth_session.access_token):
+            request.session.pop('oauth_data')
     
     bot_data:dict = await aio_get_request(
         url = DISCORD_BASE_URL + '/users/@me', 

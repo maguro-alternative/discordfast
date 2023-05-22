@@ -13,6 +13,7 @@ from base.aio_req import (
     search_guild,
     oauth_check
 )
+from routers.session_base.user_session import OAuthData,User
 
 DISCORD_BASE_URL = "https://discord.com/api"
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -28,10 +29,14 @@ templates = Jinja2Templates(directory="templates")
 @router.get('/guilds')
 async def guilds(request:Request):
     # OAuth2トークンが有効かどうか判断
-    try:
-        if not  await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+    print(request.session.items())
+    if request.session.get('oauth_data'):
+        oauth_session = OAuthData(**request.session.get('oauth_data'))
+        user_session = User(**request.session.get('user'))
+        # トークンの有効期限が切れていた場合、再ログインする
+        if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=REDIRECT_URL,status_code=302)
-    except KeyError:
+    else:
         return RedirectResponse(url=REDIRECT_URL,status_code=302)
     # Botが所属しているサーバを取得
     bot_in_guild_get = await aio_get_request(
@@ -45,7 +50,7 @@ async def guilds(request:Request):
     user_in_guild_get = await aio_get_request(
         url = DISCORD_BASE_URL + '/users/@me/guilds',
         headers = {
-            'Authorization': f'Bearer {request.session["oauth_data"]["access_token"]}'
+            'Authorization': f'Bearer {oauth_session.access_token}'
         }
     )
 
@@ -54,12 +59,15 @@ async def guilds(request:Request):
         bot_in_guild_get = bot_in_guild_get,
         user_in_guild_get = user_in_guild_get
     )
+    request.session.update({
+        "match_guild":match_guild
+    })
 
     return templates.TemplateResponse(
         "guilds.html",
         {
             "request": request, 
-            "match_guild":match_guild,
-            "title":request.session["user"]['username']+"のサーバ一覧"
+            "match_guild":request.session.get("match_guild"),
+            "title":f"{user_session.username}のサーバ一覧"
         }
     )

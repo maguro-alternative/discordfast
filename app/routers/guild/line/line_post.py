@@ -18,6 +18,7 @@ from base.aio_req import (
     return_permission,
     oauth_check
 )
+from routers.session_base.user_session import OAuthData,User
 
 from message_type.discord_type.message_creater import ReqestDiscord
 from base.guild_permission import Permission
@@ -49,10 +50,13 @@ async def line_post(
     guild_id:int
 ):
     # OAuth2トークンが有効かどうか判断
-    try:
-        if not await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+    if request.session.get('oauth_data'):
+        oauth_session = OAuthData(**request.session.get('oauth_data'))
+        user_session = User(**request.session.get('user'))
+        # トークンの有効期限が切れていた場合、再ログインする
+        if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=REDIRECT_URL,status_code=302)
-    except KeyError:
+    else:
         return RedirectResponse(url=REDIRECT_URL,status_code=302)
     # 使用するデータベースのテーブル名
     TABLE = f'guilds_line_channel_{guild_id}'
@@ -88,7 +92,7 @@ async def line_post(
 
     # ログインユーザの情報を取得
     guild_user = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{request.session["user"]["id"]}',
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{user_session.id}',
         headers = {
             'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
         }
@@ -101,8 +105,8 @@ async def line_post(
     # サーバの権限を取得
     guild_user_permission = await return_permission(
         guild_id=guild_id,
-        user_id=request.session["user"]["id"],
-        access_token=request.session["oauth_data"]["access_token"]
+        user_id=user_session.id,
+        access_token=oauth_session.access_token
     )
 
     # パーミッションの番号を取得
@@ -137,7 +141,7 @@ async def line_post(
     # 許可されている場合、管理者の場合
     if (and_code == permission_code or 
         admin_code == 8 or
-        request.session['user']['id'] in guild_permission_user or
+        user_session.id in guild_permission_user or
         len(set(guild_permission_role) & set(role_list)) > 0
         ):
         user_permission = 'admin'

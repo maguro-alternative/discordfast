@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -15,13 +15,12 @@ from base.database import PostgresDB
 from base.aio_req import pickle_write
 from core.db_pickle import *
 
-from base.aio_req import (
-    return_permission,
-    oauth_check
-)
+from routers.api.chack.post_user_check import user_checker
+from routers.session_base.user_session import OAuthData,User
+
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
-
+DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
 
 USER = os.getenv('PGUSER')
@@ -48,16 +47,16 @@ async def line_post(
     form = await request.form()
 
     # OAuth2トークンが有効かどうか判断
-    try:
-        await return_permission(
-            guild_id=form["guild_id"],
-            user_id=request.session["user"]["id"],
-            access_token=request.session["oauth_data"]["access_token"]
-        )
-        if not await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
-            return RedirectResponse(url=REDIRECT_URL,status_code=302)
-    except KeyError:
+    check_code = await user_checker(
+        request=request,
+        oauth_session=OAuthData(**request.session.get('oauth_data')),
+        user_session=User(**request.session.get('user'))
+    )
+    
+    if check_code == 302:
         return RedirectResponse(url=REDIRECT_URL,status_code=302)
+    elif check_code == 400:
+        return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
     TABLE = f'webhook_{form.get("guild_id")}'
 

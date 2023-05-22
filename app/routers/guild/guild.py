@@ -13,6 +13,7 @@ from base.aio_req import (
     oauth_check,
     return_permission
 )
+from routers.session_base.user_session import OAuthData,User
 
 DISCORD_BASE_URL = "https://discord.com/api"
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -30,10 +31,13 @@ async def guild(
     guild_id:int
 ):
     # OAuth2トークンが有効かどうか判断
-    try:
-        if not await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+    if request.session.get('oauth_data'):
+        oauth_session = OAuthData(**request.session.get('oauth_data'))
+        user_session = User(**request.session.get('user'))
+        # トークンの有効期限が切れていた場合、再ログインする
+        if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=REDIRECT_URL,status_code=302)
-    except KeyError:
+    else:
         return RedirectResponse(url=REDIRECT_URL,status_code=302)
     
     # サーバの情報を取得
@@ -47,8 +51,8 @@ async def guild(
     # サーバの権限を取得
     permission = await return_permission(
         guild_id=guild_id,
-        user_id=request.session["user"]["id"],
-        access_token=request.session["oauth_data"]["access_token"]
+        user_id=user_session.id,
+        access_token=oauth_session.access_token
     )
 
     return templates.TemplateResponse(
