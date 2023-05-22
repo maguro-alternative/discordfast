@@ -135,7 +135,7 @@ async def line_post(
     )
 
     return templates.TemplateResponse(
-        'vccountsuccess.html',
+        'api/vccountsuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

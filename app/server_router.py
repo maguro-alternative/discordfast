@@ -13,18 +13,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from routers import (
-    line_bot,
     index,
     register,
     callback,
-    guild,
     guilds,
-    line_post,
+    logout
+)
+from routers.guild import guild
+
+from routers.guild.line import line_post
+from routers.guild.vc_signal import vc_signal
+from routers.guild.webhook import webhook
+
+from routers.api import (
+    line_bot,
     line_post_sucess,
-    logout,
-    vc_signal,
     vc_count_success,
-    webhook,
     webhook_success,
     test_success
 )

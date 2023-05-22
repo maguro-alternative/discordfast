@@ -131,7 +131,7 @@ class User(Base):
         username:str = None,
         avatar:str = None,
         avatar_decoration:str = None,
-        discriminator:int = None,
+        discriminator:str = None,
         public_flags:int = None,
         bot:bool = None,
         **kwargs

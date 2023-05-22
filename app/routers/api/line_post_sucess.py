@@ -195,7 +195,7 @@ async def line_post_success(request: Request):
     )
 
     return templates.TemplateResponse(
-        'linepostsuccess.html',
+        'api/linepostsuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

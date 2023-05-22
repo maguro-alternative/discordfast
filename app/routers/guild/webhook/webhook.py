@@ -145,7 +145,7 @@ async def webhook(
     )
 
     return templates.TemplateResponse(
-        "webhook.html",
+        "guild/webhook/webhook.html",
         {
             "request": request, 
             "guild": guild,

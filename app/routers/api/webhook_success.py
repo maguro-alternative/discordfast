@@ -252,7 +252,7 @@ async def line_post(
     )
 
     return templates.TemplateResponse(
-        'webhooksuccess.html',
+        'api/webhooksuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

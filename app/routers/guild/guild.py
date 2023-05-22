@@ -52,7 +52,7 @@ async def guild(
     )
 
     return templates.TemplateResponse(
-        "guild.html",
+        "guild/guild.html",
         {
             "request": request, 
             "guild": guild,
