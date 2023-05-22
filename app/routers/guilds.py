@@ -29,7 +29,6 @@ templates = Jinja2Templates(directory="templates")
 @router.get('/guilds')
 async def guilds(request:Request):
     # OAuth2トークンが有効かどうか判断
-    print(request.session.items())
     if request.session.get('oauth_data'):
         oauth_session = OAuthData(**request.session.get('oauth_data'))
         user_session = User(**request.session.get('user'))

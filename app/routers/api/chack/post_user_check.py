@@ -11,8 +11,7 @@ load_dotenv()
 import os
 from typing import Dict,List
 
-from routers.session_base.user_session import OAuthData,User,MatchGuild
-
+from routers.session_base.user_session import OAuthData,User
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
 
