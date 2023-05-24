@@ -11,8 +11,7 @@ import aiofiles
 import os
 from typing import List
 from itertools import groupby,chain
-import pickle
-import io
+
 from typing import List,Dict,Any,Tuple
 
 from base.database import PostgresDB

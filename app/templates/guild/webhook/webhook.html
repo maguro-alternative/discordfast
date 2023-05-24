@@ -133,6 +133,19 @@
                             <br/>
                         </div>
 
+                        <h6>NGワードOR検索(いずれかの言葉が含まれている場合、送信しない)</h6>
+                        <div id="ngOrWord_1">
+                            <button type="button" id="ngOrAdd_1" onclick="addTextButton(this,'ngOrText')">入力欄を増やす</button>
+                            <br/>
+                        </div>
+
+
+                        <h6>NGワードAND検索(すべての単語が含まれている場合、送信しない)</h6>
+                        <div id="ngAndWord_1">
+                            <button type="button" id="ngAndAdd_1" onclick="addTextButton(this,'ngAndText')">入力欄を増やす</button>
+                            <br/>
+                        </div>
+
 
                         <h6>メンションOR検索(いずれかの言葉が含まれている場合、メンションを付けて送信)</h6>
                         <div id="mentionOrWord_1">
@@ -306,6 +319,38 @@
                                     キーワード({{k[0]}}-{{j[0]}})<input name="changeSearchAndText{{k[0]}}_{{j[0]}}" type="text" value="{{and_word}}" maxlength="50" required/>
                                 </label>
                                 <span id="changeSAnd{{k[0]}}_{{j[0]}}" class="close-icon" onclick="removeTextBox(this)">✖</span>
+                                {% set _ = j.append(j[0] + 1) %}
+                                {% set _ = j.pop(0) %}
+                            {% endfor %}
+                        </div>
+
+                        {% set j = [1] %}
+
+                        <h6>NGワードOR検索(いずれかの言葉が含まれている場合、送信しない)</h6>
+                        <div id="changeNgOrWord_{{k[0]}}">
+                            <button type="button" id="changeNgOrAdd_{{k[0]}}" onclick="addTextButton(this,'changeNgOrText')">入力欄を増やす</button>
+                            <br/>
+                            {% for or_word in webhook.search_or_word %}
+                                <label id="keychangeNOr{{k[0]}}_{{j[0]}}">
+                                    キーワード({{k[0]}}-{{j[0]}})<input name="changeNgOrText{{k[0]}}_{{j[0]}}" type="text" value="{{or_word}}" maxlength="50" required/>
+                                </label>
+                                <span id="changeNOr{{k[0]}}_{{j[0]}}" class="close-icon" onclick="removeTextBox(this)">✖</span>
+                                {% set _ = j.append(j[0] + 1) %}
+                                {% set _ = j.pop(0) %}
+                            {% endfor %}
+                        </div>
+
+                        {% set j = [1] %}
+
+                        <h6>NGワードAND検索(すべての単語が含まれている場合、送信しない)</h6>
+                        <div id="changeNgAndWord_{{k[0]}}">
+                            <button type="button" id="changeNgAndAdd_{{k[0]}}" onclick="addTextButton(this,'changeNgAndText')">入力欄を増やす</button>
+                            <br/>
+                            {% for and_word in webhook.search_and_word %}
+                                <label id="keychangeNAnd{{k[0]}}_{{j[0]}}">
+                                    キーワード({{k[0]}}-{{j[0]}})<input name="changeNgAndText{{k[0]}}_{{j[0]}}" type="text" value="{{and_word}}" maxlength="50" required/>
+                                </label>
+                                <span id="changeNAnd{{k[0]}}_{{j[0]}}" class="close-icon" onclick="removeTextBox(this)">✖</span>
                                 {% set _ = j.append(j[0] + 1) %}
                                 {% set _ = j.pop(0) %}
                             {% endfor %}

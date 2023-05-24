@@ -14,6 +14,7 @@ from datetime import datetime,timezone
 from base.database import PostgresDB
 from base.aio_req import pickle_write
 from core.db_pickle import *
+from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
 
 from routers.api.chack.post_user_check import user_checker
 from routers.session_base.user_session import OAuthData,User
@@ -70,12 +71,14 @@ async def line_post(
         "member_member_select_",
         "searchOrText",
         "searchAndText",
+        "ngOrText",
+        "ngAndText",
         "mentionOrText",
         "mentionAndText",
 
         "webhookChange_",
         "subscTypeChange_",
-        "subscIdChange_",       #11
+        "subscIdChange_",       #13
         "role_role_change_",
         "member_member_change_",
         "changeSearchOrText",
@@ -85,6 +88,7 @@ async def line_post(
     )
 
     # "webhookSelect_"で始まるキーのみを抽出し、数字部分を取得する
+    # create_webhook_number = [1,2,3]
     create_webhook_number = [
         int(key.replace(FORM_NAMES[0], "")) 
         for key in form.keys() 
@@ -92,10 +96,11 @@ async def line_post(
     ]
 
     # "webhookChange_"で始まるキーのみを抽出し、数字部分を取得する
+    # change_webhook_number = [1,2,3]
     change_webhook_number = [
-        int(key.replace(FORM_NAMES[9], "")) 
+        int(key.replace(FORM_NAMES[11], "")) 
         for key in form.keys() 
-        if key.startswith(FORM_NAMES[9])
+        if key.startswith(FORM_NAMES[11])
     ]
 
     create_webhook_list = []
@@ -130,12 +135,14 @@ async def line_post(
             none_flag = True
 
         for row_name,form_name in {
-            'mention_roles':FORM_NAMES[3],
-            'mention_members':FORM_NAMES[4],
-            'search_or_word':FORM_NAMES[5],
-            'search_and_word':FORM_NAMES[6],
-            'mention_or_word':FORM_NAMES[7],
-            'mention_and_word':FORM_NAMES[8]
+            'mention_roles'     :FORM_NAMES[3],
+            'mention_members'   :FORM_NAMES[4],
+            'search_or_word'    :FORM_NAMES[5],
+            'search_and_word'   :FORM_NAMES[6],
+            'ng_or_word'        :FORM_NAMES[7],
+            'ng_and_word'       :FORM_NAMES[8],
+            'mention_or_word'   :FORM_NAMES[9],
+            'mention_and_word'  :FORM_NAMES[10]
         }.items():
             row_list = list()
 
@@ -174,24 +181,26 @@ async def line_post(
             table_name=TABLE,
             row_values=create_webhook_list
         )
-    print(create_webhook_list)
+    #print(create_webhook_list)
 
     # 更新
     for webhook_num in change_webhook_number:
         row = {
             'guild_id': int(form.get("guild_id")), 
-            'webhook_id':int(form.get(f"{FORM_NAMES[9]}{webhook_num}")),
-            'subscription_type':form.get(f"{FORM_NAMES[10]}{webhook_num}"),
-            'subscription_id': form.get(f"{FORM_NAMES[11]}{webhook_num}")
+            'webhook_id':int(form.get(f"{FORM_NAMES[11]}{webhook_num}")),
+            'subscription_type':form.get(f"{FORM_NAMES[12]}{webhook_num}"),
+            'subscription_id': form.get(f"{FORM_NAMES[13]}{webhook_num}")
         }
 
         for row_name,form_name in {
-            'mention_roles':FORM_NAMES[12],
-            'mention_members':FORM_NAMES[13],
-            'search_or_word':FORM_NAMES[14],
-            'search_and_word':FORM_NAMES[15],
-            'mention_or_word':FORM_NAMES[16],
-            'mention_and_word':FORM_NAMES[17]
+            'mention_roles'     :FORM_NAMES[14],
+            'mention_members'   :FORM_NAMES[15],
+            'search_or_word'    :FORM_NAMES[16],
+            'search_and_word'   :FORM_NAMES[17],
+            'ng_or_word'        :FORM_NAMES[18],
+            'ng_and_word'       :FORM_NAMES[19],
+            'mention_or_word'   :FORM_NAMES[20],
+            'mention_and_word'  :FORM_NAMES[21]
         }.items():
             row_list = list()
 

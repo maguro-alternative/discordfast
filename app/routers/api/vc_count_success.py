@@ -13,6 +13,8 @@ from base.aio_req import pickle_write
 from routers.api.chack.post_user_check import user_checker
 from routers.session_base.user_session import OAuthData,User
 
+from core.pickes_save.vc_columns import VC_COLUMNS
+
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 

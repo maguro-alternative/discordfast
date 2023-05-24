@@ -56,6 +56,7 @@ class DBot(discord.AutoShardedBot):
         except KeyboardInterrupt:
             print("終了します")
             self.loop.run_until_complete(self.close())
+            exit()
         except discord.HTTPException as e:
             traceback.print_exc()
             if e.status == 429 and os.environ.get("WEBHOOK") != None:

@@ -128,6 +128,59 @@ const copyInputTag = (parentName) => {
             }
         }
 
+        // NGワードOR検索の場合
+        if (childRen[i].id.indexOf("ngOrWord_") > -1) {
+            for (let j = 0;j < childRen[i].children.length; j++){
+
+                let childBaseName = childRen[i].children[j].id
+                let childIdNum = 1
+
+                // 末尾に数字がある場合
+                if (/\d$/.test(childRen[i].children[j].id)){
+                    // 末尾の数字を削除
+                    childIdNum = /\d$/.exec(childRen[i].children[j].id)
+                    childBaseName = childRen[i].children[j].id.replace(/\d$/,"")
+                }
+
+                if (childRen[i].children[j].id.indexOf("ngOrAdd_") > -1){
+                    // idの末尾に数を追加
+                    childRen[i].children[j].id = childBaseName + copiedLen
+                }
+                if (childRen[i].children[j].className.indexOf("ngOrText") > -1){
+                    childRen[i].children[j].remove()
+                    j--
+                }
+                console.log(childRen[i].children[j])
+            }
+        }
+
+
+        // NGワードAND検索の場合
+        if (childRen[i].id.indexOf("ngAndWord_") > -1) {
+            for (let j = 0;j < childRen[i].children.length; j++){
+
+                let childBaseName = childRen[i].children[j].id
+                let childIdNum = 1
+
+                // 末尾に数字がある場合
+                if (/\d$/.test(childRen[i].children[j].id)){
+                    // 末尾の数字を削除
+                    childIdNum = /\d$/.exec(childRen[i].children[j].id)
+                    childBaseName = childRen[i].children[j].id.replace(/\d$/,"")
+                }
+
+                if (childRen[i].children[j].id.indexOf("ngAndAdd_") > -1){
+                    // idの末尾に数を追加
+                    childRen[i].children[j].id = childBaseName + copiedLen
+                }
+                if (childRen[i].children[j].className.indexOf("ngAndText") > -1){
+                    childRen[i].children[j].remove()
+                    j--
+                }
+                console.log(childRen[i].children[j])
+            }
+        }
+
 
         // メンションOR検索の場合
         if (childRen[i].id.indexOf("mentionOrWord_") > -1) {
