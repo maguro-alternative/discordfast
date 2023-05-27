@@ -65,7 +65,7 @@ class User(BaseModel):
     username            :str
     global_name         :Union[str,None]
     display_name        :Union[str,None]
-    avatar              :str
+    avatar              :Optional[str]
     avatar_decoration   :Union[str,None]
     discriminator       :str
     public_flags        :int
