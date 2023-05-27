@@ -42,7 +42,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 @router.post('/api/webhook-success')
-async def line_post(
+async def webhook_post(
     request:Request
 ):
     form = await request.form()

@@ -13,7 +13,7 @@ from base.aio_req import pickle_write
 from routers.api.chack.post_user_check import user_checker
 from routers.session_base.user_session import OAuthData,User
 
-from core.pickes_save.vc_columns import VC_COLUMNS
+from core.pickes_save.guild_permissions_columns import GUILD_SET_COLUMNS
 
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
@@ -42,8 +42,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.post('/api/vc-count-success')
-async def vc_post(
+@router.post('/api/admin-success')
+async def admin_post(
     request:Request
 ):
     form = await request.form()
@@ -60,62 +60,67 @@ async def vc_post(
     elif check_code == 400:
         return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-    # 使用するデータベースのテーブル名
-    TABLE = f'guilds_vc_signal_{form.get("guild_id")}'
+    TABLE = 'guild_set_permissions'
 
-    # "send_channel_id_"で始まるキーのみを抽出し、数字部分を取得する
-    numbers = [
-        int(key.replace("send_channel_id_", "")) 
-        for key in form.keys() 
-        if key.startswith("send_channel_id_")
+    # 各権限コード
+    line_permission_code = form.get("line_permission_code")
+    vc_permission_code = form.get("vc_permission_code")
+    webhook_permission_code = form.get("webhook_permission_code")
+
+    # ユーザidの取り出し
+    line_user_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('member_select_line_')
+    ]
+    vc_user_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('member_select_vc_')
+    ]
+    webhook_user_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('member_select_webhook_')
     ]
 
-    row_list = []
+    # ロールidの取り出し
+    line_role_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('role_select_line_')
+    ]
+    vc_role_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('role_select_vc_')
+    ]
+    webhook_role_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('role_select_webhook_')
+    ]
 
-    # チャンネルごとに更新をかける
-    for vc_id in numbers:
-        row_values = {}
-        send_signal = False
-        join_bot = False
-        everyone_mention = False
-        role_key = [
-            int(form.get(key))
-            for key in form.keys()
-            if key.startswith(f"role_{vc_id}_")
-        ]
-
-        if form.get(f"send_signal_{vc_id}") != None:
-            send_signal = True
-        if form.get(f"join_bot_{vc_id}") != None:
-            join_bot = True
-        if form.get(f"everyone_mention_{vc_id}") != None:
-            everyone_mention = True
-            
-        row_values = {
-            'send_signal':send_signal,
-            'send_channel_id':form.get(f"send_channel_id_{vc_id}"),
-            'join_bot':join_bot,
-            'everyone_mention':everyone_mention,
-            'mention_role_id':role_key
-        }
-
-        where_clause = {
-            'vc_id': vc_id
-        }
-
-        row_list.append({
-            'where_clause':where_clause,
-            'row_values':row_values
-        })
-
-    #print(row_list)
+    row_value = {
+        'line_permission'           :line_permission_code,
+        'line_user_id_permission'   :line_user_id_permission,
+        'line_role_id_permission'   :line_role_id_permission,
+        'vc_permission'             :vc_permission_code,
+        'vc_user_id_permission'     :vc_user_id_permission,
+        'vc_role_id_permission'     :vc_role_id_permission,
+        'webhook_permission'        :webhook_permission_code,
+        'webhook_user_id_permission':webhook_user_id_permission,
+        'webhook_role_id_permission':webhook_role_id_permission
+    }
 
     await db.connect()
 
-    await db.primary_batch_update_rows(
+    await db.update_row(
         table_name=TABLE,
-        set_values_and_where_columns=row_list,
-        table_colum=VC_COLUMNS
+        row_values=row_value,
+        where_clause={
+            'guild_id':form.get('guild_id')
+        }
     )
 
     # 更新後のテーブルを取得
@@ -127,8 +132,6 @@ async def vc_post(
 
     await db.disconnect()
 
-    #print(table_fetch)
-
     # pickleファイルに書き込み
     await pickle_write(
         filename=TABLE,
@@ -136,7 +139,7 @@ async def vc_post(
     )
 
     return templates.TemplateResponse(
-        'api/vccountsuccess.html',
+        'api/adminsuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

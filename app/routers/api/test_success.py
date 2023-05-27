@@ -13,7 +13,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 @router.post('/api/test-success')
-async def line_post(
+async def test_post(
     request:Request
 ):
     form = await request.form()

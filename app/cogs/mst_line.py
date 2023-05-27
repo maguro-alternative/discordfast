@@ -39,10 +39,12 @@ class mst_line(commands.Cog):
         TABLE = f'guilds_line_channel_{message.guild.id}'
 
         # 読み取り
-        line_fetch = await pickle_read(filename=TABLE)
+        line_fetch:List[dict] = await pickle_read(filename=TABLE)
 
         bot_message = False
         ng_channel = False
+
+        print(line_fetch)
 
         key_channel = [
             g 

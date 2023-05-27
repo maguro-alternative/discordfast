@@ -58,15 +58,12 @@ async def guilds(request:Request):
         bot_in_guild_get = bot_in_guild_get,
         user_in_guild_get = user_in_guild_get
     )
-    request.session.update({
-        "match_guild":match_guild
-    })
 
     return templates.TemplateResponse(
         "guilds.html",
         {
             "request": request, 
-            "match_guild":request.session.get("match_guild"),
+            "match_guild":match_guild,
             "title":f"{user_session.username}のサーバ一覧"
         }
     )

@@ -130,7 +130,7 @@ async def webhook_pickle_save(
     if changed_table_flag:
         # まとめて作成(バッジ)
         for table_row in table_fetch:
-            print(table_row)
+            #print(table_row)
             await db.insert_row(
                 table_name=table_name,
                 row_values=table_row

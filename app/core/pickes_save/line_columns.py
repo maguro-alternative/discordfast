@@ -28,7 +28,7 @@ LINE_NEW_COLUMNS = {
     'ng_users':[]
 }
 # 取得するチャンネルのタイプ
-LINE_TYPE = (0,2)
+LINE_TYPE = [0,2]
 
 async def line_pickle_save(
     db:PostgresDB,
@@ -60,6 +60,8 @@ async def line_pickle_save(
     # テーブル内のカラム名配列
     channel_colums = [key for key in LINE_COLUMNS.keys()]
     table_colums = [key for key in table_columns_type.keys()]
+
+    # print(table_fetch)
 
     # テーブル内のカラムの型配列
     unchanged,table_fetch = await check_table_type(
@@ -174,16 +176,19 @@ async def line_pickle_save(
             )
 
     dict_row = list()
+    #print(table_fetch)
 
     # テーブルに中身がある場合
     if len(table_fetch) > 0:
         if table_fetch[0] != f"{table_name} does not exist":
             print(f'{table_name}.pickleの書き込みをはじめます')
             dict_row = [
-                dict(zip(record.keys(), record)) 
+                dict(zip(record.keys(), record.values())) 
                 for record in table_fetch
             ]
 
+    #print(dict_row)
+    #print(table_fetch)
 
     # 書き込み
     # pickleファイルに書き込み

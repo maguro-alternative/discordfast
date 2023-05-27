@@ -107,4 +107,6 @@ async def check_table_type(
 
                 table_fetch[i] = table
 
+    #print(table_fetch)
+
     return unchanged,table_fetch

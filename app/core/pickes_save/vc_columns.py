@@ -30,7 +30,7 @@ VC_NEW_COLUMNS = {
     'mention_role_id':[]
 }
 # 取得するチャンネルのタイプ
-VC_TYPE = (2)
+VC_TYPE = [2]
 
 async def vc_pickle_save(
     db:PostgresDB,
@@ -180,7 +180,7 @@ async def vc_pickle_save(
         if table_fetch[0] != f"{table_name} does not exist":
             print(f'{table_name}.pickleの書き込みをはじめます')
             dict_row = [
-                dict(zip(record.keys(), record)) 
+                dict(zip(record.keys(), record.values())) 
                 for record in table_fetch
             ]
 

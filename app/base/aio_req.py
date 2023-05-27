@@ -70,7 +70,7 @@ async def pickle_write(
     """
     # 取り出して書き込み
     dict_row = [
-        dict(zip(record.keys(), record)) 
+        dict(zip(record.keys(), record.values())) 
         for record in table_fetch
     ]
     # 書き込み
@@ -172,7 +172,7 @@ async def return_permission(
     access_token:str
 ) -> Permission:
     """
-    指定されたユーザの権限を返す
+    指定されたユーザの権限を返す(ロールの権限も含む)
 
     guild_id        :int
         サーバのid

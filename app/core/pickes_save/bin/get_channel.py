@@ -7,7 +7,7 @@ load_dotenv()
 
 
 import os
-from typing import List,Dict,Any
+from typing import List,Dict,Any,Tuple
 DISCORD_BASE_URL = "https://discord.com/api"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]

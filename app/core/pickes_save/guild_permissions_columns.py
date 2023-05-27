@@ -129,9 +129,7 @@ async def guild_permissions_pickle_save(
     table_fetch = await db.select_rows(
         table_name=table_name,
         columns=[],
-        where_clause={
-            'guild_id':guild.id
-        }
+        where_clause={}
     )
 
     # ない場合は新規で登録

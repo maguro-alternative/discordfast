@@ -18,7 +18,8 @@
     </a>
     <br/>
     {% if permission.administrator %}
-        管理者です。
+        管理者です。<br/>
+        <a href="/guild/{{guild_id}}/admin" class="btn btn-primary">管理者設定</a>
     {% endif %}
     <h4>設定する項目一覧</h4>
     

@@ -24,12 +24,15 @@ from routers.guild import guild
 from routers.guild.line import line_post
 from routers.guild.vc_signal import vc_signal
 from routers.guild.webhook import webhook
+from routers.guild.admin import admin
+from routers.guild.admin import permission_code 
 
 from routers.api import (
     line_bot,
-    line_post_sucess,
+    line_post_success,
     vc_count_success,
     webhook_success,
+    admin_success,
     test_success
 )
 
@@ -77,12 +80,15 @@ app.include_router(callback.router)
 app.include_router(guild.router)
 app.include_router(guilds.router)
 app.include_router(line_post.router)
-app.include_router(line_post_sucess.router)
+app.include_router(line_post_success.router)
 app.include_router(logout.router)
 app.include_router(vc_signal.router)
 app.include_router(vc_count_success.router)
 app.include_router(webhook.router)
 app.include_router(webhook_success.router)
+app.include_router(admin.router)
+app.include_router(admin_success.router)
+app.include_router(permission_code.router)
 
 
 # フォーム送信テスト用
@@ -112,4 +118,5 @@ def keep_alive():
         t = Thread(target=local_run)
     else:
         t = Thread(target=run)
+    t.setDaemon(True)
     t.start()

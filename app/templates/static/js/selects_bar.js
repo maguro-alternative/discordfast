@@ -157,6 +157,7 @@ const selectRoleAddEvent = (roleLen,se) => {
     }
 
     function addSelectEvent(e) {
+        // 親要素(サーバーidがdivid)を取得
         const selectedItems = document.getElementById(divId);
 
         // 二重に登録されないように削除
@@ -189,6 +190,8 @@ const selectRoleAddEvent = (roleLen,se) => {
         const hiddenItem = document.createElement("input");
         hiddenItem.className = "hidden-item";
         hiddenItem.type = "hidden";
+
+        console.log(roleArray)
         
         // 登録しようとしているチャンネルがある場合
         if (roleArray[se.id]){
