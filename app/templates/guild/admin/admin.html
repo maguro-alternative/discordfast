@@ -103,7 +103,7 @@
                                 {% if role.id|int == role_id|int %}
                                     {{role.name}}
                                     <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                    <input type="hidden" name="role_select_line_{{k[0]}}" value="{{role.id}}"/>
+                                    <input type="hidden" name="role_select_line_{{i[0]}}" value="{{role.id}}"/>
                                     {% set _ = i.append(i[0] + 1) %}
                                     {% set _ = i.pop(0) %}
                                 {% endif %}
@@ -191,7 +191,7 @@
                                 {% if role.id|int == role_id|int %}
                                     {{role.name}}
                                     <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                    <input type="hidden" name="role_select_vc_{{k[0]}}" value="{{role.id}}"/>
+                                    <input type="hidden" name="role_select_vc_{{i[0]}}" value="{{role.id}}"/>
                                     {% set _ = i.append(i[0] + 1) %}
                                     {% set _ = i.pop(0) %}
                                 {% endif %}
@@ -279,7 +279,7 @@
                                 {% if role.id|int == role_id|int %}
                                     {{role.name}}
                                     <span class="remove-item" onclick="removeAdd(this)">x</span>
-                                    <input type="hidden" name="role_select_webhook_{{k[0]}}" value="{{role.id}}"/>
+                                    <input type="hidden" name="role_select_webhook_{{i[0]}}" value="{{role.id}}"/>
                                     {% set _ = i.append(i[0] + 1) %}
                                     {% set _ = i.pop(0) %}
                                 {% endif %}
