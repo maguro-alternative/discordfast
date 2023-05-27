@@ -72,7 +72,7 @@ class User(BaseModel):
     flags               :int
     banner              :Union[str,None]
     banner_color        :Union[str,None]
-    accent_color        :int
+    accent_color        :Optional[int]
     locale              :str
     mfa_enabled         :bool
     premium_type        :int
