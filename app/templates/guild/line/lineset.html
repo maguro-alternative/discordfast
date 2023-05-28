@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <script src="/static/js/box_allcheck.js" type="text/javascript"></script>
+  {% extends "layout.html" %}
+  {% block content %}
+  <body bgcolor="#252525" text="#ffffff">
+
+    <h1>LINEからDiscordへの送信設定</h1>
+    <h4></h4>
+
+    {% if not guild.icon %}
+        <a href="/guild/{{guild.id}}">
+            <img src="/static/img/discord-icon.jpg" />
+        </a>
+    {% else %}
+        <a href="/guild/{{guild.id}}">
+            <img src="https://cdn.discordapp.com/icons/{{guild.id}}/{{guild.icon}}.png"  />
+        </a>
+    {% endif %}
+    <a href="/guild/{{guild.id}}">
+        <li>{{ guild.name }}</li>
+    </a>
+    <br><br>
+
+    {% set per = ['admin'] %}
+
+    <h3>{{request.session.user.username}}さんは
+    {% if user_permission in per %}
+        編集できます。
+    {% else %}
+        編集できません。閲覧のみになります。
+    {% endif %}
+    </h3>
+    <br/>
+
+    {% if user_permission not in per %}
+    <fieldset disabled>
+    {% endif %}
+
+    <form action="/api/line-set-success" name="discordForm" method="post">
+
+        <h3>LINE Notifyのトークン</h3>
+        <input type="password" name="line_notify_token" value="{{line_row.line_notify_token}}"/>
+
+        <h3>LINE Botのトークン</h3>
+        <input type="password" name="line_bot_token" value="{{line_row.line_bot_token}}"/>
+
+        <h3>LINEグループのid</h3>
+        <input type="password" name="line_group_id" value="{{line_row.line_group_id}}"/>
+
+
+        <br/>
+        <h3>通知の送信先チャンネル</h3>
+        
+        <select name="default_channel_id" size="1">
+
+            {% if line_row.default_channel_id|int == 0 %}
+                <option value="0">選択なし</option>
+            {% endif %}
+            
+            {% for chan in all_channel %}
+                <!--テキストチャンネルの場合-->
+                {% if chan.type == 0 %}
+                    <option value={{chan.id}} 
+                        {% if chan.id|int == line_row.default_channel_id|int %}
+                            selected
+                        {% endif %}
+                    >
+
+                        {% if chan.parent_id %}
+                            {% for cate in all_channel %}
+                                {% if cate.type == 4 and cate.id == chan.parent_id %}
+                                    {{ cate.name }}:
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {{chan.name}}
+
+                    </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <br/>
+
+        <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+        {% if user_permission in per %}
+            <input type="submit" value="送信"/>
+        {% endif %}
+    </form>
+    {% if user_permission not in per %}
+    </fieldset>
+    {% endif %}
+    <br/>
+    <a href="/guild/{{guild_id}}" class="btn btn-primary">前のページに戻る</a>
+    <a href="/guilds" class="btn btn-primary">サーバ一覧に戻る</a>
+    <br/>
+    サーバーウィジェットが有効の場合、サーバーの状況が表示されます。<br/>
+    <iframe title="discord_5second" style="height: 350px;" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+    <script src="/static/js/selects_bar.js" type="text/javascript"></script>
+  </body>
+  {% endblock %}
+</html>

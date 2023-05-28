@@ -1,3 +1,5 @@
+from typing import List,Dict
+
 from discord import Guild
 
 from base.database import PostgresDB
@@ -5,47 +7,30 @@ from base.aio_req import (
     pickle_write
 )
 
-
 from core.pickes_save.bin.check_table import check_table_type
 
-GUILD_SET_TABLE = 'guild_set_permissions'
-GUILD_SET_COLUMNS = {
+LINE_BOT_TABLE = 'line_bot'
+LINE_BOT_COLUMNS = {
     'guild_id': 'NUMERIC PRIMARY KEY', 
-    'line_permission':'NUMERIC',
-    'line_user_id_permission':'NUMERIC[]',
-    'line_role_id_permission':'NUMERIC[]',
-    'line_bot_permission':'NUMERIC',
-    'line_bot_user_id_permission':'NUMERIC[]',
-    'line_bot_role_id_permission':'NUMERIC[]',
-    'vc_permission':'NUMERIC',
-    'vc_user_id_permission':'NUMERIC[]',
-    'vc_role_id_permission':'NUMERIC[]',
-    'webhook_permission':'NUMERIC',
-    'webhook_user_id_permission':'NUMERIC[]',
-    'webhook_role_id_permission':'NUMERIC[]'
+    'line_notify_token': 'BYTEA',
+    'line_bot_token': 'BYTEA',
+    'line_group_id': 'BYTEA',
+    'default_channel_id':'NUMERIC'
 }
-GUILD_SET_NEW_COLUMNS = {
+LINE_BOT_NEW_COLUMNS = {
     'guild_id': 0, 
-    'line_permission':8,
-    'line_user_id_permission':[],
-    'line_role_id_permission':[],
-    'line_bot_permission':8,
-    'line_bot_user_id_permission':[],
-    'line_bot_role_id_permission':[],
-    'vc_permission':8,
-    'vc_user_id_permission':[],
-    'vc_role_id_permission':[],
-    'webhook_permission':8,
-    'webhook_user_id_permission':[],
-    'webhook_role_id_permission':[]
+    'line_notify_token': b'',
+    'line_bot_token': b'',
+    'line_group_id': b'',
+    'default_channel_id':0
 }
 
-async def guild_permissions_pickle_save(
+async def line_bot_pickle_save(
     db:PostgresDB,
     guild:Guild
 ) -> None:
     """
-    サーバーの権限を示すテーブルの作成、更新
+    LINEからDiscordへの送信設定を示すテーブルの作成、更新
     キャッシュデータの作成
 
     param:
@@ -54,10 +39,13 @@ async def guild_permissions_pickle_save(
     guild:Guild
         Discordのサーバーインスタンス
     """
-    # guildのテーブル
-    table_name = f"{GUILD_SET_TABLE}"
-    table_fetch = await db.select_rows(
-        table_name=table_name,
+
+    # テーブル名を代入
+    table_name:str = LINE_BOT_TABLE
+    
+    # テーブルの要素を取得
+    table_fetch:List[Dict] = await db.select_rows(
+        table_name=f"{table_name}",
         columns=[],
         where_clause={
             'guild_id': guild.id
@@ -67,21 +55,31 @@ async def guild_permissions_pickle_save(
     # データベース側のカラムの型を入手
     table_columns_type = await db.get_columns_type(table_name=table_name)
 
+    #print(table_columns_type)
+
     # テーブル内のカラム名配列
-    guild_colums = [key for key in GUILD_SET_COLUMNS.keys()]
-    table_colums = [key for key in table_columns_type.keys()]
+    channel_colums = [key for key in LINE_BOT_COLUMNS.keys()]
+    if len(table_columns_type) == 0:
+        # テーブル未作成の場合、同じ型を宣言
+        if (table_fetch[0] == f"{table_name} does not exist"):
+            table_colums = [key for key in LINE_BOT_COLUMNS.keys()]
+        else:
+            table_colums = [key for key in table_columns_type.keys()]
+    else:
+        table_colums = [key for key in table_columns_type.keys()]
+
+    # print(table_fetch)
 
     # テーブル内のカラムの型配列
     unchanged,table_fetch = await check_table_type(
-        columns=GUILD_SET_COLUMNS,
+        columns=LINE_BOT_COLUMNS,
         table_columns=table_columns_type,
-        new_columns=GUILD_SET_NEW_COLUMNS,
+        new_columns=LINE_BOT_NEW_COLUMNS,
         table_fetch=table_fetch
     )
 
     # テーブルに変更があるかのフラグ
-    changed_table_flag = table_colums != guild_colums or unchanged != False
-
+    changed_table_flag = table_colums != channel_colums or unchanged != False
 
     # テーブルをつくるか、カラムを取得するかのフラグ
     create_colum_flag = False
@@ -90,6 +88,7 @@ async def guild_permissions_pickle_save(
     # テーブルを削除するかのフラグ
     drop_table_flag = False
 
+    # テーブルがなかった場合、作成
     if len(table_fetch) > 0:
         # テーブルが存在しない場合、作成
         if (table_fetch[0] == f"{table_name} does not exist"):
@@ -97,14 +96,16 @@ async def guild_permissions_pickle_save(
         # テーブルが存在する場合、カラムを格納
         else:
             create_colum_flag = True
-    # テーブルが存在している
+
+    # テーブルが存在しているが、中身が空
     elif len(table_fetch) == 0:
         print(f'テーブル:{table_name}の要素は空です')
-        # 中身が空かつ、要素が変更されていた場合
+        # 要素が変更されていた場合
         if changed_table_flag:
             drop_table_flag = True
+        # ローカル側のカラムを格納
         else:
-            table_colums = [key for key in GUILD_SET_COLUMNS.keys()]
+            table_colums = [key for key in LINE_BOT_COLUMNS.keys()]
 
     # データベース側のカラムを格納
     if create_colum_flag:
@@ -122,35 +123,52 @@ async def guild_permissions_pickle_save(
         print(f'テーブル:{table_name}を作成します')
         await db.create_table(
             table_name=table_name,
-            columns=GUILD_SET_COLUMNS
+            columns=LINE_BOT_COLUMNS
         )
+
+    
 
     # テーブルに変更があった場合
     if changed_table_flag:
         # まとめて作成(バッジ)
-        await db.batch_insert_row(
-            table_name=table_name,
-            row_values=table_fetch
-        )
-
-    # ない場合は新規で登録
-    if len(table_fetch) == 0:
-        guild_new_colum = GUILD_SET_NEW_COLUMNS
-        guild_new_colum.update({
-            'guild_id':guild.id
-        })
         await db.insert_row(
             table_name=table_name,
-            row_values=guild_new_colum
+            row_values=table_fetch[0]
+        )
+
+    # 中身が空の場合
+    if len(table_fetch) == 0 or create_table_flag:
+
+        row_values = []
+
+        row = {}
+        for key,values in LINE_BOT_NEW_COLUMNS.items():
+            # 各要素を更新
+            if key == "guild_id":
+                value = guild.id
+            elif key == "default_channel_id":
+                # システムチャンネルがある場合代入
+                if hasattr(guild.system_channel,'id'):
+                    value = guild.system_channel.id
+            else:
+                value = values
+            row.update({key:value})
+        
+        row_values.append(row)
+
+        # 一つ一つ作成
+        await db.insert_row(
+            table_name=table_name,
+            row_values=row
         )
 
     # テーブルの要素を取得
-    table_fetch = await db.select_rows(
-        table_name=table_name,
+    table_fetch:List[Dict] = await db.select_rows(
+        table_name=f"{table_name}",
         columns=[],
         where_clause={}
     )
-    
+
     print(f'{table_name}.pickleの書き込みをはじめます')
 
     # pickleファイルに書き込み

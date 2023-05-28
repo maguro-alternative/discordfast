@@ -13,7 +13,8 @@ from core.pickes_save import (
     line_columns,
     vc_columns,
     webhook_columns,
-    guild_permissions_columns
+    guild_permissions_columns,
+    line_bot_columns
 )
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -46,5 +47,6 @@ async def db_pickle_save(guilds:List[Guild]) -> None:
         await vc_columns.vc_pickle_save(db=db,guild=guild)
         await webhook_columns.webhook_pickle_save(db=db,guild=guild)
         await guild_permissions_columns.guild_permissions_pickle_save(db=db,guild=guild)
+        await line_bot_columns.line_bot_pickle_save(db=db,guild=guild)
 
     await db.disconnect()

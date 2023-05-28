@@ -22,6 +22,7 @@ from routers import (
 from routers.guild import guild
 
 from routers.guild.line import line_post
+from routers.guild.line import line_set
 from routers.guild.vc_signal import vc_signal
 from routers.guild.webhook import webhook
 from routers.guild.admin import admin
@@ -30,6 +31,7 @@ from routers.guild.admin import permission_code
 from routers.api import (
     line_bot,
     line_post_success,
+    line_set_success,
     vc_count_success,
     webhook_success,
     admin_success,
@@ -89,6 +91,8 @@ app.include_router(webhook_success.router)
 app.include_router(admin.router)
 app.include_router(admin_success.router)
 app.include_router(permission_code.router)
+app.include_router(line_set.router)
+app.include_router(line_set_success.router)
 
 
 # フォーム送信テスト用

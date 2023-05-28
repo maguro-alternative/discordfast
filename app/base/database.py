@@ -426,7 +426,7 @@ class PostgresDB:
         query = f"""
             SELECT column_name, data_type 
             FROM information_schema.columns 
-            WHERE table_name = '{table_name}'
+            WHERE table_name = '{table_name}';
         """
 
         result = await self.conn.fetch(query)
