@@ -12,6 +12,7 @@ from functools import partial
 import io
 import asyncio
 import aiofiles
+from cryptography.fernet import Fernet
 
 from pydub import AudioSegment
 
@@ -27,6 +28,8 @@ except ModuleNotFoundError:
     from app.message_type.line_type.line_message import LineBotAPI,Voice_File
     from app.core.start import DBot
 
+ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+
 class mst_line(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot
@@ -40,16 +43,23 @@ class mst_line(commands.Cog):
 
         # 読み取り
         line_fetch:List[dict] = await pickle_read(filename=TABLE)
+        line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
 
         bot_message = False
         ng_channel = False
 
-        print(line_fetch)
+        # print(line_fetch)
 
-        key_channel = [
+        key_channel:List[dict] = [
             g 
             for g in line_fetch 
             if int(g.get('channel_id')) == message.channel.id
+        ]
+
+        bot_info:List[dict] = [
+            b
+            for b in line_bot_fetch
+            if int(b.get('guild_id')) == message.guild.id
         ]
 
         if len(key_channel) > 0:
@@ -69,21 +79,20 @@ class mst_line(commands.Cog):
                 str(message.type) in key_channel[0].get('ng_message_type') or
                 Decimal(message.author.id) in key_channel[0].get('ng_users')):
                 return
-        
 
-        # FIVE_SECONDs,FIVE_HOUR
-        # ACCESS_TOKEN,GUILD_ID,TEMPLE_ID (それぞれ最低限必要な環境変数)
-        bots_name = os.environ['BOTS_NAME'].split(",")
+        line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_notify_token')))
+        line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_bot_token')))
+        line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_group_id')))
 
-        for bot_name in bots_name:
-            # メッセージが送られたサーバーを探す
-            if os.environ.get(f"{bot_name}_GUILD_ID") == str(message.guild.id):
-                line_bot_api = LineBotAPI(
-                    notify_token = os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
-                    line_bot_token = os.environ[f'{bot_name}_BOT_TOKEN'],
-                    line_group_id = os.environ.get(f'{bot_name}_GROUP_ID')
-                )
-                break
+        # いずれかの項目が未入力の場合、終了
+        if len(line_bot_token) == 0 or len(line_notify_token) or len(line_group_id):
+            return
+        else:
+            line_bot_api = LineBotAPI(
+                notify_token=line_notify_token,
+                line_bot_token=line_bot_token,
+                line_group_id=line_group_id
+            )
 
         # line_bot_apiが定義されなかった場合、終了
         # 主な原因はLINEグループを作成していないサーバーからのメッセージ
@@ -344,6 +353,16 @@ async def voice_checker(
             os.remove(attachment.filename)
 
     return voice_files, attachments
+
+# 復号化関数
+async def decrypt_password(encrypted_password:bytes) -> str:
+    cipher_suite = Fernet(ENCRYPTED_KEY)
+    try:
+        decrypted_password = cipher_suite.decrypt(encrypted_password)
+        return decrypted_password.decode('utf-8')
+    # トークンが無効の場合
+    except:
+        return ''
 
 def setup(bot:DBot):
     return bot.add_cog(mst_line(bot))
