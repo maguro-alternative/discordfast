@@ -85,7 +85,8 @@ class mst_line(commands.Cog):
         line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_group_id')))
 
         # いずれかの項目が未入力の場合、終了
-        if len(line_bot_token) == 0 or len(line_notify_token) or len(line_group_id):
+        if len(line_bot_token) == 0 or len(line_notify_token) == 0 or len(line_group_id) == 0:
+            print('LINEトークンに未入力項目あり')
             return
         else:
             line_bot_api = LineBotAPI(
