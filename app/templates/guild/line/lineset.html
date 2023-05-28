@@ -40,14 +40,20 @@
     <form action="/api/line-set-success" name="discordForm" method="post">
 
         <h3>LINE Notifyのトークン</h3>
-        <input type="password" name="line_notify_token" value="{{line_row.line_notify_token}}"/>
+        <input type="password" id="line_notify_token" name="line_notify_token" value="{{line_row.line_notify_token}}"/>
+        <button type='button' id="btn_notify_token_view" onclick="password_view('line_notify_token','btn_notify_token_view')">表示</button>
 
         <h3>LINE Botのトークン</h3>
-        <input type="password" name="line_bot_token" value="{{line_row.line_bot_token}}"/>
+        <input type="password" id="line_bot_token" name="line_bot_token" value="{{line_row.line_bot_token}}"/>
+        <button type='button' id="btn_line_token_view" onclick="password_view('line_bot_token','btn_line_token_view')">表示</button>
+
+        <h3>LINE Botのシークレットキー</h3>
+        <input type="password" id="line_bot_secret" name="line_bot_secret" value="{{line_row.line_bot_secret}}"/>
+        <button type='button' id="btn_line_secret_view" onclick="password_view('line_bot_secret','btn_line_secret_view')">表示</button>
 
         <h3>LINEグループのid</h3>
-        <input type="password" name="line_group_id" value="{{line_row.line_group_id}}"/>
-
+        <input type="password" id="line_group_id" name="line_group_id" value="{{line_row.line_group_id}}"/>
+        <button type='button' id="btn_group_id_view" onclick="password_view('line_group_id','btn_group_id_view')">表示</button>
 
         <br/>
         <h3>通知の送信先チャンネル</h3>
@@ -82,7 +88,7 @@
         </select>
         <br/>
 
-        <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+        <input type="hidden" name="guild_id" value="{{guild_id}}"/><br/>
         {% if user_permission in per %}
             <input type="submit" value="送信"/>
         {% endif %}
@@ -96,7 +102,7 @@
     <br/>
     サーバーウィジェットが有効の場合、サーバーの状況が表示されます。<br/>
     <iframe title="discord_5second" style="height: 350px;" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
-    <script src="/static/js/selects_bar.js" type="text/javascript"></script>
+    <script src="/static/js/password_view.js" type="text/javascript"></script>
   </body>
   {% endblock %}
 </html>

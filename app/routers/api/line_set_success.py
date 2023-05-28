@@ -59,12 +59,14 @@ async def line_post_success(request: Request):
 
     hashed_notify_token:bytes = await encrypt_password(form.get('line_notify_token'))
     hashed_bot_token:bytes = await encrypt_password(form.get('line_bot_token'))
+    hashed_bot_secret:str = await encrypt_password(form.get('line_bot_secret'))
     hashed_group_id:bytes = await encrypt_password(form.get('line_group_id'))
     default_channel_id:int = form.get('default_channel_id')
 
     row_values = {
         'line_notify_token':hashed_notify_token,
         'line_bot_token':hashed_bot_token,
+        "line_bot_secret":hashed_bot_secret,
         'line_group_id':hashed_group_id,
         'default_channel_id':default_channel_id
     }
@@ -92,7 +94,7 @@ async def line_post_success(request: Request):
     )
 
     return templates.TemplateResponse(
-        'api/linepostsuccess.html',
+        'api/linesetsuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

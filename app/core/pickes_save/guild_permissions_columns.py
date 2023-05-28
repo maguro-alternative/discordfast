@@ -134,7 +134,7 @@ async def guild_permissions_pickle_save(
         )
 
     # ない場合は新規で登録
-    if len(table_fetch) == 0:
+    if len(table_fetch) == 0 or create_table_flag:
         guild_new_colum = GUILD_SET_NEW_COLUMNS
         guild_new_colum.update({
             'guild_id':guild.id

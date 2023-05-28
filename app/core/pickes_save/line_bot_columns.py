@@ -14,6 +14,7 @@ LINE_BOT_COLUMNS = {
     'guild_id': 'NUMERIC PRIMARY KEY', 
     'line_notify_token': 'BYTEA',
     'line_bot_token': 'BYTEA',
+    'line_bot_secret': 'BYTEA',
     'line_group_id': 'BYTEA',
     'default_channel_id':'NUMERIC'
 }
@@ -21,6 +22,7 @@ LINE_BOT_NEW_COLUMNS = {
     'guild_id': 0, 
     'line_notify_token': b'',
     'line_bot_token': b'',
+    'line_bot_secret': b'',
     'line_group_id': b'',
     'default_channel_id':0
 }

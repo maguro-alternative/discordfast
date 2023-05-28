@@ -127,7 +127,7 @@ async def vc_pickle_save(
         )
 
     # 中身が空の場合
-    if len(table_fetch) == 0:
+    if len(table_fetch) == 0 or create_table_flag:
 
         # Discordのチャンネルを取得
         all_channel = await get_discord_channel(

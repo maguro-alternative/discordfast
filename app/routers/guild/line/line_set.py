@@ -147,18 +147,20 @@ async def line_set(
 
     # 各項目をフロント部分に渡す
     for table in table_fetch:
-        guild_id:int = table.get('guild_id')
-        line_notify_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_notify_token')))
-        line_bot_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_token')))
-        line_group_id:str = await decrypt_password(encrypted_password=bytes(table.get('line_group_id')))
-        default_channel_id:int = table.get('default_channel_id')
+        if int(table.get('guild_id')) == guild_id:
+            line_notify_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_notify_token')))
+            line_bot_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_token')))
+            line_bot_secret:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_secret')))
+            line_group_id:str = await decrypt_password(encrypted_password=bytes(table.get('line_group_id')))
+            default_channel_id:int = table.get('default_channel_id')
 
-        line_row = {
-            'line_notify_token':line_notify_token,
-            'line_bot_token':line_bot_token,
-            'line_group_id':line_group_id,
-            'default_channel_id':default_channel_id
-        }
+            line_row = {
+                'line_notify_token':line_notify_token,
+                'line_bot_token':line_bot_token,
+                'line_bot_secret':line_bot_secret,
+                'line_group_id':line_group_id,
+                'default_channel_id':default_channel_id
+            }
 
 
     return templates.TemplateResponse(
