@@ -82,6 +82,8 @@ async def line_response(
             
             line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_group_id')))
             default_channel_id:int = bot_info.get('default_channel_id')
+
+            debug_mode:bool = bot_info.get('debug_mode')
             # Discordサーバーのインスタンスを作成
             discord_find_message = ReqestDiscord(
                 guild_id = guild_id,
@@ -107,6 +109,10 @@ async def line_response(
     # 応答確認の場合終了
     if type(response.events) is list:
         return HTMLResponse("OK")
+
+    # デバッグモードがonの場合、LINEグループにグループidを返す
+    if debug_mode:
+        await line_bot_api.push_message_notify(message=f'本グループのグループid:{response.events.source.groupId}')
 
     # イベントの中身を取得
     event = response.events

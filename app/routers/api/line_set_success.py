@@ -59,16 +59,18 @@ async def line_post_success(request: Request):
 
     hashed_notify_token:bytes = await encrypt_password(form.get('line_notify_token'))
     hashed_bot_token:bytes = await encrypt_password(form.get('line_bot_token'))
-    hashed_bot_secret:str = await encrypt_password(form.get('line_bot_secret'))
+    hashed_bot_secret:bytes = await encrypt_password(form.get('line_bot_secret'))
     hashed_group_id:bytes = await encrypt_password(form.get('line_group_id'))
     default_channel_id:int = form.get('default_channel_id')
+    debug_mode:bool = form.get('debug_mode',default=False)
 
     row_values = {
         'line_notify_token':hashed_notify_token,
         'line_bot_token':hashed_bot_token,
         "line_bot_secret":hashed_bot_secret,
         'line_group_id':hashed_group_id,
-        'default_channel_id':default_channel_id
+        'default_channel_id':default_channel_id,
+        'debug_mode':debug_mode
     }
 
     await db.connect()

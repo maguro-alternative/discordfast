@@ -16,7 +16,8 @@ LINE_BOT_COLUMNS = {
     'line_bot_token': 'BYTEA',
     'line_bot_secret': 'BYTEA',
     'line_group_id': 'BYTEA',
-    'default_channel_id':'NUMERIC'
+    'default_channel_id':'NUMERIC',
+    'debug_mode':'BOOLEAN'
 }
 LINE_BOT_NEW_COLUMNS = {
     'guild_id': 0, 
@@ -24,7 +25,8 @@ LINE_BOT_NEW_COLUMNS = {
     'line_bot_token': b'',
     'line_bot_secret': b'',
     'line_group_id': b'',
-    'default_channel_id':0
+    'default_channel_id':0,
+    'debug_mode':False
 }
 
 async def line_bot_pickle_save(
