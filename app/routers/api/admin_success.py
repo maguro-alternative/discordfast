@@ -64,6 +64,7 @@ async def admin_post(
 
     # 各権限コード
     line_permission_code = form.get("line_permission_code")
+    line_bot_permission_code = form.get("line_bot_permission_code")
     vc_permission_code = form.get("vc_permission_code")
     webhook_permission_code = form.get("webhook_permission_code")
 
@@ -72,6 +73,11 @@ async def admin_post(
         int(form.get(key))
         for key in form.keys()
         if key.startswith('member_select_line_')
+    ]
+    line_bot_user_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('member_select_line_bot_')
     ]
     vc_user_id_permission = [
         int(form.get(key))
@@ -90,6 +96,11 @@ async def admin_post(
         for key in form.keys()
         if key.startswith('role_select_line_')
     ]
+    line_bot_role_id_permission = [
+        int(form.get(key))
+        for key in form.keys()
+        if key.startswith('role_select_line_bot_')
+    ]
     vc_role_id_permission = [
         int(form.get(key))
         for key in form.keys()
@@ -102,15 +113,18 @@ async def admin_post(
     ]
 
     row_value = {
-        'line_permission'           :line_permission_code,
-        'line_user_id_permission'   :line_user_id_permission,
-        'line_role_id_permission'   :line_role_id_permission,
-        'vc_permission'             :vc_permission_code,
-        'vc_user_id_permission'     :vc_user_id_permission,
-        'vc_role_id_permission'     :vc_role_id_permission,
-        'webhook_permission'        :webhook_permission_code,
-        'webhook_user_id_permission':webhook_user_id_permission,
-        'webhook_role_id_permission':webhook_role_id_permission
+        'line_permission'               :line_permission_code,
+        'line_user_id_permission'       :line_user_id_permission,
+        'line_role_id_permission'       :line_role_id_permission,
+        'line_bot_permission_code'      :line_bot_permission_code,
+        'line_bot_user_id_permission'   :line_bot_user_id_permission,
+        'line_bot_role_id_permission'   :line_bot_role_id_permission,
+        'vc_permission'                 :vc_permission_code,
+        'vc_user_id_permission'         :vc_user_id_permission,
+        'vc_role_id_permission'         :vc_role_id_permission,
+        'webhook_permission'            :webhook_permission_code,
+        'webhook_user_id_permission'    :webhook_user_id_permission,
+        'webhook_role_id_permission'    :webhook_role_id_permission
     }
 
     await db.connect()
