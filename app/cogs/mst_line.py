@@ -195,51 +195,59 @@ class mst_line(commands.Cog):
     @commands.slash_command(description="LINEの利用状況を確認します")
     async def test_signal(self,ctx:discord.ApplicationContext):
 
-        # 環境変数から所属しているサーバー名一覧を取得し、配列に格納
-        servers_name = os.environ['BOTS_NAME']
-        server_list = servers_name.split(",")
-        for server_name in server_list:
-            # コマンドを打ったサーバーと環境変数にあるサーバーが一致した場合、利用状況を送信
-            if int(os.environ[f"{server_name}_GUILD_ID"]) == ctx.guild.id:
+        # 読み取り
+        line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
 
-                if os.environ.get(f'{server_name}_NOTIFY_TOKEN') == None:
-                    await ctx.respond('LINE Notfiyが登録されていません。')
-                    return
+        bot_info:List[dict] = [
+            b
+            for b in line_bot_fetch
+            if int(b.get('guild_id')) == ctx.guild.id
+        ]
 
-                await ctx.respond("LINE連携の利用状況です。")
+        if len(bot_info) == 0:
+            await ctx.respond('LINE Notfiyが登録されていません。')
+            return
 
-                line_signal = LineBotAPI(
-                    notify_token = os.environ.get(f'{server_name}_NOTIFY_TOKEN'),
-                    line_bot_token = os.environ[f'{server_name}_BOT_TOKEN'],
-                    line_group_id = os.environ.get(f'{server_name}_GROUP_ID')
-                )
+        await ctx.respond("LINE連携の利用状況です。")
 
-                states = await line_signal.notify_status()
+        line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_notify_token')))
+        line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_bot_token')))
+        line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_group_id')))
 
-                embed = discord.Embed(
-                    title = ctx.guild.name,
-                    description = f"""
-                    一か月のメッセージ送信上限(基本1000,23年6月以降は200):
-                        **{await line_signal.pushlimit()}**\n
-                    今月の送信数:
-                        **{await line_signal.totalpush()}**\n
-                    友達、グループ人数:
-                        **{await line_signal.friend()}**\n
-                    1時間当たりのメッセージ送信上限(1000):
-                        **{states.rate_limit}**\n
-                    1時間当たりの残りメッセージ送信数:
-                        **{states.rate_remaining}**\n
-                    1時間当たりの画像送信上限数(50):
-                        **{states.image_limit}**\n
-                    1時間当たりの残り画像送信数:
-                        **{states.image_remaining}**
-                    """
-                )
+        # いずれかの項目が未入力の場合、終了
+        if len(line_bot_token) == 0 or len(line_notify_token) == 0 or len(line_group_id) == 0:
+            await ctx.respond('LINEが登録されていません。')
+            
+        line_signal = LineBotAPI(
+            notify_token = line_notify_token,
+            line_bot_token = line_bot_token,
+            line_group_id = line_group_id
+        )
 
-                await ctx.channel.send(embed = embed)
-                return
-                
-        await ctx.respond('LINEが登録されていません。')
+        states = await line_signal.notify_status()
+
+        embed = discord.Embed(
+            title = ctx.guild.name,
+            description = f"""
+            一か月のメッセージ送信上限(基本1000,23年6月以降は200):
+                **{await line_signal.pushlimit()}**\n
+            今月の送信数:
+                **{await line_signal.totalpush()}**\n
+            友達、グループ人数:
+                **{await line_signal.friend()}**\n
+            1時間当たりのメッセージ送信上限(1000):
+                **{states.rate_limit}**\n
+            1時間当たりの残りメッセージ送信数:
+                **{states.rate_remaining}**\n
+            1時間当たりの画像送信上限数(50):
+                **{states.image_limit}**\n
+            1時間当たりの残り画像送信数:
+                **{states.image_remaining}**
+            """
+        )
+
+        await ctx.channel.send(embed = embed)
+        return
 
 # 画像を識別
 async def image_checker(
