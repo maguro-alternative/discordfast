@@ -120,7 +120,7 @@ async def line_pickle_save(
         )
 
     # テーブルに変更があった場合
-    if changed_table_flag:
+    if changed_table_flag and len(table_fetch) != 0:
         # まとめて作成(バッジ)
         await db.batch_insert_row(
             table_name=table_name,

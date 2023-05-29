@@ -127,7 +127,7 @@ async def webhook_pickle_save(
         )
 
     # テーブルに変更があった場合
-    if changed_table_flag:
+    if changed_table_flag and len(table_fetch) != 0:
         # まとめて作成(バッジ)
         for table_row in table_fetch:
             #print(table_row)
