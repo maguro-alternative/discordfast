@@ -89,7 +89,11 @@
 
         <h3>デバッグモード</h3>
         <h6>有効にすると、LINEグループにグループIDを送信します。(トークンとシークレットキーは必須)</h6>
-        デバッグモード:<input type="checkbox" name="debug_mode" value="True"/>
+        デバッグモード:<input type="checkbox" name="debug_mode"
+        {% if line_row.debug_mode %}
+            checked
+        {% endif %}
+        value="True"/>
         <br/>
 
         <input type="hidden" name="guild_id" value="{{guild_id}}"/><br/>
