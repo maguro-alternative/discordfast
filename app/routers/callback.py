@@ -14,6 +14,7 @@ from base.aio_req import (
 )
 
 DISCORD_BASE_URL = "https://discord.com/api"
+DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 router = APIRouter()
 
@@ -26,8 +27,9 @@ async def callback(
     request:Request
 ):
     # セッションの初期化
-    if request.session:
+    if request.session.get('user') != None:
         request.session.pop("user")
+    if request.session.get('connection') != None:
         request.session.pop("connection")
     if request.session.get("oauth_data") != None:
         request.session.pop("oauth_data")

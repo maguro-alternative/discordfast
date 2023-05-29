@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+    <script src="/static/js/box_allcheck.js" type="text/javascript"></script>
+    {% extends "layout.html" %}
+    {% block content %}
+    <body bgcolor="#252525" text="#ffffff">
+
+        <h1>{{guild.name}}の権限設定</h1>
+        <h4>各項目にアクセスできる権限を設定できます。</h4>
+
+        
+
+        {% if not guild.icon %}
+            <a href="/guild/{{guild.id}}">
+                <img src="/static/img/discord-icon.jpg" />
+            </a>
+        {% else %}
+            <a href="/guild/{{guild.id}}">
+                <img src="https://cdn.discordapp.com/icons/{{guild.id}}/{{guild.icon}}.png"  />
+            </a>
+        {% endif %}
+        <a href="/guild/{{guild.id}}">
+            <li>{{ guild.name }}</li>
+        </a>
+        <br/>
+        <a href="/guild/{{guild.id}}/admin/permission-code" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+            権限コード計算はこちら
+        </a>
+        <br><br>
+        
+        <form action="/api/admin-success" name="discordForm" method="post">
+            <details>
+                <summary>
+                    <strong>LINEへの送信設定</strong>
+                </summary>
+                Permission Code:{{guild_table.line_permission|int}}
+
+                <h6>編集を許可する権限コード</h6>
+                <input type="number" name="line_permission_code" value="{{guild_table.line_permission|int}}" min="0" max="1099511627775"/>
+
+
+                {% set member_len = guild_table.line_user_id_permission|length %}
+                {% set i = [1] %}
+
+                <h6>アクセスを許可するメンバーの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="memberSelect_line" onchange="selectAdminAddEvent('{{member_len}}',this,'member_select_line')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for member in guild_members %}
+                        <option value="{{member.user.id}}">
+                            {{member.user.username}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="member_select_line" class="selected-items">
+                    {% for member_id in guild_table.line_user_id_permission %}
+                        <div id="{{member_id}}" class="selected-item">
+                            {% for member in guild_members %}
+                                {% if member_id|int == member.user.id|int %}
+                                    {{member.user.username}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="member_select_line_{{i[0]}}" value="{{member.user.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <br/><br/>
+
+                {% set role_len = guild_table.line_role_id_permission|length %}
+
+                <h6>アクセスを許可するロールの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="roleSelect_line" onchange="selectAdminAddEvent('{{role_len}}',this,'role_select_line')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for role in guild.roles %}
+                        <option value="{{role.id}}">
+                            {{role.name}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="role_select_line" class="selected-items">
+
+                    {% for role_id in guild_table.line_role_id_permission %}
+                        <div id="{{role_id}}" class="selected-item">
+                            {% for role in guild.roles %}
+
+                                <!-- すでに通知するロールが設定されていた場合、表示 -->
+                                {% if role.id|int == role_id|int %}
+                                    {{role.name}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="role_select_line_{{i[0]}}" value="{{role.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                                
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+                <br/><br/>
+            </details>
+
+
+
+            <details>
+                <summary>
+                    <strong>Discordへの送信設定</strong>
+                </summary>
+                Permission Code:{{guild_table.line_permission|int}}
+
+                <h6>編集を許可する権限コード</h6>
+                <input type="number" name="line_bot_permission_code" value="{{guild_table.line_bot_permission|int}}" min="0" max="1099511627775"/>
+
+
+                {% set member_len = guild_table.line_bot_user_id_permission|length %}
+                {% set i = [1] %}
+
+                <h6>アクセスを許可するメンバーの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="memberSelect_line_bot" onchange="selectAdminAddEvent('{{member_len}}',this,'member_select_line_bot')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for member in guild_members %}
+                        <option value="{{member.user.id}}">
+                            {{member.user.username}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="member_select_line_bot" class="selected-items">
+                    {% for member_id in guild_table.line_user_id_permission %}
+                        <div id="{{member_id}}" class="selected-item">
+                            {% for member in guild_members %}
+                                {% if member_id|int == member.user.id|int %}
+                                    {{member.user.username}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="member_select_line_bot_{{i[0]}}" value="{{member.user.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <br/><br/>
+
+                {% set role_len = guild_table.line_bot_role_id_permission|length %}
+
+                <h6>アクセスを許可するロールの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="roleSelect_line_bot" onchange="selectAdminAddEvent('{{role_len}}',this,'role_select_line_bot')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for role in guild.roles %}
+                        <option value="{{role.id}}">
+                            {{role.name}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="role_select_line_bot" class="selected-items">
+
+                    {% for role_id in guild_table.line_bot_role_id_permission %}
+                        <div id="{{role_id}}" class="selected-item">
+                            {% for role in guild.roles %}
+
+                                <!-- すでに通知するロールが設定されていた場合、表示 -->
+                                {% if role.id|int == role_id|int %}
+                                    {{role.name}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="role_select_line_bot_{{i[0]}}" value="{{role.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                                
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+                <br/><br/>
+            </details>
+
+
+
+            <details>
+                <summary>
+                    <strong>ボイスチャンネルの通知設定</strong>
+                </summary>
+                Permission Code:{{guild_table.vc_permission|int}}
+
+                <h6>編集を許可する権限コード</h6>
+                <input type="number" name="vc_permission_code" value="{{guild_table.vc_permission|int}}" min="0" max="1099511627775"/>
+
+
+                {% set member_len = guild_table.vc_user_id_permission|length %}
+
+                <h6>アクセスを許可するメンバーの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="memberSelect_vc" onchange="selectAdminAddEvent('{{member_len}}',this,'member_select_vc')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for member in guild_members %}
+                        <option value="{{member.user.id}}">
+                            {{member.user.username}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="member_select_vc" class="selected-items">
+                    {% for member_id in guild_table.mention_members %}
+                        <div id="{{member_id}}" class="selected-item">
+                            {% for member in guild_members %}
+                                {% if member_id|int == member.user.id|int %}
+                                    {{member.user.username}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="member_select_vc_{{i[0]}}" value="{{member.user.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <br/><br/>
+
+                {% set role_len = guild_table.vc_role_id_permission|length %}
+
+                <h6>アクセスを許可するロールの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="roleSelect_vc" onchange="selectAdminAddEvent('{{role_len}}',this,'role_select_vc')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for role in guild.roles %}
+                        <option value="{{role.id}}">
+                            {{role.name}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="role_select_vc" class="selected-items">
+
+                    {% for role_id in guild_table.vc_role_id_permission %}
+                        <div id="{{role_id}}" class="selected-item">
+                            {% for role in guild.roles %}
+
+                                <!-- すでに通知するロールが設定されていた場合、表示 -->
+                                {% if role.id|int == role_id|int %}
+                                    {{role.name}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="role_select_vc_{{i[0]}}" value="{{role.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                                
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+                <br/><br/>
+            </details>
+
+
+
+            <details>
+                <summary>
+                    <strong>Webhookの通知設定</strong>
+                </summary>
+                Permission Code:{{guild_table.webhook_permission|int}}
+
+                <h6>編集を許可する権限コード</h6>
+                <input type="number" name="webhook_permission_code" value="{{guild_table.webhook_permission|int}}" min="0" max="1099511627775"/>
+
+
+                {% set member_len = guild_table.webhook_user_id_permission|length %}
+
+                <h6>アクセスを許可するメンバーの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="memberSelect_webhook" onchange="selectAdminAddEvent('{{member_len}}',this,'member_select_webhook')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for member in guild_members %}
+                        <option value="{{member.user.id}}">
+                            {{member.user.username}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="member_select_webhook" class="selected-items">
+                    {% for member_id in guild_table.mention_members %}
+                        <div id="{{member_id}}" class="selected-item">
+                            {% for member in guild_members %}
+                                {% if member_id|int == member.user.id|int %}
+                                    {{member.user.username}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="member_select_webhook_{{i[0]}}" value="{{member.user.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <br/><br/>
+
+                {% set role_len = guild_table.webhook_role_id_permission|length %}
+
+                <h6>アクセスを許可するロールの選択</h6>
+                <!-- サーバ内のロール一覧をselectできるようにする -->
+                <select id="roleSelect_webhook" onchange="selectAdminAddEvent('{{role_len}}',this,'role_select_webhook')" size="1">
+                    <option hidden disabled>選択してください</option>
+                    {% for role in guild.roles %}
+                        <option value="{{role.id}}">
+                            {{role.name}}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br/>
+                
+                <!-- 
+                    既に設定されている、または設定された場合、{{ロール名}}:x の形式で画面に表示する
+                    xをクリックすることで削除できる
+                -->
+                <div id="role_select_webhook" class="selected-items">
+
+                    {% for role_id in guild_table.vc_role_id_permission %}
+                        <div id="{{role_id}}" class="selected-item">
+                            {% for role in guild.roles %}
+
+                                <!-- すでに通知するロールが設定されていた場合、表示 -->
+                                {% if role.id|int == role_id|int %}
+                                    {{role.name}}
+                                    <span class="remove-item" onclick="removeAdd(this)">x</span>
+                                    <input type="hidden" name="role_select_webhook_{{i[0]}}" value="{{role.id}}"/>
+                                    {% set _ = i.append(i[0] + 1) %}
+                                    {% set _ = i.pop(0) %}
+                                {% endif %}
+                                
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+                <br/><br/>
+            </details>
+
+            <input type="hidden" name="guild_id" value="{{guild_id}}"/>
+            <br/><br/>
+            <input type="submit" value="送信"/>
+        </form>
+
+        サーバーウィジェットが有効の場合、サーバーの状況が表示されます。<br/>
+        <iframe title="discord_5second" style="height: 350px;" src="https://discord.com/widget?id={{guild_id}}&theme=dark/" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+        <script src="/static/js/select_id.js" type="text/javascript"></script>
+    </body>
+    {% endblock %}
+</html>

@@ -1,6 +1,7 @@
 from fastapi import APIRouter,Request,Header
 from fastapi.responses import HTMLResponse
 from starlette.requests import Request
+from cryptography.fernet import Fernet
 
 import base64
 import hashlib
@@ -22,10 +23,14 @@ except ModuleNotFoundError:
 # ./venv/Scripts/activate.bat
 
 import os
+from typing import List,Tuple,Union
+
+from base.aio_req import pickle_read
 
 
-bots_name = os.environ['BOTS_NAME'].split(",")
 TOKEN = os.environ['DISCORD_BOT_TOKEN']
+
+ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
 
 # LINE側のメッセージを受け取る
 @router.post("/line-bot")
@@ -52,12 +57,14 @@ async def line_response(
     boo = await byte_body.body()
     body = boo.decode('utf-8')
 
-    # channel_secretからbotの種類を判別する
-    for bot_name in bots_name:
-        channel_secret = os.environ[f'{bot_name}_CHANNEL_SECRET']
+    # LINE Botのトークンなどを取り出す
+    line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
+
+    for bot_info in line_bot_fetch:
+        line_bot_secret:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_bot_secret')))
         # ハッシュ値を求める
         hash = hmac.new(
-            channel_secret.encode('utf-8'),
+            line_bot_secret.encode('utf-8'),
             body.encode('utf-8'), 
             hashlib.sha256
         ).digest()
@@ -66,23 +73,34 @@ async def line_response(
         signature = base64.b64encode(hash)
         decode_signature = signature.decode('utf-8')
 
+        # ハッシュ値が一致した場合
         if decode_signature == x_line_signature:
-            channel_secret = os.environ[f'{bot_name}_CHANNEL_SECRET']
-            # Discordサーバーのクラスを宣言
+
+            guild_id:int = int(bot_info.get('guild_id'))
+            line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_notify_token')))
+            line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_bot_token')))
+            
+            line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_group_id')))
+            default_channel_id:int = bot_info.get('default_channel_id')
+
+            debug_mode:bool = bot_info.get('debug_mode')
+            # Discordサーバーのインスタンスを作成
             discord_find_message = ReqestDiscord(
-                guild_id = int(os.environ[f'{bot_name}_GUILD_ID']),
-                limit = int(os.environ["USER_LIMIT"]), 
+                guild_id = guild_id,
+                limit = int(os.environ.get("USER_LIMIT",default=100)), 
                 token = TOKEN
             )
-            # LINEのクラスを宣言
+            # LINEのインスタンスを作成
             line_bot_api = LineBotAPI(
-                notify_token = os.environ.get(f'{bot_name}_NOTIFY_TOKEN'),
-                line_bot_token = os.environ[f'{bot_name}_BOT_TOKEN'],
-                line_group_id = os.environ.get(f'{bot_name}_GROUP_ID')
+                notify_token = line_notify_token,
+                line_bot_token = line_bot_token,
+                line_group_id = line_group_id
             )
             # メッセージを送信するDiscordのテキストチャンネルのID
-            channel_id = int(os.environ[f'{bot_name}_CHANNEL_ID'])
+            channel_id = default_channel_id
             break
+
+        
 
     # ハッシュ値が一致しなかった場合エラーを返す
     if decode_signature != x_line_signature: 
@@ -91,6 +109,10 @@ async def line_response(
     # 応答確認の場合終了
     if type(response.events) is list:
         return HTMLResponse("OK")
+
+    # デバッグモードがonの場合、LINEグループにグループidを返す
+    if debug_mode:
+        await line_bot_api.push_message_notify(message=f'本グループのグループid:{response.events.source.groupId}')
 
     # イベントの中身を取得
     event = response.events
@@ -164,3 +186,14 @@ async def line_response(
 
     # レスポンス200を返し終了
     return HTMLResponse(content="OK")
+
+
+# 復号化関数
+async def decrypt_password(encrypted_password:bytes) -> str:
+    cipher_suite = Fernet(ENCRYPTED_KEY)
+    try:
+        decrypted_password = cipher_suite.decrypt(encrypted_password)
+        return decrypted_password.decode('utf-8')
+    # トークンが無効の場合
+    except:
+        return ''

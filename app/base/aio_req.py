@@ -70,7 +70,7 @@ async def pickle_write(
     """
     # 取り出して書き込み
     dict_row = [
-        dict(zip(record.keys(), record)) 
+        dict(zip(record.keys(), record.values())) 
         for record in table_fetch
     ]
     # 書き込み
@@ -104,20 +104,31 @@ async def search_guild(
     user_guild_id = []
     match_guild = []
 
-    for bot_guild in bot_in_guild_get:
-        bot_guild_id.append(bot_guild['id'])
+    bot_guild_id = [
+        bot_guild.get('id')
+        for bot_guild in bot_in_guild_get
+    ]
 
-    for user_guild in user_in_guild_get:
-        user_guild_id.append(user_guild['id'])
-            
+    user_guild_id = [
+        user_guild.get('id')
+        for user_guild in user_in_guild_get
+    ]
+    
+    # for探索短縮のため、総数が少ない方をforinする
     if len(bot_guild_id) < len(user_guild_id):
-        for guild_id,guild in zip(bot_guild_id,bot_in_guild_get):
-            if guild_id in user_guild_id:
-                match_guild.append(guild)
+        match_guild = [
+            guild
+            for guild_id,guild in zip(bot_guild_id,bot_in_guild_get)
+            if guild_id in user_guild_id
+        ]
+        
     else:
-        for guild_id,guild in zip(user_guild_id,user_in_guild_get):
-            if guild_id in bot_guild_id:
-                match_guild.append(guild)
+        match_guild = [
+            guild
+            for guild_id,guild in zip(user_guild_id,user_in_guild_get)
+            if guild_id in bot_guild_id
+        ]
+        
 
     return match_guild
 
@@ -161,7 +172,7 @@ async def return_permission(
     access_token:str
 ) -> Permission:
     """
-    指定されたユーザの権限を返す
+    指定されたユーザの権限を返す(ロールの権限も含む)
 
     guild_id        :int
         サーバのid

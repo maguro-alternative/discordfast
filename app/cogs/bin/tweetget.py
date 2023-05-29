@@ -115,6 +115,23 @@ class Twitter_Get_Tweet:
                         upload_flag = False
                         mention_flag = False
 
+
+                        # ORでNGワード検索
+                        for word in webhook_fetch.get('ng_or_word'):
+                            # NGワードに登録されている場合、False
+                            if word in tweet_value.get('text'):
+                                upload_flag = False
+
+                        # ANDでNGワードを検索
+                        for word in webhook_fetch.get('ng_and_word'):
+                            # NGワードに登録されている場合、Falseを返し続ける
+                            if word in tweet_value.get('text'):
+                                upload_flag = False
+                            # NGに一つでも該当しない場合、True
+                            else:
+                                upload_flag = True
+                                break
+
                         # ANDでキーワードを検索
                         for word in webhook_fetch.get('search_and_word'):
                             # 条件にそぐわない場合終了

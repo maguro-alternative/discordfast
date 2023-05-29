@@ -43,6 +43,35 @@ class Voice_File:
         self.url = url
         self.second = second
 
+class NotifyStates:
+    """
+    LINE Notifyのステータス
+    ヘッダーから読み取る
+
+    param:
+    notify:Response
+        LINE Notifyのステータスのレスポンス
+    """
+    def __init__(
+        self,
+        notify:Response
+    ) -> None:
+        """
+        self.rate_limit         :int
+            1時間当たりのメッセージ送信上限
+        self.rate_remaining     :int
+            残りのメッセージ送信上限
+        self.image_limit        :int
+            1時間当たりの画像送信上限
+        self.image_remaining    :int
+            残り画像送信上限
+        """
+        self.rate_limit = int(notify.headers.get('X-RateLimit-Limit'))
+        self.rate_remaining = int(notify.headers.get('X-RateLimit-Remaining'))
+        self.image_limit = int(notify.headers.get('X-RateLimit-ImageLimit'))
+        self.image_remaining = int(notify.headers.get('X-RateLimit-ImageRemaining'))
+
+
 # LINEのgetリクエストを行う
 async def line_get_request(url: str, token: str) -> Dict:
     """
@@ -90,7 +119,7 @@ async def line_post_request(url: str, headers: dict, data: dict) -> Dict:
             data = data
         ) as resp:
             return await resp.json()
-
+        
 class LineBotAPI:
     """
     LINEBotのオブジェクト
@@ -325,7 +354,7 @@ class LineBotAPI:
         return int(r["totalUsage"])
 
     # LINE Notifyのステータスを取得
-    async def notify_status(self) -> Response:
+    async def notify_status(self) -> NotifyStates:
         """
         LINE Notifyのステータスを取得
 
@@ -338,59 +367,7 @@ class LineBotAPI:
                 url = NOTIFY_STATUS_URL,
                 headers = {'Authorization': 'Bearer ' + self.notify_token}
             ) as resp:
-                return resp
-
-    # LINE Notifyの1時間当たりの上限を取得
-    async def rate_limit(self) -> int:
-        """
-        LINE Notifyの1時間当たりの上限を取得
-
-        return
-        X-RateLimit-Limit:int
-        リクエスト上限数
-        """
-        resp = await self.notify_status()
-        ratelimit = resp.headers.get('X-RateLimit-Limit')
-        return int(ratelimit)
-
-    # LINE Notifyの1時間当たりの残りの回数を取得
-    async def rate_remaining(self) -> int:
-        """
-        LINE Notifyの1時間当たりの残りの回数を取得
-
-        return
-        X-RateLimit-Remaining:int
-        残りリクエスト数
-        """
-        resp = await self.notify_status()
-        ratelimit = resp.headers.get('X-RateLimit-Remaining')
-        return int(ratelimit)
-
-    # LINE Notifyの1時間当たりの画像送信上限を取得
-    async def rate_image_limit(self) -> int:
-        """
-        LINE Notifyの1時間当たりの画像送信上限を取得
-
-        return
-        X-RateLimit-ImageLimit:int
-        画像送信上限数
-        """
-        resp = await self.notify_status()
-        ratelimit = resp.headers.get('X-RateLimit-ImageLimit')
-        return int(ratelimit)
-
-    # LINE Notifyの1時間当たりの残り画像送信上限を取得
-    async def rate_image_remaining(self) -> int:
-        """
-        LINE Notifyの1時間当たりの残り画像送信上限を取得
-
-        return
-        X-RateLimit-ImageRemaining:int
-        残り画像送信上限数
-        """
-        resp = await self.notify_status()
-        ratelimit = resp.headers.get('X-RateLimit-ImageRemaining')
-        return int(ratelimit)
+                return NotifyStates(notify=resp)
 
     # 友達数、グループ人数をカウント
     async def friend(self) -> str:
@@ -460,7 +437,7 @@ class LineBotAPI:
         )
         
         # グループIDが無効の場合、友達から判断
-        if r.get('displayName') == None:
+        if r.get('message') != None:
             r = await line_get_request(
                 LINE_BOT_URL + f"/profile/{user_id}",
                 self.line_bot_token,
@@ -543,9 +520,19 @@ class LineBotAPI:
                     youtube=youtube
                 )
     
-    #
+    # LINEから受け取った音声データを取得し、Discordにアップロード
     async def voice_get(self ,message_id: int) -> Audio_Files:
-        """"""
+        """
+        LINEから受け取った音声データを取得し、Discordにアップロード
+
+        param:
+        message_id:int
+        LINEのメッセージのid
+
+        return
+        Audio_File
+        アップロードする音声データのクラス
+        """
         # 音声のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(

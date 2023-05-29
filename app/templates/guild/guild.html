@@ -18,11 +18,13 @@
     </a>
     <br/>
     {% if permission.administrator %}
-        管理者です。
+        管理者です。<br/>
+        <a href="/guild/{{guild_id}}/admin" class="btn btn-primary">管理者設定</a>
     {% endif %}
     <h4>設定する項目一覧</h4>
     
-    <a href="/guild/{{guild_id}}/line-post" class="btn btn-primary">lineの送信設定</a>
+    <a href="/guild/{{guild_id}}/line-post" class="btn btn-primary">lineへの送信設定</a>
+    <a href="/guild/{{guild_id}}/line-set" class="btn btn-primary">discordへの送信設定</a>
     <a href="/guild/{{guild_id}}/vc-signal" class="btn btn-primary">ボイスチャンネルの通知設定</a>
     <a href="/guild/{{guild_id}}/webhook" class="btn btn-primary">webhookの送信設定</a>
     <br/>

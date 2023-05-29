@@ -3,17 +3,14 @@ from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
+
 from dotenv import load_dotenv
 load_dotenv()
 
-import aiofiles
-
 import os
-from typing import List
+from typing import List,Dict,Any
 from itertools import groupby,chain
-import pickle
-import io
-from typing import List,Dict,Any,Tuple
+from cryptography.fernet import Fernet
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -22,13 +19,17 @@ from base.aio_req import (
     return_permission,
     oauth_check
 )
+from routers.session_base.user_session import OAuthData,User
+
+from message_type.discord_type.message_creater import ReqestDiscord
+from base.guild_permission import Permission
 
 DISCORD_BASE_URL = "https://discord.com/api"
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
-
-
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+
 
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
@@ -46,19 +47,23 @@ router = APIRouter()
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-@router.get('/guild/{guild_id}/vc-signal')
-async def line_post(
+@router.get('/guild/{guild_id}/line-set')
+async def line_set(
     request:Request,
     guild_id:int
 ):
     # OAuth2トークンが有効かどうか判断
-    try:
-        if not await oauth_check(access_token=request.session["oauth_data"]["access_token"]):
+    if request.session.get('oauth_data'):
+        oauth_session = OAuthData(**request.session.get('oauth_data'))
+        user_session = User(**request.session.get('user'))
+        # トークンの有効期限が切れていた場合、再ログインする
+        if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=REDIRECT_URL,status_code=302)
-    except KeyError:
+    else:
         return RedirectResponse(url=REDIRECT_URL,status_code=302)
+    
     # 使用するデータベースのテーブル名
-    TABLE = f'guilds_vc_signal_{guild_id}'
+    TABLE = f'line_bot'
 
     # サーバのチャンネル一覧を取得
     all_channel = await aio_get_request(
@@ -68,22 +73,8 @@ async def line_post(
         }
     )
 
-    # チャンネルのソート
-    all_channel_sort,all_channels,vc_channels = await sort_discord_channel(all_channel=all_channel)
-    
-    vc_cate_sort = [
-        tmp 
-        for tmp in all_channel_sort
-        if tmp['type'] == 2 or tmp['type'] == 4
-    ]
-
-    # text_channel = list(chain.from_iterable(all_channels))
-    text_channel_sort = [
-        tmp 
-        for tmp in all_channel_sort
-        if tmp['type'] == 0
-    ]
-
+    # ソート後のチャンネル一覧
+    all_channel_sort = await sort_discord_channel(all_channel=all_channel)
 
     # サーバの情報を取得
     guild = await aio_get_request(
@@ -95,19 +86,21 @@ async def line_post(
 
     # ログインユーザの情報を取得
     guild_user = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{request.session["user"]["id"]}',
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{user_session.id}',
         headers = {
             'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
         }
     )
-    role_list = [g for g in guild_user["roles"]]
-
+    role_list = [
+        g 
+        for g in guild_user["roles"]
+    ]
 
     # サーバの権限を取得
     guild_user_permission = await return_permission(
         guild_id=guild_id,
-        user_id=request.session["user"]["id"],
-        access_token=request.session["oauth_data"]["access_token"]
+        user_id=user_session.id,
+        access_token=oauth_session.access_token
     )
 
     # パーミッションの番号を取得
@@ -115,6 +108,7 @@ async def line_post(
 
     # キャッシュ読み取り
     guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
+    
     guild_table = [
         g 
         for g in guild_table_fetch 
@@ -124,25 +118,24 @@ async def line_post(
     guild_permission_user = list()
     guild_permission_role = list()
     if len(guild_table) > 0:
-        guild_permission_code = int(guild_table[0].get('vc_permission'))
+        guild_permission_code = int(guild_table[0].get('line_bot_permission'))
         guild_permission_user = [
             user 
-            for user in guild_table[0].get('vc_user_id_permission')
+            for user in guild_table[0].get('line_bot_user_id_permission')
         ]
         guild_permission_role = [
             role
-            for role in guild_table[0].get('vc_role_id_permission')
+            for role in guild_table[0].get('line_bot_role_id_permission')
         ]
 
     and_code = guild_permission_code & permission_code
     admin_code = 8 & permission_code
-
     user_permission:str = 'normal'
 
     # 許可されている場合、管理者の場合
     if (and_code == permission_code or 
         admin_code == 8 or
-        request.session['user']['id'] in guild_permission_user or
+        user_session.id in guild_permission_user or
         len(set(guild_permission_role) & set(role_list)) > 0
         ):
         user_permission = 'admin'
@@ -150,115 +143,58 @@ async def line_post(
     # キャッシュ読み取り
     table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
-    # データベースへ接続
-    await db.connect()
+    line_row = {}
 
-    vc_set = []
+    # 各項目をフロント部分に渡す
+    for table in table_fetch:
+        if int(table.get('guild_id')) == guild_id:
+            line_notify_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_notify_token')))
+            line_bot_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_token')))
+            line_bot_secret:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_secret')))
+            line_group_id:str = await decrypt_password(encrypted_password=bytes(table.get('line_group_id')))
+            default_channel_id:int = table.get('default_channel_id')
+            debug_mode:bool = bool(table.get('debug_mode'))
 
-    # ボイスチャンネルのみを代入
-    app_vc = [int(x['id']) for x in vc_cate_sort if x['type'] == 2]
+            line_row = {
+                'line_notify_token':line_notify_token,
+                'line_bot_token':line_bot_token,
+                'line_bot_secret':line_bot_secret,
+                'line_group_id':line_group_id,
+                'default_channel_id':default_channel_id,
+                'debug_mode':debug_mode
+            }
 
-    # テータベース側のボイスチャンネルを代入
-    db_vc = [int(x['vc_id']) for x in table_fetch]
-    if set(app_vc) != set(db_vc):
-        # データベース側で欠けているチャンネルを取得
-        missing_items = [
-            item 
-            for item in table_fetch 
-            if item not in vc_cate_sort
-        ]
-
-        # 新しくボイスチャンネルが作成されていた場合
-        if len(missing_items) > 0:
-            for vc in missing_items:
-                if vc['type'] == 2:
-                    row_values = {
-                        'vc_id': vc['id'], 
-                        'guild_id': guild_id, 
-                        'send_signal': True,
-                        'send_channel_id': guild.get('system_channel_id'), 
-                        'join_bot': False,
-                        'everyone_mention': True,
-                        'mention_role_id':[]
-                    }
-
-                    # サーバー用に新たにカラムを作成
-                    await db.insert_row(
-                        table_name=TABLE,
-                        row_values=row_values
-                    )
-                    vc_set.append(row_values)
-        # ボイスチャンネルがいくつか削除されていた場合
-        else:
-            # 削除されたチャンネルを取得
-            missing_items = [
-                item 
-                for item in all_channels 
-                if item not in table_fetch
-            ]
-            
-            # 削除されたチャンネルをテーブルから削除
-            for vc in missing_items:
-                await db.delete_row(
-                    table_name=TABLE,
-                    where_clause={
-                        'vc_id':vc['vc_id']
-                    }
-                )
-
-            # 削除後のチャンネルを除き、残りのチャンネルを取得
-            vc_set = [
-                d for d in table_fetch 
-                if not (d.get('vc_id') in [
-                    e.get('vc_id') for e in missing_items
-                ] )
-            ]
-
-    else:
-        vc_set = table_fetch
-
-        # データベースの状況を取得
-        db_check_fetch = await db.select_rows(
-            table_name=TABLE,
-            columns=[],
-            where_clause={}
-        )
-        # データベースに登録されたが、削除されずに残っているチャンネルを削除
-        check = [int(c['vc_id']) for c in db_check_fetch]
-        del_check = set(check) - set(app_vc)
-
-        for chan_id in list(del_check):
-            await db.delete_row(
-                table_name=TABLE,
-                where_clause={
-                    'channel_id':chan_id
-                }
-            )
-
-    await db.disconnect()
 
     return templates.TemplateResponse(
-        "vc_signal.html",
+        "guild/line/lineset.html",
         {
             "request": request, 
-            "vc_cate_channel": vc_cate_sort,
-            "text_channel": text_channel_sort,
             "guild": guild,
             "guild_id": guild_id,
-            'vc_set' : vc_set,
+            "all_channel": all_channel_sort,
+            "line_row":line_row,
             "user_permission":user_permission,
             "title": request.session["user"]['username']
         }
     )
+    
+
+# 復号化関数
+async def decrypt_password(encrypted_password:bytes) -> str:
+    cipher_suite = Fernet(ENCRYPTED_KEY)
+    try:
+        decrypted_password = cipher_suite.decrypt(encrypted_password)
+        return decrypted_password.decode('utf-8')
+    # トークンが無効の場合
+    except:
+        return ''
 
 
 async def sort_discord_channel(
     all_channel:List
-) -> Tuple[List,List,List]:
-    # 親カテゴリー格納用
+) -> List:
+     # 親カテゴリー格納用
     position = []
-    # ソート後のチャンネル一覧
-    all_channel_sort = []
 
     # レスポンスのJSONからpositionでソートされたリストを作成
     sorted_channels = sorted(all_channel, key=lambda c: c['position'])
@@ -281,13 +217,6 @@ async def sort_discord_channel(
         else:
             listtmp:List = channel_dict[str(parent_id)]
             listtmp.extend(list(group))
-
-            # リスト内包記法でボイスチャンネルとカテゴリー以外は除外
-            listtmp = [
-                tmp 
-                for tmp in listtmp 
-                #if tmp['type'] == 2 or tmp['type'] == 4
-            ]
             channel_dict[str(parent_id)] = listtmp
             # リストを空にする
             listtmp = list()
@@ -307,10 +236,8 @@ async def sort_discord_channel(
     if len(channel_dict['None']) != 0:
         # 配列の長さをカテゴリー数+1にする
         all_channels = [{}] * (len(extracted_list) + 1)
-        vc_channels = [{}] * (len(extracted_list) + 1)
     else:
         all_channels = [{}] * len(extracted_list)
-        vc_channels = [{}] * len(extracted_list)
 
     for parent_id, channel in channel_dict.items():
         # カテゴリー内にチャンネルがある場合
@@ -333,7 +260,6 @@ async def sort_discord_channel(
 
             # 指定した位置にカテゴリー内のチャンネルを代入
             all_channels[position_index] = channel
-            vc_channels[position_index] = channel
 
             # 先頭がカテゴリーでない場合
             if channel[0]['parent_id'] != None:
@@ -343,4 +269,4 @@ async def sort_discord_channel(
     # list(list),[[],[]]を一つのリストにする
     all_channel_sort = list(chain.from_iterable(all_channels))
 
-    return all_channel_sort,all_channels,vc_channels
+    return all_channel_sort

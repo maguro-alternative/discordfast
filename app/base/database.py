@@ -4,7 +4,7 @@ from asyncpg.exceptions import DuplicateTableError
 import asyncio
 import os
 
-from typing import List,Dict,Any,Union
+from typing import List,Dict,Any,Union,Tuple
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -174,6 +174,9 @@ class PostgresDB:
         table_name: str, 
         row_values: List[Dict[str, Any]]
     ) -> None:
+        """
+        行を一気に作成
+        """
         if self.conn == None:
             raise DataBaseNotConnect
         
@@ -186,8 +189,10 @@ class PostgresDB:
             ) 
             for row in row_values
         ]
+
+        #print(columns)
+        #print(values)
         
-        print(table_name,values)
         await self.conn.copy_records_to_table(
             table_name=table_name,
             records=values
@@ -401,8 +406,73 @@ class PostgresDB:
         if self.conn == None:
             raise DataBaseNotConnect
         return await self.conn.fetch(sql_syntax)
+    
+    async def get_columns_type(
+        self, 
+        table_name:str
+    ) -> Dict:
+        """
+        指定されたテーブルの列の型を返す
+
+        param:
+        table_name  :str 
+            テーブルの名前
+
+        return:
+        List[Tuple[str,str]]
+            行名と型の配列
+
+        """
+        query = f"""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = '{table_name}';
+        """
+
+        result = await self.conn.fetch(query)
+        columns:List[Tuple[str,str]] = [
+            (row['column_name'],row['data_type'])
+            for row in result
+        ]
+        columns_dict:Dict = {}
+
+        # ARRAY型の列の要素のデータ型を取得
+        for i, (column_name,data_type) in enumerate(columns):
+            # 初期の辞書型
+            tmp_dict:Dict = {column_name:data_type}
+            # 配列の場合
+            if data_type.startswith('ARRAY'):
+                query = f"""
+                SELECT column_name, udt_name 
+                FROM information_schema.columns 
+                WHERE table_name = '{table_name}' AND column_name = '{column_name}'
+                """
+
+                result:List[Dict] = await self.conn.fetch(query)
+                element_data_type:str = result[0]['udt_name']
+
+                # 配列の場合(先頭に_がある)
+                if element_data_type.startswith('_'):
+                    element_data_type = element_data_type.replace('_','')
+                    element_data_type = f'{element_data_type}[]'
+                # 配列用に更新
+                tmp_dict = {
+                    column_name: element_data_type
+                }
+
+            # varcharの場合
+            if data_type == 'character varying':
+                tmp_dict = {
+                    column_name: 'varchar'
+                }
+            columns_dict.update(tmp_dict)
+
+        return columns_dict
+
 
 async def main():
+    import re
+    import uuid
     user = os.getenv('PGUSER')
     password = os.getenv('PGPASSWORD')
     database = os.getenv('PGDATABASE')
@@ -413,45 +483,147 @@ async def main():
         database=database,
         host=host
     )
+    # ローカル側のカラム(こちらに合わせる)
     columns = {
-        'guild_id': 'DECIMAL PRIMARY KEY', 
-        'channel_id': 'DECIMAL[]', 
-        'channel_type': 'VARCHAR(50)',
-        'message_type': 'VARCHAR(50)',
-        'message_bot': 'BOOLEAN',
-        'channel_nsfw': 'BOOLEAN'
+        'uuid':'UUID PRIMARY KEY',
+        'guild_id': 'NUMERIC', 
+        'webhook_id':'NUMERIC',
+        'subscription_type':'VARCHAR(50)',
+        'subscription_id': 'VARCHAR(50)',
+        'mention_roles':'NUMERIC[]',
+        'mention_members':'NUMERIC[]',
+        'ng_or_word':'VARCHAR(50)[]',
+        'ng_and_word':'VARCHAR(50)[]',
+        'search_or_word':'VARCHAR(50)[]',
+        'search_and_word':'VARCHAR(50)[]',
+        'mention_or_word':'VARCHAR(50)[]',
+        'mention_and_word':'VARCHAR(50)[]',
+        'created_at':'VARCHAR(50)'
     }
+
+    new_columns:Dict = {
+        'uuid':'',
+        'guild_id': 0, 
+        'webhook_id':0,
+        'subscription_type':'',
+        'subscription_id': '',
+        'mention_roles':[],
+        'mention_members':[],
+        'ng_or_word':[],
+        'ng_and_word':[],
+        'search_or_word':[],
+        'search_and_word':[],
+        'mention_or_word':[],
+        'mention_and_word':[],
+        'created_at':''
+    }
+
+    table_fetch = [
+        {
+            'uuid':uuid.UUID('e04ddf59-8f06-49e9-b0a1-b3a21724a22e'),
+            'guild_id': 0, 
+            'webhook_id':0,
+            'subscription_type':'twitter',
+            'subscription_id': 'a',
+            'mention_roles':[1],
+            'mention_members':[1,2],
+            'search_or_word':[],
+            'search_and_word':[],
+            'mention_or_word':[],
+            'mention_and_word':[],
+            'created_at':'Tue May 23 05:00:00 +0000 2022'
+        },
+        {
+            'uuid':uuid.UUID('e04ddf59-8f06-49e9-b0a1-b3a21724a22e'),
+            'guild_id': 0, 
+            'webhook_id':0,
+            'subscription_type':'twitter',
+            'subscription_id': 'a',
+            'mention_roles':[1],
+            'mention_members':[1,2],
+            'search_or_word':[],
+            'search_and_word':[],
+            'mention_or_word':[],
+            'mention_and_word':[],
+            'created_at':'Tue May 23 05:00:00 +0000 2022'
+        }
+    ]
+
+    set_columns:Dict = {}
+    table_name='webhook_838937935822585928'
     await db.connect()
 
-    await db.drop_table(table_name='users')
-    await db.create_table(table_name='guilds_ng_channel',columns=columns)
-    # データベースのクエリを実行する処理をここに書く
-    row_values = {
-        'guild_id': 838937935822585928, 
-        'channel_id': [911602953373241344,872822898946105396], 
-        'channel_type': 'voice',
-        'message_type': 'pins_add',
-        'message_bot': True,
-        'channel_nsfw': False
-    }
+    # データベース側のカラム
+    table_columns = await db.get_columns_type(table_name=table_name)
+    print(table_columns)
 
-    #await db.insert_row(table_name='guilds_ng_channel',row_values=row_values)
+    missing_items = [
+        {key:value}
+        for key,value in new_columns.items() 
+        if key not in table_columns.keys()
+    ]
+    for column_name,data_type in columns.items():
+        table_data_type:str = table_columns.get(column_name)
+        # (数字)が含まれていた場合、取り除く
+        data_type:str = re.sub(r'\(\d+\)','',data_type)
+        
+        # データベース側になかった場合
+        # 主キーで、変更があった場合
+        if (table_data_type == None or 
+            table_data_type not in data_type.lower() and (
+            'PRIMARY KEY' in data_type or
+            'primary key' in data_type
+            )):
+            
+            if isinstance(new_columns[column_name],list):
+                new_columns[column_name] = tuple(new_columns[column_name])
 
-    row_values = {
-        #'channel_id': f'array_append(channel_id, {928284688181772309})'
-        'channel_id': [928284688181772309]
-    }
+            set_columns.update(
+                {
+                    column_name:new_columns[column_name]
+                }
+            )
+        # 完全一致(大文字小文字区別せず)あった場合
+        # 主キーで、変更がない場合
+        elif (table_data_type == data_type.lower() or 
+              (table_data_type in data_type.lower() and (
+            'PRIMARY KEY' in data_type or
+            'primary key' in data_type
+            ))):
+            set_columns.update(
+                {
+                    column_name:'Unchanged'
+                }
+            )
 
-    where_clause = {
-        'guild_id': 838937935822585928
-    }
+    #print(set_columns.values())
+    if (len(list(set_columns.values())) == 1 and 
+        list(set_columns.values())[0] == "Unchanged"):
+        unchanged = True
+    else:
+        unchanged = False
 
-    await db.update_row(
-        table_name='guilds_ng_channel',
-        row_values=row_values,
-        where_clause=where_clause
-    )
+    for i,table in enumerate(table_fetch):
+        for table_key,table_value in table.items():
+            if set_columns.get(table_key) == "Unchanged":
+                table.update({table_key:table_value})
+
+        for item in missing_items:
+            for key,value in item.items():
+                table.update({key:value})
+
+        table_fetch[i] = table
+        print(table)
+        
+
+    
+                
+
+
     await db.disconnect()
+
+    print(set_columns)
+    #print(table_fetch)
 
 
 if __name__ == '__main__':
