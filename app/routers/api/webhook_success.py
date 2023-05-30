@@ -83,6 +83,8 @@ async def webhook_post(
         "member_member_change_",
         "changeSearchOrText",
         "changeSearchAndText",
+        "changeNgOrText",
+        "changeNgAndText",
         "changeMentionOrText",
         "changeMentionAndText"
     )

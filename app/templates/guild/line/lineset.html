@@ -40,19 +40,51 @@
     <form action="/api/line-set-success" name="discordForm" method="post">
 
         <h3>LINE Notifyのトークン</h3>
-        <input type="password" id="line_notify_token" name="line_notify_token" value="{{line_row.line_notify_token}}"/>
+        {% if user_permission not in per %}
+            <input type="password" id="line_notify_token" name="line_notify_token" value="{{line_row.line_notify_token}}"/>
+        {% else %}
+            {% if line_row.line_notify_token|length == 0 %}
+                未入力
+            {% else %}
+                入力済み
+            {% endif %}
+        {% endif %}
         <button type='button' id="btn_notify_token_view" onclick="password_view('line_notify_token','btn_notify_token_view')">表示</button>
 
         <h3>LINE Botのトークン</h3>
-        <input type="password" id="line_bot_token" name="line_bot_token" value="{{line_row.line_bot_token}}"/>
+        {% if user_permission not in per %}
+            <input type="password" id="line_bot_token" name="line_bot_token" value="{{line_row.line_bot_token}}"/>
+        {% else %}
+            {% if line_row.line_bot_token|length == 0 %}
+                未入力
+            {% else %}
+                入力済み
+            {% endif %}
+        {% endif %}
         <button type='button' id="btn_line_token_view" onclick="password_view('line_bot_token','btn_line_token_view')">表示</button>
 
         <h3>LINE Botのシークレットキー</h3>
-        <input type="password" id="line_bot_secret" name="line_bot_secret" value="{{line_row.line_bot_secret}}"/>
+        {% if user_permission not in per %}
+            <input type="password" id="line_bot_secret" name="line_bot_secret" value="{{line_row.line_bot_secret}}"/>
+        {% else %}
+            {% if line_row.line_bot_secret|length == 0 %}
+                未入力
+            {% else %}
+                入力済み
+            {% endif %}
+        {% endif %}
         <button type='button' id="btn_line_secret_view" onclick="password_view('line_bot_secret','btn_line_secret_view')">表示</button>
 
         <h3>LINEグループのid</h3>
-        <input type="password" id="line_group_id" name="line_group_id" value="{{line_row.line_group_id}}"/>
+        {% if user_permission not in per %}
+            <input type="password" id="line_group_id" name="line_group_id" value="{{line_row.line_group_id}}"/>
+        {% else %}
+            {% if line_row.line_group_id|length == 0 %}
+                未入力
+            {% else %}
+                入力済み
+            {% endif %}
+        {% endif %}
         <button type='button' id="btn_group_id_view" onclick="password_view('line_group_id','btn_group_id_view')">表示</button>
 
         <br/>

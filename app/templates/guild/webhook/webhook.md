@@ -10,6 +10,8 @@ _がついているものは末尾に数字がつく。
 "member_member_select_",
 "searchOrText",
 "searchAndText",
+"ngOrText",
+"ngAndText",
 "mentionOrText",
 "mentionAndText",
 
@@ -20,6 +22,8 @@ _がついているものは末尾に数字がつく。
 "member_member_change_",
 "changeSearchOrText",
 "changeSearchAndText",
+"changeNgOrText",
+"changeNgAndText",
 "changeMentionOrText",
 "changeMentionAndText"
 ```
@@ -53,6 +57,20 @@ _以降の数字はテキストの数を示している。
 
 ## searchAndText :str
 テキストにこの項目に指定された文字すべてが含まれていた場合に送信する。  
+niconico,YouTubeには非対応  
+末尾には1が付き、更に_1とついてくる。  
+_以降の数字はテキストの数を示している。  
+複数の項目が送られて来ると両者ともに2,3と続いてくる。
+
+## ngOrText :str
+テキストにこの項目に指定されたいずれかの文字が含まれていた場合は送信しない。  
+niconico,YouTubeには非対応  
+末尾には1が付き、更に_1とついてくる。  
+_以降の数字はテキストの数を示している。  
+複数の項目が送られて来ると両者ともに2,3と続いてくる。
+
+## ngAndText :str
+テキストにこの項目に指定された文字すべてが含まれていた場合は送信しない。  
 niconico,YouTubeには非対応  
 末尾には1が付き、更に_1とついてくる。  
 _以降の数字はテキストの数を示している。  
@@ -102,6 +120,20 @@ _以降の数字はテキストの数を示している。
 
 ## changeSearchAndText :str
 テキストにこの項目に指定された文字すべてが含まれていた場合に送信する。  
+niconico,YouTubeには非対応  
+末尾には1が付き、更に_1とついてくる。  
+_以降の数字はテキストの数を示している。  
+複数の項目が送られて来ると両者ともに2,3と続いてくる。
+
+## changeNgOrText :str
+テキストにこの項目に指定されたいずれかの文字が含まれていた場合は送信しない。  
+niconico,YouTubeには非対応  
+末尾には1が付き、更に_1とついてくる。  
+_以降の数字はテキストの数を示している。  
+複数の項目が送られて来ると両者ともに2,3と続いてくる。
+
+## changeNgAndText :str
+テキストにこの項目に指定された文字すべてが含まれていた場合は送信しない。  
 niconico,YouTubeには非対応  
 末尾には1が付き、更に_1とついてくる。  
 _以降の数字はテキストの数を示している。  
