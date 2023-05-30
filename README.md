@@ -6,7 +6,7 @@ Discordの多機能Botです。
 - Web版VOICEVOXによる読み上げ機能
 - カラオケ(動作不安定)
 - ChatGPTへの質問(現在使用不可)
-- Twitter,niocnicoの通知
+- Twitter,niconico,YouTubeの通知
 - PostgreSQLを使用したLINEと入退室の管理
 
 # ボイスチャンネルの入退室通知
@@ -236,6 +236,11 @@ upload_video.py-oauth2.json
 - PGUSER
 ```bash
 ・データベースのユーザー名
+```
+
+postgresのuriに当てはめると以下のようになる
+```bash
+postgresql://{PGHOST}:{PGPORT}/{PGDATABASE}?user={PGUSER}&password={PGPASSWORD}
 ```
 
 - ENCRYPTED_KEY
