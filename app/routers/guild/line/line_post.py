@@ -267,7 +267,7 @@ async def line_post(
             "all_channel": all_channel_sort,
             "line_row":line_row,
             "user_permission":user_permission,
-            "title": request.session["user"]['username']
+            "title": "LINEへの送信設定/" + guild["name"]
         }
     )
 

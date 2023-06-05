@@ -135,6 +135,9 @@
                             {% set member_len = 0 %}
                         {% endif %}
 
+                        <br/>
+                        メッセージを送信しないユーザー
+                        <br/>
                         <!-- サーバ内のロール一覧をselectできるようにする -->
                         <select id="mySelect_{{all.id}}" onchange="selectMemberAddEvent('{{member_len}}',this)" size="1">
                             {% for member in guild_members %}

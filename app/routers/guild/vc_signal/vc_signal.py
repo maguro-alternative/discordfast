@@ -250,7 +250,7 @@ async def line_post(
             "guild_id": guild_id,
             'vc_set' : vc_set,
             "user_permission":user_permission,
-            "title": request.session["user"]['username']
+            "title": "ボイスチャンネルの送信設定/" + guild['name']
         }
     )
 

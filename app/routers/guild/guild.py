@@ -62,6 +62,6 @@ async def guild(
             "guild": guild,
             "guild_id": guild_id,
             "permission":vars(permission),
-            "title":request.session["user"]['username']
+            "title":guild['name'] + "の設定項目一覧"
         }
     )

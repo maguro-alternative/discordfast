@@ -159,6 +159,6 @@ async def webhook(
             "channels":all_channel,
             "guild_id": guild_id,
             "user_permission":user_permission,
-            "title": request.session["user"]['username']
+            "title": "webhookの送信設定/" + guild['name']
         }
     )
