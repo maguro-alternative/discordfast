@@ -42,7 +42,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.post('/api/vc-count-success')
+@router.post('/api/vc-signal-success')
 async def vc_post(
     request:Request
 ):
@@ -136,7 +136,7 @@ async def vc_post(
     )
 
     return templates.TemplateResponse(
-        'api/vccountsuccess.html',
+        'api/vcsignalsuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

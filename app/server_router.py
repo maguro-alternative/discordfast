@@ -32,7 +32,7 @@ from routers.api import (
     line_bot,
     line_post_success,
     line_set_success,
-    vc_count_success,
+    vc_signal_success,
     webhook_success,
     admin_success,
     test_success
@@ -85,7 +85,7 @@ app.include_router(line_post.router)
 app.include_router(line_post_success.router)
 app.include_router(logout.router)
 app.include_router(vc_signal.router)
-app.include_router(vc_count_success.router)
+app.include_router(vc_signal_success.router)
 app.include_router(webhook.router)
 app.include_router(webhook_success.router)
 app.include_router(admin.router)
