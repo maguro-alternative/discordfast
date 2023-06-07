@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -24,15 +24,31 @@ templates = Jinja2Templates(directory="templates")
 @router.get('/callback/')
 async def callback(
     code:str,
+    state: str,
     request:Request
 ):
-    # セッションの初期化
+    # 旧セッションの初期化
     if request.session.get('user') != None:
         request.session.pop("user")
     if request.session.get('connection') != None:
         request.session.pop("connection")
     if request.session.get("oauth_data") != None:
         request.session.pop("oauth_data")
+    
+    # セッションの初期化
+    if request.session.get('discord_user') != None:
+        request.session.pop("discord_user")
+    if request.session.get('discord_connection') != None:
+        request.session.pop("discord_connection")
+    if request.session.get("discord_oauth_data") != None:
+        request.session.pop("discord_oauth_data")
+
+    # stateが一緒しない場合、400で終了
+    if request.session.get("state") != state:
+        raise HTTPException(status_code=400, detail="認証失敗")
+    # stateが一致した場合、削除して続行
+    else:
+        request.session.pop("state")
         
     authorization_code = code
 
@@ -52,16 +68,16 @@ async def callback(
         }
     )
 
-    request.session["oauth_data"] = responce_json
+    request.session["discord_oauth_data"] = responce_json
 
-    request.session["user"] = await aio_get_request(
+    request.session["discord_user"] = await aio_get_request(
         url = DISCORD_BASE_URL + '/users/@me', 
         headers = { 
             'Authorization': f'Bearer {responce_json["access_token"]}' 
         }
     )
 
-    request.session["connection"] = await aio_get_request(
+    request.session["discord_connection"] = await aio_get_request(
         url = DISCORD_BASE_URL + '/users/@me/connections', 
         headers = { 
             'Authorization': f'Bearer {responce_json["access_token"]}' 

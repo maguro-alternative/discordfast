@@ -24,7 +24,7 @@
 
     {% set per = ['admin'] %}
 
-    <h3>{{request.session.user.username}}さんは
+    <h3>{{request.session.discord_user.username}}さんは
     {% if user_permission in per %}
         編集できます。
     {% else %}

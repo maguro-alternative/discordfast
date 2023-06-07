@@ -16,7 +16,7 @@ from base.aio_req import (
     return_permission,
     oauth_check
 )
-from routers.session_base.user_session import OAuthData,User
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
@@ -45,9 +45,9 @@ async def webhook(
     guild_id:int    
 ):
     # OAuth2トークンが有効かどうか判断
-    if request.session.get('oauth_data'):
-        oauth_session = OAuthData(**request.session.get('oauth_data'))
-        user_session = User(**request.session.get('user'))
+    if request.session.get('discord_oauth_data'):
+        oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
+        user_session = DiscordUser(**request.session.get('discord_user'))
         # トークンの有効期限が切れていた場合、再ログインする
         if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=REDIRECT_URL,status_code=302)

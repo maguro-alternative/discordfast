@@ -1,7 +1,7 @@
 from pydantic import BaseModel,validator
 from typing import List,Optional,Union,Any
 
-class OAuthData(BaseModel):
+class DiscordOAuthData(BaseModel):
     """
     DiscordのOAuth2認証のデータ
 
@@ -25,7 +25,7 @@ class OAuthData(BaseModel):
     token_type      :str
 
 
-class User(BaseModel):
+class DiscordUser(BaseModel):
     """
     ユーザ情報
 
@@ -77,7 +77,7 @@ class User(BaseModel):
     mfa_enabled         :bool
     premium_type        :int
 
-class Connection(BaseModel):
+class DiscordConnection(BaseModel):
     """
     Discordのアカウント連携情報
 

@@ -14,7 +14,7 @@ load_dotenv()
 
 from routers import (
     index,
-    register,
+    login,
     callback,
     guilds,
     logout
@@ -64,7 +64,7 @@ jinja_env = templates.env  #Jinja2.Environment : filterやglobalの設定用
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
 # session使用
-app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get('MIDDLE_KEY'))
 # オリジン間のリソースを共有
 app.add_middleware(
     CORSMiddleware, 
@@ -77,7 +77,7 @@ app.add_middleware(
 # 各パス
 app.include_router(index.router)
 app.include_router(line_bot.router)
-app.include_router(register.router)
+app.include_router(login.router)
 app.include_router(callback.router)
 app.include_router(guild.router)
 app.include_router(guilds.router)

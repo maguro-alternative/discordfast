@@ -8,7 +8,7 @@ from base.aio_req import (
     aio_get_request,
     oauth_check
 )
-from routers.session_base.user_session import OAuthData
+from routers.session_base.user_session import DiscordOAuthData
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -22,11 +22,11 @@ DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 @router.get("/")
 async def index(request: Request):
     # Discordの認証情報が有効かどうか判断
-    if request.session.get('oauth_data'):
-        oauth_session = OAuthData(**request.session.get('oauth_data'))
+    if request.session.get('discord_oauth_data'):
+        oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
         # トークンの有効期限が切れていた場合、認証情報を削除
         if not await oauth_check(access_token=oauth_session.access_token):
-            request.session.pop('oauth_data')
+            request.session.pop('discord_oauth_data')
     
     bot_data:dict = await aio_get_request(
         url = DISCORD_BASE_URL + '/users/@me', 
@@ -49,14 +49,14 @@ async def index(request: Request):
 """
 
 {
-    'oauth_data': {
+    'discord_oauth_data': {
         'access_token': str, 
         'expires_in': int, 
         'refresh_token': str, 
         'scope': str, 
         'token_type': str
     }, 
-    'user': {
+    'discord_user': {
         'id': int, 
         'username': str, 
         'global_name': str, 
@@ -73,7 +73,7 @@ async def index(request: Request):
         'mfa_enabled': bool, 
         'premium_type': int
     }, 
-    'connection': [
+    'discord_connection': [
         {
             'type': 'epicgames', 
             'id': str, 

@@ -11,6 +11,7 @@ from base.aio_req import (
 )
 
 import os
+import secrets
 
 router = APIRouter()
 
@@ -21,19 +22,22 @@ REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&cli
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
-@router.get("/register")
-async def register_get(request: Request):
+@router.get("/discord-login")
+async def discord_login(request: Request):
+    # ランダムなstate値の生成
+    state = secrets.token_urlsafe(16)
+    request.session['state'] = state
     try:
         oauth_data:dict = await aio_get_request(
             url = DISCORD_BASE_URL + '/users/@me', 
             headers = { 
-                'Authorization': f'Bearer {request.session["oauth_data"]["access_token"]}' 
+                'Authorization': f'Bearer {request.session["discord_oauth_data"]["access_token"]}' 
             }
         )
         if oauth_data.get('message') == '401: Unauthorized':
-            return RedirectResponse(url=REDIRECT_URL,status_code=302)
+            return RedirectResponse(url=f"{REDIRECT_URL}&state={state}",status_code=302)
     except:
-        return RedirectResponse(url=REDIRECT_URL,status_code=302)
+        return RedirectResponse(url=f"{REDIRECT_URL}&state={state}",status_code=302)
     return templates.TemplateResponse(
         'register.html',
         {

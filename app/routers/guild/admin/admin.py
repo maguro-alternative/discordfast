@@ -14,7 +14,7 @@ from base.aio_req import (
     oauth_check
 )
 from typing import List,Dict,Any,Tuple
-from routers.session_base.user_session import OAuthData,User
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 DISCORD_BASE_URL = "https://discord.com/api"
 REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -32,9 +32,9 @@ async def admin(
     guild_id:int
 ):
     # OAuth2トークンが有効かどうか判断
-    if request.session.get('oauth_data'):
-        oauth_session = OAuthData(**request.session.get('oauth_data'))
-        user_session = User(**request.session.get('user'))
+    if request.session.get('discord_oauth_data'):
+        oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
+        user_session = DiscordUser(**request.session.get('discord_user'))
         # トークンの有効期限が切れていた場合、再ログインする
         if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=REDIRECT_URL,status_code=302)
@@ -95,6 +95,6 @@ async def admin(
             "guild_members":guild_members,
             "guild_id": guild_id,
             "guild_table":guild_table[0],
-            "title":request.session["user"]['username']
+            "title":request.session["discord_user"]['username']
         }
     )

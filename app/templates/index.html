@@ -6,7 +6,7 @@
     <h1>ようこそ！！！！！！！</h1>
     ここは{{bot_data.username}}の設定とかできるサイトです！！！！！
     <br/>
-    {% if request.session.oauth_data %}
+    {% if request.session.discord_oauth_data %}
       <a href="/guilds" class="btn btn-primary">サーバ一覧へ</a>
     {% endif %}
     <br/>

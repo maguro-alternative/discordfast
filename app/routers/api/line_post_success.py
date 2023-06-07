@@ -13,7 +13,7 @@ from base.database import PostgresDB
 from base.aio_req import pickle_write
 from core.db_pickle import *
 from routers.api.chack.post_user_check import user_checker
-from routers.session_base.user_session import OAuthData,User
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 from core.pickes_save.line_columns import LINE_COLUMNS
 
@@ -44,8 +44,8 @@ async def line_post_success(request: Request):
     # OAuth2トークンが有効かどうか判断
     check_code = await user_checker(
         request=request,
-        oauth_session=OAuthData(**request.session.get('oauth_data')),
-        user_session=User(**request.session.get('user'))
+        oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
+        user_session=DiscordUser(**request.session.get('discord_user'))
     )
     
     if check_code == 302:

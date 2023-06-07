@@ -17,11 +17,20 @@ REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&cli
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
-@router.get("/logout")
-async def register_get(request: Request):
+@router.get("/discord-logout")
+async def discord_logout(request: Request):
     # セッションの初期化
-    if request.session:
+    if request.session.get('discord_user') != None:
+        request.session.pop("discord_user")
+    if request.session.get('discord_connection') != None:
+        request.session.pop("discord_connection")
+    if request.session.get("discord_oauth_data") != None:
+        request.session.pop("discord_oauth_data")
+
+    # 旧セッションの初期化
+    if request.session.get('user') != None:
         request.session.pop("user")
+    if request.session.get('connection') != None:
         request.session.pop("connection")
     if request.session.get("oauth_data") != None:
         request.session.pop("oauth_data")

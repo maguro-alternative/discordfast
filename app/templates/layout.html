@@ -34,10 +34,10 @@
                             <a href="/" class="btn btn-primary">top</a>
                         </div>
                         <div class="col-xs-2 col-sm-2 col-md-2" style="width: 50%;">
-                        {% if request.session.oauth_data %}
-                            <a href="/logout" class="btn btn-primary">Logout</a>
+                        {% if request.session.discord_oauth_data %}
+                            <a href="/discord-logout" class="btn btn-primary">Logout</a>
                         {% else %}
-                            <a href="/register" class="btn btn-primary">Login</a>
+                            <a href="/discord-login" class="btn btn-primary">Login</a>
                         {% endif %}
                         </div>
                     </div>
