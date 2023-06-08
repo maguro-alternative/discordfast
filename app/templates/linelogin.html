@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  {% extends "layout.html" %}
+  {% block content %}
+  <body bgcolor="#252525" text="#ffffff">
+    <h1>ログインするLINEBot選択</h1>
+    <h6>所属しているグループのBotを選択してください。</h6>
+    <ul>
+        {% for profile in bot_profiles %}
+            <a href="/line-login/{{profile.guild_id}}">
+                {% if not profile.pictureUrl %}
+                    <img src="/static/img/linedev.JPG"/>
+                {% else %}
+                    <img src="{{profile.pictureUrl}}"/>
+                {% endif %}
+                <li>{{ profile.displayName }}</li>
+            </a>
+            <br><br>
+        {% endfor %}
+    </ul>
+  </body>
+  {% endblock %}
+</html>

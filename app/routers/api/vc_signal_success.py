@@ -11,11 +11,11 @@ import os
 from base.database import PostgresDB
 from base.aio_req import pickle_write
 from routers.api.chack.post_user_check import user_checker
-from routers.session_base.user_session import OAuthData,User
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 from core.pickes_save.vc_columns import VC_COLUMNS
 
-REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 
 from core.db_pickle import *
@@ -42,7 +42,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.post('/api/vc-count-success')
+@router.post('/api/vc-signal-success')
 async def vc_post(
     request:Request
 ):
@@ -51,12 +51,12 @@ async def vc_post(
     # OAuth2トークンが有効かどうか判断
     check_code = await user_checker(
         request=request,
-        oauth_session=OAuthData(**request.session.get('oauth_data')),
-        user_session=User(**request.session.get('user'))
+        oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
+        user_session=DiscordUser(**request.session.get('discord_user'))
     )
     
     if check_code == 302:
-        return RedirectResponse(url=REDIRECT_URL,status_code=302)
+        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:
         return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
@@ -136,7 +136,7 @@ async def vc_post(
     )
 
     return templates.TemplateResponse(
-        'api/vccountsuccess.html',
+        'api/vcsignalsuccess.html',
         {
             'request': request,
             'guild_id': form['guild_id'],

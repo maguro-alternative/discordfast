@@ -18,7 +18,7 @@
             'mention_role_id':[]
         }],
         "user_permission":user_permission,
-        "title": request.session["user"]['username']
+        "title": request.session["discord_user"]['username']
 
     -->
     <body bgcolor="#252525" text="#ffffff">
@@ -38,7 +38,7 @@
 
         {% set per = ['admin'] %}
     
-        <h3>{{request.session.user.username}}さんは
+        <h3>{{request.session.discord_user.username}}さんは
         {% if user_permission in per %}
             編集できます。
         {% else %}
@@ -50,7 +50,7 @@
         <fieldset disabled>
         {% endif %}
 
-        <form action="/api/vc-count-success" name="discordForm" method="post">
+        <form action="/api/vc-signal-success" name="discordForm" method="post">
             <details>
                 <summary>
                     <strong>チャンネル一覧</strong>

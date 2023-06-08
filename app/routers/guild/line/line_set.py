@@ -19,13 +19,13 @@ from base.aio_req import (
     return_permission,
     oauth_check
 )
-from routers.session_base.user_session import OAuthData,User
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 from message_type.discord_type.message_creater import ReqestDiscord
 from base.guild_permission import Permission
 
 DISCORD_BASE_URL = "https://discord.com/api"
-REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
@@ -53,14 +53,14 @@ async def line_set(
     guild_id:int
 ):
     # OAuth2トークンが有効かどうか判断
-    if request.session.get('oauth_data'):
-        oauth_session = OAuthData(**request.session.get('oauth_data'))
-        user_session = User(**request.session.get('user'))
+    if request.session.get('discord_oauth_data'):
+        oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
+        user_session = DiscordUser(**request.session.get('discord_user'))
         # トークンの有効期限が切れていた場合、再ログインする
         if not await oauth_check(access_token=oauth_session.access_token):
-            return RedirectResponse(url=REDIRECT_URL,status_code=302)
+            return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     else:
-        return RedirectResponse(url=REDIRECT_URL,status_code=302)
+        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     
     # 使用するデータベースのテーブル名
     TABLE = f'line_bot'
@@ -152,7 +152,9 @@ async def line_set(
             line_bot_token:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_token')))
             line_bot_secret:str = await decrypt_password(encrypted_password=bytes(table.get('line_bot_secret')))
             line_group_id:str = await decrypt_password(encrypted_password=bytes(table.get('line_group_id')))
-            default_channel_id:int = table.get('default_channel_id')
+            line_client_id:str = await decrypt_password(encrypted_password=bytes(table.get('line_client_id')))
+            line_client_secret:str = await decrypt_password(encrypted_password=bytes(table.get('line_client_secret')))
+            default_channel_id:int = int(table.get('default_channel_id'))
             debug_mode:bool = bool(table.get('debug_mode'))
 
             line_row = {
@@ -160,6 +162,8 @@ async def line_set(
                 'line_bot_token':line_bot_token,
                 'line_bot_secret':line_bot_secret,
                 'line_group_id':line_group_id,
+                'line_client_id':line_client_id,
+                'line_client_secret':line_client_secret,
                 'default_channel_id':default_channel_id,
                 'debug_mode':debug_mode
             }
@@ -174,7 +178,7 @@ async def line_set(
             "all_channel": all_channel_sort,
             "line_row":line_row,
             "user_permission":user_permission,
-            "title": request.session["user"]['username']
+            "title": "LINEBOTおよびグループ設定/" + guild['name']
         }
     )
     

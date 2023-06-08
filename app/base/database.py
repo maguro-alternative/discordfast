@@ -180,6 +180,8 @@ class PostgresDB:
         if self.conn == None:
             raise DataBaseNotConnect
         
+        #print(row_values)
+        
         columns = row_values[0].keys()
 
         values = [

@@ -46,6 +46,13 @@ async def line_pickle_save(
     """
     # テーブル名を代入
     table_name:str = f"{LINE_TABLE}{guild.id}"
+
+    # テーブルをつくるか、カラムを取得するかのフラグ
+    create_colum_flag = False
+    create_table_flag = False
+
+    # テーブルを削除するかのフラグ
+    drop_table_flag = False
     
     # テーブルの要素を取得
     table_fetch:List[Dict] = await db.select_rows(
@@ -54,44 +61,46 @@ async def line_pickle_save(
         where_clause={}
     )
 
-    # データベース側のカラムの型を入手
-    table_columns_type = await db.get_columns_type(table_name=table_name)
-
     # テーブル内のカラム名配列
     channel_colums = [key for key in LINE_COLUMNS.keys()]
-    table_colums = [key for key in table_columns_type.keys()]
-
-    # print(table_fetch)
-
-    # テーブル内のカラムの型配列
-    unchanged,table_fetch = await check_table_type(
-        columns=LINE_COLUMNS,
-        table_columns=table_columns_type,
-        new_columns=LINE_NEW_COLUMNS,
-        table_fetch=table_fetch
-    )
-
-    # テーブルに変更があるかのフラグ
-    changed_table_flag = table_colums != channel_colums or unchanged != False
-
-    # テーブルをつくるか、カラムを取得するかのフラグ
-    create_colum_flag = False
-    create_table_flag = False
-
-    # テーブルを削除するかのフラグ
-    drop_table_flag = False
 
     # テーブルがなかった場合、作成
     if len(table_fetch) > 0:
         # テーブルが存在しない場合、作成
         if (table_fetch[0] == f"{table_name} does not exist"):
             create_table_flag = True
+            table_colums = [key for key in LINE_COLUMNS.keys()]
         # テーブルが存在する場合、カラムを格納
         else:
             create_colum_flag = True
+            # データベース側のカラムの型を入手
+            table_columns_type = await db.get_columns_type(table_name=table_name)
+            table_colums = [key for key in table_columns_type.keys()]
+    else:
+        # データベース側のカラムの型を入手
+        table_columns_type = await db.get_columns_type(table_name=table_name)
+        table_colums = [key for key in table_columns_type.keys()]
 
+    # print(table_fetch)
+
+    # テーブルの方が存在する場合
+    if bool('table_columns_type' in locals()):
+        # テーブル内のカラムの型配列
+        unchanged,table_fetch = await check_table_type(
+            columns=LINE_COLUMNS,
+            table_columns=table_columns_type,
+            new_columns=LINE_NEW_COLUMNS,
+            table_fetch=table_fetch
+        )
+    else:
+        unchanged = False
+
+    # テーブルに変更があるかのフラグ
+    changed_table_flag = table_colums != channel_colums or unchanged != False
+
+    
     # テーブルが存在しているが、中身が空
-    elif len(table_fetch) == 0:
+    if len(table_fetch) == 0:
         print(f'テーブル:{table_name}の要素は空です')
         # 要素が変更されていた場合
         if changed_table_flag:
@@ -100,7 +109,7 @@ async def line_pickle_save(
         else:
             table_colums = [key for key in LINE_COLUMNS.keys()]
 
-        # データベース側のカラムを格納
+    # データベース側のカラムを格納
     if create_colum_flag:
         print(f'テーブル:{table_name}のカラム名一覧を作成します')
         table_colums = [key for key in table_fetch[0].keys()]
@@ -158,22 +167,23 @@ async def line_pickle_save(
                 row.update({key:value})
             
             row_values.append(row)
+            # print(row)
 
             # 一つ一つ作成
             # await db.insert_row(table_name=table_name,row_values=row)
 
-            # まとめて作成(バッジ)
-            await db.batch_insert_row(
-                table_name=table_name,
-                row_values=row_values
-            )
+        # まとめて作成(バッジ)
+        await db.batch_insert_row(
+            table_name=table_name,
+            row_values=row_values
+        )
 
-            # テーブルの要素を取得
-            table_fetch:List[Dict] = await db.select_rows(
-                table_name=f"{table_name}",
-                columns=[],
-                where_clause={}
-            )
+        # テーブルの要素を取得
+        table_fetch:List[Dict] = await db.select_rows(
+            table_name=f"{table_name}",
+            columns=[],
+            where_clause={}
+        )
 
     dict_row = list()
     #print(table_fetch)

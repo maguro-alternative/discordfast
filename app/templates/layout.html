@@ -33,12 +33,19 @@
                         <div class="col-xs-2 col-sm-10 col-md-10" style="width: 50%;">
                             <a href="/" class="btn btn-primary">top</a>
                         </div>
-                        <div class="col-xs-2 col-sm-2 col-md-2" style="width: 50%;">
-                        {% if request.session.oauth_data %}
-                            <a href="/logout" class="btn btn-primary">Logout</a>
+                        <div class="col-xs-2 col-sm-2 col-md-2" style="width: 25%;">
+                        {% if request.session.discord_oauth_data %}
+                            <a href="/discord-logout" class="btn btn-primary">Discord Logout</a>
                         {% else %}
-                            <a href="/register" class="btn btn-primary">Login</a>
+                            <a href="/discord-login" class="btn btn-primary">Discord Login</a>
                         {% endif %}
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2" style="width: 25%;">
+                            {% if request.session.line_oauth_data %}
+                                <a href="/line-logout" class="btn btn-primary">LINE Logout</a>
+                            {% else %}
+                                <a href="/line-login" class="btn btn-primary">LINE Login</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

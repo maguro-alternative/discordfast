@@ -24,7 +24,7 @@
 
     {% set per = ['admin'] %}
 
-    <h3>{{request.session.user.username}}さんは
+    <h3>{{request.session.discord_user.username}}さんは
     {% if user_permission in per %}
         編集できます。
     {% else %}
@@ -135,6 +135,9 @@
                             {% set member_len = 0 %}
                         {% endif %}
 
+                        <br/>
+                        メッセージを送信しないユーザー
+                        <br/>
                         <!-- サーバ内のロール一覧をselectできるようにする -->
                         <select id="mySelect_{{all.id}}" onchange="selectMemberAddEvent('{{member_len}}',this)" size="1">
                             {% for member in guild_members %}

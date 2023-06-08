@@ -248,3 +248,9 @@ postgresql://{PGHOST}:{PGPORT}/{PGDATABASE}?user={PGUSER}&password={PGPASSWORD}
 ・lineのトークン類を暗号化するための暗号鍵
 pythonのライブラリ、cryptographyで生成できる
 ```
+
+- MIDDLE_KEY
+```bash
+・セッション保存の際に使用する秘密鍵
+文字列(str)であれば何でもいい
+```

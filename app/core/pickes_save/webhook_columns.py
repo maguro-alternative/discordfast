@@ -128,13 +128,14 @@ async def webhook_pickle_save(
 
     # テーブルに変更があった場合
     if changed_table_flag and len(table_fetch) != 0:
-        # まとめて作成(バッジ)
-        for table_row in table_fetch:
-            #print(table_row)
-            await db.insert_row(
-                table_name=table_name,
-                row_values=table_row
-            )
+        if "does not exist" not in table_fetch[0]:
+            # まとめて作成(バッジ)
+            for table_row in table_fetch:
+                #print(table_row)
+                await db.insert_row(
+                    table_name=table_name,
+                    row_values=table_row
+                )
         
     
     # テーブルの要素を取得

@@ -14,10 +14,11 @@ load_dotenv()
 
 from routers import (
     index,
-    register,
+    login,
     callback,
     guilds,
-    logout
+    logout,
+    line_group
 )
 from routers.guild import guild
 
@@ -32,7 +33,8 @@ from routers.api import (
     line_bot,
     line_post_success,
     line_set_success,
-    vc_count_success,
+    line_group_success,
+    vc_signal_success,
     webhook_success,
     admin_success,
     test_success
@@ -64,7 +66,7 @@ jinja_env = templates.env  #Jinja2.Environment : filterやglobalの設定用
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
 # session使用
-app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get('MIDDLE_KEY'))
 # オリジン間のリソースを共有
 app.add_middleware(
     CORSMiddleware, 
@@ -77,7 +79,7 @@ app.add_middleware(
 # 各パス
 app.include_router(index.router)
 app.include_router(line_bot.router)
-app.include_router(register.router)
+app.include_router(login.router)
 app.include_router(callback.router)
 app.include_router(guild.router)
 app.include_router(guilds.router)
@@ -85,7 +87,7 @@ app.include_router(line_post.router)
 app.include_router(line_post_success.router)
 app.include_router(logout.router)
 app.include_router(vc_signal.router)
-app.include_router(vc_count_success.router)
+app.include_router(vc_signal_success.router)
 app.include_router(webhook.router)
 app.include_router(webhook_success.router)
 app.include_router(admin.router)
@@ -93,6 +95,8 @@ app.include_router(admin_success.router)
 app.include_router(permission_code.router)
 app.include_router(line_set.router)
 app.include_router(line_set_success.router)
+app.include_router(line_group.router)
+app.include_router(line_group_success.router)
 
 
 # フォーム送信テスト用

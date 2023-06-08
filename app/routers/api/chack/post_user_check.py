@@ -11,14 +11,14 @@ load_dotenv()
 import os
 from typing import Dict,List
 
-from routers.session_base.user_session import OAuthData,User
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
 
 async def user_checker(
     request:Request,
-    oauth_session:OAuthData,
-    user_session:User
+    oauth_session:DiscordOAuthData,
+    user_session:DiscordUser
 ) -> int:
     """
     postリクエストが正しいものか判別する。
