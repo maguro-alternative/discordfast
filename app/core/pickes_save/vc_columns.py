@@ -48,30 +48,6 @@ async def vc_pickle_save(
     """
     # テーブル名を代入
     table_name:str = f"{VC_TABLE}{guild.id}"
-    # テーブルの要素を取得
-    table_fetch:List[Dict] = await db.select_rows(
-        table_name=f"{table_name}",
-        columns=[],
-        where_clause={}
-    )
-
-    # データベース側のカラムの型を入手
-    table_columns_type = await db.get_columns_type(table_name=table_name)
-
-    # テーブル内のカラム名配列
-    channel_colums = [key for key in VC_COLUMNS.keys()]
-    table_colums = [key for key in table_columns_type.keys()]
-
-    # テーブル内のカラムの型配列
-    unchanged,table_fetch = await check_table_type(
-        columns=VC_COLUMNS,
-        table_columns=table_columns_type,
-        new_columns=VC_NEW_COLUMNS,
-        table_fetch=table_fetch
-    )
-
-    # テーブルに変更があるかのフラグ
-    changed_table_flag = table_colums != channel_colums or unchanged != False
 
     # テーブルをつくるか、カラムを取得するかのフラグ
     create_colum_flag = False
@@ -80,17 +56,50 @@ async def vc_pickle_save(
     # テーブルを削除するかのフラグ
     drop_table_flag = False
 
+    # テーブルの要素を取得
+    table_fetch:List[Dict] = await db.select_rows(
+        table_name=f"{table_name}",
+        columns=[],
+        where_clause={}
+    )
+
+    # テーブル内のカラム名配列
+    channel_colums = [key for key in VC_COLUMNS.keys()]
+
     # テーブルがなかった場合、作成
     if len(table_fetch) > 0:
         # テーブルが存在しない場合、作成
         if (table_fetch[0] == f"{table_name} does not exist"):
             create_table_flag = True
+            table_colums = [key for key in VC_COLUMNS.keys()]
         # テーブルが存在する場合、カラムを格納
         else:
             create_colum_flag = True
+            # データベース側のカラムの型を入手
+            table_columns_type = await db.get_columns_type(table_name=table_name)
+            table_colums = [key for key in table_columns_type.keys()]
+    else:
+         # データベース側のカラムの型を入手
+        table_columns_type = await db.get_columns_type(table_name=table_name)
+        table_colums = [key for key in table_columns_type.keys()]
+
+    # テーブルの方が存在する場合
+    if bool('table_columns_type' in locals()):
+        # テーブル内のカラムの型配列
+        unchanged,table_fetch = await check_table_type(
+            columns=VC_COLUMNS,
+            table_columns=table_columns_type,
+            new_columns=VC_NEW_COLUMNS,
+            table_fetch=table_fetch
+        )
+    else:
+        unchanged = False
+
+    # テーブルに変更があるかのフラグ
+    changed_table_flag = table_colums != channel_colums or unchanged != False
 
     # テーブルが存在しているが、中身が空
-    elif len(table_fetch) == 0:
+    if len(table_fetch) == 0:
         print(f'テーブル:{table_name}の要素は空です')
         # 要素が変更されていた場合
         if changed_table_flag:
@@ -120,11 +129,12 @@ async def vc_pickle_save(
 
     # テーブルに変更があった場合
     if changed_table_flag and len(table_fetch) != 0:
-        # まとめて作成(バッジ)
-        await db.batch_insert_row(
-            table_name=table_name,
-            row_values=table_fetch
-        )
+        if "does not exist" not in table_fetch[0]:
+            # まとめて作成(バッジ)
+            await db.batch_insert_row(
+                table_name=table_name,
+                row_values=table_fetch
+            )
 
     # 中身が空の場合
     if len(table_fetch) == 0 or create_table_flag:

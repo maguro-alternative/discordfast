@@ -87,6 +87,31 @@
         {% endif %}
         <button type='button' id="btn_group_id_view" onclick="password_view('line_group_id','btn_group_id_view')">表示</button>
 
+        <h3>LINEログインのクライアントid</h3>
+        {% if user_permission in per %}
+            <input type="password" id="line_client_id" name="line_client_id" value="{{line_row.line_client_id}}"/>
+        {% else %}
+            {% if line_row.line_client_id|length == 0 %}
+                未入力
+            {% else %}
+                入力済み
+            {% endif %}
+        {% endif %}
+        <button type='button' id="btn_client_id_view" onclick="password_view('line_client_id','btn_client_id_view')">表示</button>
+
+        <h3>LINEログインのクライアントシークレットキー</h3>
+        {% if user_permission in per %}
+            <input type="password" id="line_client_secret" name="line_client_secret" value="{{line_row.line_client_secret}}"/>
+        {% else %}
+            {% if line_row.line_client_secret|length == 0 %}
+                未入力
+            {% else %}
+                入力済み
+            {% endif %}
+        {% endif %}
+        <button type='button' id="btn_client_secret_view" onclick="password_view('line_client_secret','btn_client_secret_view')">表示</button>
+
+
         <br/>
         <h3>通知の送信先チャンネル</h3>
         

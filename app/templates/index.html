@@ -9,6 +9,9 @@
     {% if request.session.discord_oauth_data %}
       <a href="/guilds" class="btn btn-primary">サーバ一覧へ</a>
     {% endif %}
+    {% if request.session.line_oauth_data and request.session.guild_id %}
+      <a href="/group/{{request.session.guild_id}}" class="btn btn-primary">Discordチャンネル送信先変更</a>
+    {% endif %}
     <br/>
     <!--d-blockとmx-autoで画像の中央寄せ-->
     <img class="d-block mx-auto" src="https://i.gyazo.com/adeb0735f71e695c7baf4c2ae6ede3e0.png"/>

@@ -17,7 +17,8 @@ from routers import (
     login,
     callback,
     guilds,
-    logout
+    logout,
+    line_group
 )
 from routers.guild import guild
 
@@ -32,6 +33,7 @@ from routers.api import (
     line_bot,
     line_post_success,
     line_set_success,
+    line_group_success,
     vc_signal_success,
     webhook_success,
     admin_success,
@@ -93,6 +95,8 @@ app.include_router(admin_success.router)
 app.include_router(permission_code.router)
 app.include_router(line_set.router)
 app.include_router(line_set_success.router)
+app.include_router(line_group.router)
+app.include_router(line_group_success.router)
 
 
 # フォーム送信テスト用

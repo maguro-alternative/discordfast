@@ -18,7 +18,7 @@ from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 from core.pickes_save.line_columns import LINE_COLUMNS
 
 DISCORD_BASE_URL = "https://discord.com/api"
-REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
@@ -49,7 +49,7 @@ async def line_post_success(request: Request):
     )
     
     if check_code == 302:
-        return RedirectResponse(url=REDIRECT_URL,status_code=302)
+        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:
         return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 

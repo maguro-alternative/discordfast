@@ -24,7 +24,7 @@ from base.aio_req import (
 from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 DISCORD_BASE_URL = "https://discord.com/api"
-REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 
 
@@ -57,9 +57,9 @@ async def line_post(
         user_session = DiscordUser(**request.session.get('discord_user'))
         # トークンの有効期限が切れていた場合、再ログインする
         if not await oauth_check(access_token=oauth_session.access_token):
-            return RedirectResponse(url=REDIRECT_URL,status_code=302)
+            return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     else:
-        return RedirectResponse(url=REDIRECT_URL,status_code=302)
+        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     # 使用するデータベースのテーブル名
     TABLE = f'guilds_vc_signal_{guild_id}'
 

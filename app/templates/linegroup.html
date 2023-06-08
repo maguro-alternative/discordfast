@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  {% extends "layout.html" %}
+  {% block content %}
+  <body bgcolor="#252525" text="#ffffff">
+    <form action="/api/line-group-success" method="post">
+        <h3>通知の送信先チャンネル</h3>
+        
+        <select name="default_channel_id" size="1">
+
+            {% if default_channel_id|int == 0 %}
+                <option value="0">選択なし</option>
+            {% endif %}
+            
+            {% for chan in all_channel %}
+                <!--テキストチャンネルの場合-->
+                {% if chan.type == 0 %}
+                    <option value={{chan.id}} 
+                        {% if chan.id|int == default_channel_id|int %}
+                            selected
+                        {% endif %}
+                    >
+
+                        {% if chan.parent_id %}
+                            {% for cate in all_channel %}
+                                {% if cate.type == 4 and cate.id == chan.parent_id %}
+                                    {{ cate.name }}:
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {{chan.name}}
+
+                    </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <br/>
+        <input type="hidden" name="guild_id" value="{{guild_id}}"/><br/>
+        <input type="submit" value="送信"/>
+    </form>
+  </body>
+  {% endblock %}
+</html>

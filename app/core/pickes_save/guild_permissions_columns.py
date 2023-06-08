@@ -127,11 +127,12 @@ async def guild_permissions_pickle_save(
 
     # テーブルに変更があった場合
     if changed_table_flag and len(table_fetch) != 0:
-        # まとめて作成(バッジ)
-        await db.batch_insert_row(
-            table_name=table_name,
-            row_values=table_fetch
-        )
+        if "does not exist" not in table_fetch[0]:
+            # まとめて作成(バッジ)
+            await db.batch_insert_row(
+                table_name=table_name,
+                row_values=table_fetch
+            )
 
     # ない場合は新規で登録
     if len(table_fetch) == 0 or create_table_flag:
