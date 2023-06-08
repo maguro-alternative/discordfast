@@ -121,6 +121,7 @@ async def line_callback(
 
     guild_id = request.session.get('guild_id')
 
+    # line_botテーブルの読み込み
     line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
 
     guild_set_line_bot:List[Dict] = [
@@ -129,7 +130,7 @@ async def line_callback(
         if int(line.get('guild_id')) == int(guild_id)
     ]
 
-
+    # 復号化
     client_id:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_client_id')))
     client_secret:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_client_secret')))
 
@@ -141,6 +142,7 @@ async def line_callback(
         'redirect_uri': LINE_REDIRECT_URI
     }
 
+    # ログインユーザのアクセストークンを取得
     line_access_token:Dict = await aio_post_request(
         url=f"{LINE_OAUTH_BASE_URL}/token",
         headers = {
@@ -155,6 +157,7 @@ async def line_callback(
         'nonce':nonce
     }
 
+    # idトークンを取得
     line_id_token:Dict = await aio_post_request(
         url=f"{LINE_OAUTH_BASE_URL}/verify",
         headers = {
@@ -167,9 +170,11 @@ async def line_callback(
     request.session.pop("nonce")
     #request.session.pop('guild_id')
 
-    if line_id_token.get('error_description') == 'Invalid IdToken Nonce.':
+    # idトークンが正しくない場合
+    if line_id_token.get('error_description') != None:
         raise HTTPException(status_code=400, detail="認証失敗")
     
+    # セッションに認証情報を代入
     request.session['line_oauth_data'] = line_access_token
     request.session['line_user'] = line_id_token
     

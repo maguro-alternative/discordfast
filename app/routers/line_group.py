@@ -50,6 +50,7 @@ async def group(
     else:
         return RedirectResponse(url='/line-login')
     
+    # line_botテーブルを取得
     line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
 
     guild_id = request.session.get('guild_id')
@@ -60,9 +61,11 @@ async def group(
         if int(line.get('guild_id')) == int(guild_id)
     ]
 
+    # 復号化
     line_group_id:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_group_id')))
     line_bot_token:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_bot_token')))
 
+    # LINE→Discordへの送信先チャンネルid
     default_channel_id:int = int(guild_set_line_bot[0].get('default_channel_id'))
 
     # グループIDが有効かどうか判断

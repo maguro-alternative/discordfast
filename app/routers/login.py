@@ -87,7 +87,9 @@ async def line_login(request: Request):
 
     bot_profiles = list()
 
+    # ログインできるBotをListに並べる
     for line in line_set_guilds:
+        # トークンを復号
         line_bot_token:str = await decrypt_password(encrypted_password=bytes(line.get('line_bot_token')))
         # LINEBotの情報を取得
         bot_profile_tmp:Dict = await aio_get_request(
@@ -117,6 +119,14 @@ async def line_login(
     request: Request,
     guild_id: int
 ):
+    # セッションの初期化
+    if request.session.get('line_user') != None:
+        request.session.pop("line_user")
+    if request.session.get("line_oauth_data") != None:
+        request.session.pop("line_oauth_data")
+    if request.session.pop('guild_id'):
+        request.session.pop('guild_id')
+
     # ランダムなstate値の生成
     state = secrets.token_urlsafe(16)
     nonce = secrets.token_urlsafe(16)
@@ -127,15 +137,17 @@ async def line_login(
     # line_botテーブルをロード
     line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
 
+    # 主キーがサーバーのidと一致するものを取り出す
     guild_set_line_bot:List[Dict] = [
         line
         for line in line_bot_table
         if int(line.get('guild_id')) == guild_id
     ]
 
+    # クライアントidを復号
     client_id:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_client_id')))
-    client_secret:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_client_secret')))
-
+    
+    # LINEのcallbackurlをエンコードする
     redirect_uri = os.environ.get('LINE_CALLBACK_URL')
     redirect_encode_uri = urllib.parse.quote(redirect_uri)
 
