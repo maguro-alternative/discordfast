@@ -124,7 +124,7 @@ async def line_login(
         request.session.pop("line_user")
     if request.session.get("line_oauth_data") != None:
         request.session.pop("line_oauth_data")
-    if request.session.pop('guild_id'):
+    if request.session.pop('guild_id') != None:
         request.session.pop('guild_id')
 
     # ランダムなstate値の生成
