@@ -75,10 +75,12 @@ class Twitter_Get_Tweet:
         )
         account:dict = data.get("data")
 
-        profile_image_url = account.get("profile_image_url")
-        if type(profile_image_url) is str:
-            profile_image_url = profile_image_url.replace("normal","400x400")
+        if account != None:
+            profile_image_url = account.get("profile_image_url")
+            if type(profile_image_url) is str:
+                profile_image_url = profile_image_url.replace("normal","400x400")
         else:
+            profile_image_url = None
             print(data)
 
         return profile_image_url, account.get("name")
