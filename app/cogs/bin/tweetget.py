@@ -77,13 +77,15 @@ class Twitter_Get_Tweet:
 
         if account != None:
             profile_image_url = account.get("profile_image_url")
+            account_name= account.get("name")
             if type(profile_image_url) is str:
                 profile_image_url = profile_image_url.replace("normal","400x400")
         else:
             profile_image_url = None
+            account_name = None
             print(data)
 
-        return profile_image_url, account.get("name")
+        return profile_image_url, account_name
 
     async def mention_tweet_make(
         self,
