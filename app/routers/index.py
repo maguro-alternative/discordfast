@@ -8,7 +8,7 @@ from base.aio_req import (
     aio_get_request,
     oauth_check
 )
-from routers.session_base.user_session import DiscordOAuthData
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -24,6 +24,8 @@ async def index(request: Request):
     # Discordの認証情報が有効かどうか判断
     if request.session.get('discord_oauth_data'):
         oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
+        user_session = DiscordUser(**request.session.get('discord_user'))
+        print(f"アクセスしたユーザー:{user_session.username}")
         # トークンの有効期限が切れていた場合、認証情報を削除
         if not await oauth_check(access_token=oauth_session.access_token):
             request.session.pop('discord_oauth_data')

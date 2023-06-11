@@ -32,6 +32,7 @@ async def guilds(request:Request):
     if request.session.get('discord_oauth_data'):
         oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
         user_session = DiscordUser(**request.session.get('discord_user'))
+        print(f"アクセスしたユーザー:{user_session.username}")
         # トークンの有効期限が切れていた場合、再ログインする
         if not await oauth_check(access_token=oauth_session.access_token):
             return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
