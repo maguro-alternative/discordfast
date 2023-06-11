@@ -108,7 +108,7 @@ class ReqestDiscord:
         """
         サーバーのユーザーを取得する。
         戻り値
-        Discord_Member
+        List[Discord_Member]
         """
         
         async with aiohttp.ClientSession() as session:
@@ -130,7 +130,7 @@ class ReqestDiscord:
         """
         ロールを取得する。
         戻り値
-        Discord_Role
+        List[Discord_Role]
         """
 
         async with aiohttp.ClientSession() as session:
@@ -151,7 +151,7 @@ class ReqestDiscord:
         """
         チャンネルを取得する。
         戻り値
-        Discord_Channel
+        List[Discord_Channel]
         """
 
         async with aiohttp.ClientSession() as session:
@@ -167,6 +167,29 @@ class ReqestDiscord:
                     channel_list.append(r)
 
         return channel_list
+
+    async def channel_info_get(self,channel_id:int) -> Discord_Channel:
+        """
+        チャンネル情報を取得する。
+
+        param:
+        channel_id:int
+        チャンネルid
+        
+        戻り値
+        Discord_Channel
+        """
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url = f'{DISCORD_BASE_URL}/channels/{channel_id}',
+                headers = self.headers
+            ) as resp:
+                # 取得したチャンネルを展開
+                res = await resp.json()
+                
+                r = Discord_Channel.new_from_json_dict(res)
+        return r
 
     async def members_find(self, message: str) -> str:
         """
