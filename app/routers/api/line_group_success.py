@@ -109,7 +109,7 @@ async def line_group_success(request: Request):
     )
 
     # 変更URL
-    url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/')) + f'/group/{form.get("guild_id")}'
+    url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/group/{form.get("guild_id")}'
 
     change_text = f"{user_name}によりDiscordへの送信先が「{default_channel_info.name}」に変更されました。"
     change_text += f"\n変更はこちらから\n{url}"
