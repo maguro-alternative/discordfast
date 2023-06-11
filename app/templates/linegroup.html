@@ -34,6 +34,10 @@
                 {% endif %}
             {% endfor %}
         </select>
+
+        <input type="checkbox" name="chenge_alert" />
+        変更をLINEとDiscordに通知する<br/>
+
         <br/>
         <input type="hidden" name="guild_id" value="{{guild_id}}"/><br/>
         <input type="submit" value="送信"/>

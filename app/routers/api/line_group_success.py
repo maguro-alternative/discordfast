@@ -114,14 +114,16 @@ async def line_group_success(request: Request):
     change_text = f"{user_name}によりDiscordへの送信先が「{default_channel_info.name}」に変更されました。"
     change_text += f"\n変更はこちらから\n{url}"
 
-    # LINEとDiscord双方に変更を送信
-    await line_bot_api.push_message_notify(
-        message=change_text
-    )
-    await discord_bot_api.send_discord(
-        channel_id=default_channel_id,
-        message=change_text
-    )
+    # 通知するチェックボックスが入っていた場合
+    if form.get('chenge_alert') != None:
+        # LINEとDiscord双方に変更を送信
+        await line_bot_api.push_message_notify(
+            message=change_text
+        )
+        await discord_bot_api.send_discord(
+            channel_id=default_channel_id,
+            message=change_text
+        )
 
     return templates.TemplateResponse(
         'api/linesetsuccess.html',
