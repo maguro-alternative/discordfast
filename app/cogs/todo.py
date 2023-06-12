@@ -223,7 +223,30 @@ class Todo(commands.Cog):
                     filename=table_name
                 )
             except FileNotFoundError:
-                table_fetch = list()
+                # pickleファイルがない場合、データベースに接続
+                await db.connect()
+
+                table_fetch:List[Dict] = await db.select_rows(
+                    table_name=table_name,
+                    columns=[],
+                    where_clause={}
+                )
+
+                await db.disconnect()
+
+                if len(table_fetch) == 1:
+                    if "does not exist" in table_fetch[0]:
+                        table_fetch = list()
+                    else:
+                        await pickle_write(
+                            filename=table_name,
+                            table_fetch=table_fetch
+                        )
+                else:
+                    await pickle_write(
+                        filename=table_name,
+                        table_fetch=table_fetch
+                    )
 
             for task in table_fetch:
                 time_limit_str:str = task.get('time_limit')
