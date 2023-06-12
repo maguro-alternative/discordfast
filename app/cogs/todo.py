@@ -160,6 +160,8 @@ class Todo(commands.Cog):
         description: Option(str, required=False, description="備考"),
     ):
         table_name = f"task_{ctx.guild_id}"
+
+        await ctx.respond("処理中...")
         
         try:
             table_fetch:List[Dict] = await pickle_read(
@@ -190,13 +192,6 @@ class Todo(commands.Cog):
                     filename=table_name,
                     table_fetch=table_fetch
                 )
-        task = [
-            task
-            for task in table_fatch
-            if int(task.get('task_number')) == task_number
-        ]
-
-        await ctx.respond("処理中...")
 
         await db.connect()
 
