@@ -41,14 +41,14 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
             {% for task in tasks %}
+            <tr>
                 <td style="border: 1px solid #FFF;">{{task.task_number}}</td>
                 <td style="border: 1px solid #FFF;">{{task.task_title}}</td>
                 <td style="border: 1px solid #FFF;">{{task.time_limit}}</td>
                 <td style="border: 1px solid #FFF;">{{task.alert_level}}</td>
-            {% endfor %}
             </tr>
+            {% endfor %}
         </tbody>
     </table>
     
