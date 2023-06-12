@@ -148,7 +148,7 @@ class Todo(commands.Cog):
 
         await db.disconnect()
 
-        task_number = table_fetch[0]['task_number']
+        task_number = table_fetch[-1]['task_number']
 
         await ctx.respond(f"番号は**{task_number}**です。")
 
