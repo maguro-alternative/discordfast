@@ -11,7 +11,8 @@ import os
 from base.aio_req import (
     aio_get_request,
     oauth_check,
-    return_permission
+    return_permission,
+    pickle_read
 )
 from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
@@ -55,12 +56,20 @@ async def guild(
         access_token=oauth_session.access_token
     )
 
+    try:
+        tasks = await pickle_read(
+            filename=f"task_{guild_id}"
+        )
+    except FileNotFoundError:
+        tasks = list()
+
     return templates.TemplateResponse(
         "guild/guild.html",
         {
             "request": request, 
             "guild": guild,
             "guild_id": guild_id,
+            "tasks":tasks,
             "permission":vars(permission),
             "title":guild['name'] + "の設定項目一覧"
         }
