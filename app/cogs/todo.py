@@ -149,8 +149,10 @@ class Todo(commands.Cog):
         await db.disconnect()
 
         task_number = table_fetch[-1]['task_number']
+        # 変更URL
+        url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/guild/{ctx.guild_id}'
 
-        await ctx.respond(f"番号は**{task_number}**です。")
+        await ctx.respond(f"番号は**{task_number}**です。\n一覧はこちら:{url}")
 
     @commands.slash_command(description="タスク完了")
     async def todo_completion(
@@ -213,12 +215,12 @@ class Todo(commands.Cog):
 
         respond_text = f"タスク終了:{table_fatch[0].get('title')}\n"
 
-        if table_fatch[0].get('alert_role') != None:
+        if table_fatch[0].get('alert_role') != 0:
             respond_text += f"<@&{table_fatch[0].get('alert_role')}> "
-        if table_fatch[0].get('alert_user') != None:
-            respond_text += f"<@&{table_fatch[0].get('alert_user')}>"
+        if table_fatch[0].get('alert_user') != 0:
+            respond_text += f"<@{table_fatch[0].get('alert_user')}>"
 
-        respond_text += f"備考:{description}"
+        respond_text += f"\n備考:{description}"
 
         await ctx.respond(respond_text)
 
