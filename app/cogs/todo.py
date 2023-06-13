@@ -211,14 +211,20 @@ class Todo(commands.Cog):
             where_clause={}
         )
 
+        task_fetch:List[Dict] = [
+            task
+            for task in table_fatch
+            if int(task.get('task_number')) == task_number
+        ]
+
         await db.disconnect()
 
-        respond_text = f"タスク終了:{table_fatch[0].get('title')}\n"
+        respond_text = f"タスク終了:{task_fetch[0].get('title')}\n"
 
-        if table_fatch[0].get('alert_role') != 0:
-            respond_text += f"<@&{table_fatch[0].get('alert_role')}> "
-        if table_fatch[0].get('alert_user') != 0:
-            respond_text += f"<@{table_fatch[0].get('alert_user')}>"
+        if task_fetch[0].get('alert_role') != 0:
+            respond_text += f"<@&{task_fetch[0].get('alert_role')}> "
+        if task_fetch[0].get('alert_user') != 0:
+            respond_text += f"<@{task_fetch[0].get('alert_user')}>"
 
         respond_text += f"\n備考:{description}"
 
@@ -304,7 +310,7 @@ class Todo(commands.Cog):
                 if task.get('alert_user') != 0:
                     text = f"<@&{int(task.get('alert_user'))}> " + text
 
-                if limit.seconds >= 0:
+                if limit.days >= 0:
                     if task.get('alert_level') == 1:
                         # 残り1日の場合
                         if (limit_one_day or limit_half_day or 
