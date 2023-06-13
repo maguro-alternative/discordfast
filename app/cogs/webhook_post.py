@@ -139,6 +139,8 @@ async def twitter_subsc(
                     'content':tweet
                 }
             ) as re:
+                r = await re.json()
+                print(r)
                 # 最後の要素の場合
                 if tweet == tweetlist[-1]:
                     # データベースに接続し、最終更新日を更新
