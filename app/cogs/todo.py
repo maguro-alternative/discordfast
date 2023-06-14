@@ -55,7 +55,7 @@ TASK_COLUMN = {
 class Todo(commands.Cog):
     def __init__(self, bot : DBot):
         self.bot = bot
-        self.todo_signal.start()
+        #self.todo_signal.start()
 
     @commands.slash_command(description="タスクの登録")
     async def todo_register(
