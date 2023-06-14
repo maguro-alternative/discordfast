@@ -123,6 +123,8 @@ async def twitter_subsc(
     tweetlist, create_at = await twitter.mention_tweet_make(
         webhook_fetch=webhook
     )
+
+    #print(tweetlist)
     
     async with aiohttp.ClientSession() as sessions:
         # 取得したツイートを一つ一つwebhookで送信
@@ -131,14 +133,20 @@ async def twitter_subsc(
             if tweet == tweetlist[0]:
                 # アイコンurl,ユーザ名を取得
                 image_url, username = await twitter.get_image_and_name()
+            data = {
+                'content':tweet
+            }
+            if username != None:
+                data.update({'username':username})
+            if image_url != None:
+                data.update({'avatar_url':image_url})
+            
             async with sessions.post(
                 url=webhook_url,
-                data={
-                    'username':username,
-                    'avatar_url':image_url,
-                    'content':tweet
-                }
+                data=data
             ) as re:
+                r = await re.json()
+                #print(r)
                 # 最後の要素の場合
                 if tweet == tweetlist[-1]:
                     # データベースに接続し、最終更新日を更新

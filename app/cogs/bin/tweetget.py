@@ -34,7 +34,7 @@ class Twitter_Get_Tweet:
     async def get_tweet(
         self,
         count:int = 5
-    ) -> Dict[str,Any]:
+    ) -> Dict[str,Dict]:
         """
         ツイートをOAuth1で取得する
         param:
@@ -43,7 +43,7 @@ class Twitter_Get_Tweet:
             デフォルトで5
 
         return:
-        Dict[str,Any]
+        Dict[str,Dict]
             ツイート
         """
         url = f"{TWEET_GET_BASE_URL}{self.screen_name}%20{self.search_word}&count={count}"
@@ -83,7 +83,6 @@ class Twitter_Get_Tweet:
         else:
             profile_image_url = None
             account_name = None
-            print(data)
 
         return profile_image_url, account_name
 
