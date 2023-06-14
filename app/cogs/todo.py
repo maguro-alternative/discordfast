@@ -103,50 +103,53 @@ class Todo(commands.Cog):
 
         await ctx.respond(respond_text)
 
-        await db.connect()
+        try:
+            await db.connect()
 
-        table_name = f"task_{ctx.guild_id}"
+            table_name = f"task_{ctx.guild_id}"
 
-        table_fetch = await db.select_rows(
-            table_name=table_name,
-            columns=[],
-            where_clause={}
-        )
+            table_fetch = await db.select_rows(
+                table_name=table_name,
+                columns=[],
+                where_clause={}
+            )
 
-        # テーブルがない場合、作成
-        if len(table_fetch) == 1:
-            if "does not exist" in table_fetch[0]:
-                await db.create_table(
-                    table_name=table_name,
-                    columns=TASK_COLUMN
-                )
+            # テーブルがない場合、作成
+            if len(table_fetch) == 1:
+                if "does not exist" in table_fetch[0]:
+                    await db.create_table(
+                        table_name=table_name,
+                        columns=TASK_COLUMN
+                    )
 
-        row_value = {
-            'task_title':title,
-            'time_limit':timelimit.strftime('%Y-%m-%d %H:%M'),
-            'task_channel':ctx.channel_id,
-            'alert_level':alert_level,
-            'alert_role':alert_role_id,
-            'alert_user':alert_user_id
-        }
+            row_value = {
+                'task_title':title,
+                'time_limit':timelimit.strftime('%Y-%m-%d %H:%M'),
+                'task_channel':ctx.channel_id,
+                'alert_level':alert_level,
+                'alert_role':alert_role_id,
+                'alert_user':alert_user_id
+            }
 
-        await db.insert_row(
-            table_name=table_name,
-            row_values=row_value
-        )
+            await db.insert_row(
+                table_name=table_name,
+                row_values=row_value
+            )
 
-        table_fetch = await db.select_rows(
-            table_name=table_name,
-            columns=[],
-            where_clause={}
-        )
+            table_fetch = await db.select_rows(
+                table_name=table_name,
+                columns=[],
+                where_clause={}
+            )
 
-        await pickle_write(
-            filename=table_name,
-            table_fetch=table_fetch
-        )
+            await pickle_write(
+                filename=table_name,
+                table_fetch=table_fetch
+            )
 
-        await db.disconnect()
+            await db.disconnect()
+        except:
+            await ctx.respond("登録がうまくいきませんでした。もう一度やり直してください。")
 
         task_number = table_fetch[-1]['task_number']
         # 変更URL
