@@ -10,6 +10,3 @@ popoverBtn.addEventListener('click', function() {
   }
 });
 
-popoverBtn.addEventListener('mouseout', function() {
-  popoverContent.style.display = 'none';
-});
