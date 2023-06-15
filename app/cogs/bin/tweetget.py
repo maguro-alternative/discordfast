@@ -3,6 +3,8 @@ from base.aio_req import (
     check_permission
 )
 
+from cogs.bin.base_type.tweet_type import TwitterTweet
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -34,7 +36,7 @@ class Twitter_Get_Tweet:
     async def get_tweet(
         self,
         count:int = 5
-    ) -> Dict[str,Dict]:
+    ) -> List[TwitterTweet]:
         """
         ツイートをOAuth1で取得する
         param:
@@ -43,7 +45,7 @@ class Twitter_Get_Tweet:
             デフォルトで5
 
         return:
-        Dict[str,Dict]
+        List[TwitterTweet]
             ツイート
         """
         url = f"{TWEET_GET_BASE_URL}{self.screen_name}%20{self.search_word}&count={count}"
@@ -55,7 +57,18 @@ class Twitter_Get_Tweet:
             headers=headers
         )
 
-        return tweet
+        tweet_statuses:List = tweet.get('stauses')
+
+        # ツイートが取得できなかった場合、空の配列を渡して終了
+        if tweet_statuses == None:
+            return list()
+        
+        twitter_tweet = [
+            TwitterTweet(**t)
+            for t in tweet_statuses
+        ]
+
+        return twitter_tweet
 
     async def get_image_and_name(self) -> Tuple[str,str]:
         """
@@ -103,88 +116,88 @@ class Twitter_Get_Tweet:
         tweet = await self.get_tweet()
         tweetlist = list()
         lastUpdateStr = webhook_fetch.get('created_at')
-        for tweets_key,tweets_value in tweet.items():
-            if tweets_key == 'statuses':
-                for tweet_value in tweets_value:
-                    # Webhookに最後にアップロードした時刻
-                    strTime = datetime.strptime(
-                        webhook_fetch.get('created_at'), 
-                        '%a %b %d %H:%M:%S %z %Y'
-                    )
-                    # 最新ツイート
-                    lastUpdate = datetime.strptime(
-                        tweet_value.get('created_at'), 
-                        '%a %b %d %H:%M:%S %z %Y'
-                    )
-                    # はじめの要素が最新のツイートなのでその時刻を取得
-                    if tweet_value == tweets_value[0]:
-                        lastUpdateStr = tweet_value.get('created_at')
-                    if strTime < lastUpdate:
-                        tweet_url = f'https://twitter.com/{self.screen_name}/status/{tweet_value.get("id")}'
+        for i,tweets in enumerate(tweet):
+            # 最新ツイート投稿時刻
+            lastUpdate = datetime.strptime(
+                tweets.create_at, 
+                '%a %b %d %H:%M:%S %z %Y'
+            )
+            # Webhookに最後にアップロードした時刻
+            strTime = datetime.strptime(
+                webhook_fetch.get('created_at'), 
+                '%a %b %d %H:%M:%S %z %Y'
+            )
+
+            # はじめの要素が最新のツイートなのでその時刻を取得
+            if i == 0:
+                lastUpdateStr = tweets.create_at
+
+            if strTime < lastUpdate:
+                tweet_url = f'https://twitter.com/{self.screen_name}/status/{tweets.id}'
+                upload_flag = False
+                mention_flag = False
+
+
+                # ORでNGワード検索
+                for word in webhook_fetch.get('ng_or_word'):
+                    # NGワードに登録されている場合、False
+                    if word in tweets.text:
                         upload_flag = False
+
+                # ANDでNGワードを検索
+                for word in webhook_fetch.get('ng_and_word'):
+                    # NGワードに登録されている場合、Falseを返し続ける
+                    if word in tweets.text:
+                        upload_flag = False
+                    # NGに一つでも該当しない場合、True
+                    else:
+                        upload_flag = True
+                        break
+
+                # ANDでキーワードを検索
+                for word in webhook_fetch.get('search_and_word'):
+                    # 条件にそぐわない場合終了
+                    if word not in tweets.text:
+                        upload_flag = False
+
+                # ORでキーワード検索
+                for word in webhook_fetch.get('search_or_word'):
+                    if word in tweets.text:
+                        upload_flag = True
+
+                # 検索条件がなかった場合、すべて送信
+                if (len(webhook_fetch.get('search_or_word')) == 0 and
+                    len(webhook_fetch.get('search_and_word')) == 0):
+                    upload_flag = True
+
+                # ORでメンションするかどうか判断
+                for word in webhook_fetch.get('mention_or_word'):
+                    if word in tweets.text:
+                        mention_flag = True
+                        upload_flag = True
+
+                # ANDでメンションするかどうか判断
+                for word in webhook_fetch.get('mention_and_word'):
+                    if word not in tweets.text:
                         mention_flag = False
+                        upload_flag = True
 
+                text = ""
+                if upload_flag:
+                    if mention_flag:
+                        # メンションするロールの取り出し
+                        mentions = [
+                            f"<@&{int(role_id)}> " 
+                            for role_id in webhook_fetch.get('mention_roles')
+                        ]
+                        members = [
+                            f"<@{int(member_id)}> " 
+                            for member_id in webhook_fetch.get('mention_members')
+                        ]
+                        text = " ".join(mentions) + " " + " ".join(members) + "\n"
 
-                        # ORでNGワード検索
-                        for word in webhook_fetch.get('ng_or_word'):
-                            # NGワードに登録されている場合、False
-                            if word in tweet_value.get('text'):
-                                upload_flag = False
+                    text += f'{tweets.text}\n{tweet_url}' 
 
-                        # ANDでNGワードを検索
-                        for word in webhook_fetch.get('ng_and_word'):
-                            # NGワードに登録されている場合、Falseを返し続ける
-                            if word in tweet_value.get('text'):
-                                upload_flag = False
-                            # NGに一つでも該当しない場合、True
-                            else:
-                                upload_flag = True
-                                break
-
-                        # ANDでキーワードを検索
-                        for word in webhook_fetch.get('search_and_word'):
-                            # 条件にそぐわない場合終了
-                            if word not in tweet_value.get('text'):
-                                upload_flag = False
-
-                        # ORでキーワード検索
-                        for word in webhook_fetch.get('search_or_word'):
-                            if word in tweet_value.get('text'):
-                                upload_flag = True
-
-                        # 検索条件がなかった場合、すべて送信
-                        if (len(webhook_fetch.get('search_or_word')) == 0 and
-                            len(webhook_fetch.get('search_and_word')) == 0):
-                            upload_flag = True
-
-                        # ORでメンションするかどうか判断
-                        for word in webhook_fetch.get('mention_or_word'):
-                            if word in tweet_value.get('text'):
-                                mention_flag = True
-                                upload_flag = True
-
-                        # ANDでメンションするかどうか判断
-                        for word in webhook_fetch.get('mention_and_word'):
-                            if word not in tweet_value.get('text'):
-                                mention_flag = False
-                                upload_flag = True
-
-                        text = ""
-                        if upload_flag:
-                            if mention_flag:
-                                # メンションするロールの取り出し
-                                mentions = [
-                                    f"<@&{int(role_id)}> " 
-                                    for role_id in webhook_fetch.get('mention_roles')
-                                ]
-                                members = [
-                                    f"<@{int(member_id)}> " 
-                                    for member_id in webhook_fetch.get('mention_members')
-                                ]
-                                text = " ".join(mentions) + " " + " ".join(members) + "\n"
-
-                            text += f'{tweet_value.get("text")}\n{tweet_url}' 
-
-                            tweetlist.append(text)
+                    tweetlist.append(text)
 
         return tweetlist,lastUpdateStr
