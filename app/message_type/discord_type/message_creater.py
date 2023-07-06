@@ -101,8 +101,7 @@ class ReqestDiscord:
         }
         # ファイルアップロードの際にContent-Typeが邪魔になるので取り除く
         self.no_content_headers = {
-            'Authorization': f'Bot {token}',
-            'Content-Type': 'multipart/form-data'
+            'Authorization': f'Bot {token}'
         }
 
     async def member_get(self) -> List[Discord_Member]:
