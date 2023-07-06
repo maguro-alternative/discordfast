@@ -1,5 +1,6 @@
 import os
 import re
+import io
 
 import aiohttp
 import asyncio
@@ -328,7 +329,7 @@ class ReqestDiscord:
         with aiohttp.MultipartWriter("form-data") as mpwriter:
             # ファイルを送付
             mpwriter.append(
-                obj=fileobj.iobyte
+                obj=io.BytesIO(fileobj.byte)
             ).set_content_disposition(
                 disptype='form-data', 
                 name=fileobj.filename, 
