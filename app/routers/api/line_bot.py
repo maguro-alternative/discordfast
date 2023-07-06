@@ -79,7 +79,7 @@ async def line_response(
             guild_id:int = int(bot_info.get('guild_id'))
             line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_notify_token')))
             line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_bot_token')))
-            
+
             line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_group_id')))
             default_channel_id:int = bot_info.get('default_channel_id')
 
@@ -87,7 +87,7 @@ async def line_response(
             # Discordサーバーのインスタンスを作成
             discord_find_message = ReqestDiscord(
                 guild_id = guild_id,
-                limit = int(os.environ.get("USER_LIMIT",default=100)), 
+                limit = int(os.environ.get("USER_LIMIT",default=100)),
                 token = TOKEN
             )
             # LINEのインスタンスを作成
@@ -100,10 +100,10 @@ async def line_response(
             channel_id = default_channel_id
             break
 
-        
+
 
     # ハッシュ値が一致しなかった場合エラーを返す
-    if decode_signature != x_line_signature: 
+    if decode_signature != x_line_signature:
         raise Exception
 
     # 応答確認の場合終了
@@ -174,7 +174,8 @@ async def line_response(
         await discord_find_message.send_discord_file(
             channel_id=channel_id,
             message=f'{profile_name.display_name}',
-            fileobj=fileobj
+            fileobj=fileobj,
+            content_type='audio/mp4'
         )
         # レスポンス200を返し終了
         return HTMLResponse(content="OK")

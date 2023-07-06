@@ -311,7 +311,8 @@ class ReqestDiscord:
         self, 
         channel_id: int, 
         message: str, 
-        fileobj:Audio_Files
+        fileobj:Audio_Files,
+        content_type:str=None
     ) -> Dict:
         """
         Discordへファイル付きのメッセージを送信する。
@@ -342,12 +343,21 @@ class ReqestDiscord:
                 name="content"
             )
 
+            # content_typeが指定されている場合、更新
+            content_headers = self.no_content_headers
+            if content_type:
+                content_headers.update(
+                    {
+                        'content_type': content_type
+                    }
+                )
+
             # Discordにファイルとメッセージを送信
             # 'Content-Type': 'application/x-www-form-urlencoded'が邪魔なので取り除く
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
-                    headers = self.no_content_headers,
+                    headers = content_headers,
                     data = mpwriter
                 ) as resp:
                     return await resp.json()

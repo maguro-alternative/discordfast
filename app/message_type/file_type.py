@@ -41,7 +41,7 @@ class Audio_Files:
             self.filename = filename + extension.capitalize()
         else:
             self.filename = filename
-        
+
     def detect_audio_file(self) -> str:
         """
         バイナリデータのマジックナンバーから音声ファイルの拡張子を識別する。
@@ -54,19 +54,19 @@ class Audio_Files:
         拡張子の文字列:str
         """
         header = self.iobyte.read(12)
-            
+
         # AIFFファイルのマジックナンバー
         if header.startswith(b'FORM') and header[8:12] == b'AIFF':
             return '.aiff'
-            
+
         # AIFF-Cファイルのマジックナンバー
         if header.startswith(b'FORM') and header[8:12] == b'AIFC':
             return '.aifc'
-            
+
         # WAVEファイルのマジックナンバー
         if header.startswith(b'RIFF') and header[8:12] == b'WAVE':
             return '.wav'
-            
+
         # MP3ファイルのマジックナンバー
         if header.startswith(b'\xFF\xFB') or header.startswith(b'\xFF\xF3') or \
         header.startswith(b'\xFF\xF2') or header.startswith(b'\xFF\xF4'):
@@ -95,10 +95,7 @@ class Audio_Files:
         # GSMファイルのマジックナンバー
         if header.startswith(b'\x00\x01\x00\x01'):
             return '.gsm'
-        
+
         # M4Aのマジックナンバー(LINEボイスメッセージの標準規格)
         if header.startswith(b'\x00\x00\x00\x1c') and header[8:12] == b'M4A ':
             return '.m4a'
-
-        # マジックナンバーに該当するファイル形式が見つからなかった場合はNoneを返す
-        return None
