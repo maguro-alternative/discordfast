@@ -136,7 +136,7 @@ async def line_pickle_save(
         )
 
     # 中身が空の場合
-    if len(table_fetch) == 0 or create_table_flag:
+    if len(table_fetch) == 0:
 
         # Discordのチャンネルを取得
         all_channel = await get_discord_channel(
@@ -170,8 +170,6 @@ async def line_pickle_save(
 
             # 一つ一つ作成
             # await db.insert_row(table_name=table_name,row_values=row)
-
-        print(row_values)
 
         # まとめて作成(バッジ)
         await db.batch_insert_row(
