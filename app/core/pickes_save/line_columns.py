@@ -12,20 +12,20 @@ from core.pickes_save.bin.check_table import check_table_type
 
 LINE_TABLE = 'guilds_line_channel_'
 LINE_COLUMNS = {
-    'channel_id': 'NUMERIC PRIMARY KEY', 
-    'guild_id': 'NUMERIC', 
-    'line_ng_channel': 'boolean',
-    'ng_message_type': 'VARCHAR(50)[]',
-    'message_bot': 'boolean',
-    'ng_users':'NUMERIC[]'
+    'channel_id'        : 'NUMERIC PRIMARY KEY',
+    'guild_id'          : 'NUMERIC',
+    'line_ng_channel'   : 'boolean',
+    'ng_message_type'   : 'VARCHAR(50)[]',
+    'message_bot'       : 'boolean',
+    'ng_users'          : 'NUMERIC[]'
 }
 LINE_NEW_COLUMNS = {
-    'channel_id': 0, 
-    'guild_id': 0, 
-    'line_ng_channel': False,
-    'ng_message_type': [],
-    'message_bot': True,
-    'ng_users':[]
+    'channel_id'        : 0,
+    'guild_id'          : 0,
+    'line_ng_channel'   : False,
+    'ng_message_type'   : [],
+    'message_bot'       : True,
+    'ng_users'          : []
 }
 # 取得するチャンネルのタイプ
 LINE_TYPE = [0,2]
@@ -53,7 +53,7 @@ async def line_pickle_save(
 
     # テーブルを削除するかのフラグ
     drop_table_flag = False
-    
+
     # テーブルの要素を取得
     table_fetch:List[Dict] = await db.select_rows(
         table_name=f"{table_name}",
@@ -98,7 +98,6 @@ async def line_pickle_save(
     # テーブルに変更があるかのフラグ
     changed_table_flag = table_colums != channel_colums or unchanged != False
 
-    
     # テーブルが存在しているが、中身が空
     if len(table_fetch) == 0:
         print(f'テーブル:{table_name}の要素は空です')
@@ -113,7 +112,7 @@ async def line_pickle_save(
     if create_colum_flag:
         print(f'テーブル:{table_name}のカラム名一覧を作成します')
         table_colums = [key for key in table_fetch[0].keys()]
-        
+
     # カラムの構成が変更されていた場合、削除し新たに作成する
     if changed_table_flag or drop_table_flag:
         print(f'テーブル:{table_name}を削除します')
@@ -165,7 +164,7 @@ async def line_pickle_save(
                 else:
                     value = values
                 row.update({key:value})
-            
+
             row_values.append(row)
             # print(row)
 

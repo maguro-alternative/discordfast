@@ -11,36 +11,36 @@ from core.pickes_save.bin.check_table import check_table_type
 
 WEBHOOK_TABLE = 'webhook_'
 WEBHOOK_COLUMNS = {
-    'uuid':'UUID PRIMARY KEY',
-    'guild_id': 'NUMERIC', 
-    'webhook_id':'NUMERIC',
-    'subscription_type':'VARCHAR(50)',
-    'subscription_id': 'VARCHAR(50)',
-    'mention_roles':'NUMERIC[]',
-    'mention_members':'NUMERIC[]',
-    'ng_or_word':'VARCHAR(50)[]',
-    'ng_and_word':'VARCHAR(50)[]',
-    'search_or_word':'VARCHAR(50)[]',
-    'search_and_word':'VARCHAR(50)[]',
-    'mention_or_word':'VARCHAR(50)[]',
-    'mention_and_word':'VARCHAR(50)[]',
-    'created_at':'VARCHAR(50)'
+    'uuid'              : 'UUID PRIMARY KEY',
+    'guild_id'          : 'NUMERIC',
+    'webhook_id'        : 'NUMERIC',
+    'subscription_type' : 'VARCHAR(50)',
+    'subscription_id'   : 'VARCHAR(50)',
+    'mention_roles'     : 'NUMERIC[]',
+    'mention_members'   : 'NUMERIC[]',
+    'ng_or_word'        : 'VARCHAR(50)[]',
+    'ng_and_word'       : 'VARCHAR(50)[]',
+    'search_or_word'    : 'VARCHAR(50)[]',
+    'search_and_word'   : 'VARCHAR(50)[]',
+    'mention_or_word'   : 'VARCHAR(50)[]',
+    'mention_and_word'  : 'VARCHAR(50)[]',
+    'created_at'        : 'VARCHAR(50)'
 }
 WEBHOOK_NEW_COLUMNS = {
-    'uuid':'',
-    'guild_id': 0, 
-    'webhook_id':0,
-    'subscription_type':'',
-    'subscription_id': '',
-    'mention_roles':[],
-    'mention_members':[],
-    'ng_or_word':[],
-    'ng_and_word':[],
-    'search_or_word':[],
-    'search_and_word':[],
-    'mention_or_word':[],
-    'mention_and_word':[],
-    'created_at':''
+    'uuid'              : '',
+    'guild_id'          : 0,
+    'webhook_id'        : 0,
+    'subscription_type' : '',
+    'subscription_id'   : '',
+    'mention_roles'     : [],
+    'mention_members'   : [],
+    'ng_or_word'        : [],
+    'ng_and_word'       : [],
+    'search_or_word'    : [],
+    'search_and_word'   : [],
+    'mention_or_word'   : [],
+    'mention_and_word'  : [],
+    'created_at'        : ''
 }
 
 async def webhook_pickle_save(
@@ -106,12 +106,12 @@ async def webhook_pickle_save(
             drop_table_flag = True
         else:
             table_colums = [key for key in WEBHOOK_COLUMNS.keys()]
-        
+
     # データベース側のカラムを格納
     if create_colum_flag:
         print(f'テーブル:{table_name}のカラム名一覧を作成します')
         table_colums = [key for key in table_fetch[0].keys()]
-        
+
     # カラムの構成が変更されていた場合、削除し新たに作成する
     if changed_table_flag or drop_table_flag:
         print(f'テーブル:{table_name}を削除します')
@@ -136,15 +136,14 @@ async def webhook_pickle_save(
                     table_name=table_name,
                     row_values=table_row
                 )
-        
-    
+
     # テーブルの要素を取得
     table_fetch:List[Dict] = await db.select_rows(
         table_name=f"{table_name}",
         columns=[],
         where_clause={}
     )
-    
+
     print(f'{table_name}.pickleの書き込みをはじめます')
 
     # pickleファイルに書き込み

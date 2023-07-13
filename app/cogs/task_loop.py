@@ -151,7 +151,7 @@ class Task_Loop(commands.Cog):
                     '%Y-%m-%d %H:%M'
                 )
                 limit = time_limit - now_time
-                
+
                 limit_five_day:bool = limit.seconds > 431939 and limit.seconds < 432001
                 limit_four_day:bool = limit.seconds > 345539 and limit.seconds < 345601
                 limit_tree_day:bool = limit.seconds > 259139 and limit.seconds < 259201
@@ -186,7 +186,8 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                    
+                            print(limit.seconds)
+
                     if task.get('alert_level') == 2:
                         # 残り2日の場合
                         if (limit_two_day or limit_one_day or limit_half_day or 
@@ -197,6 +198,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
+                            print(limit.seconds)
 
                     if task.get('alert_level') == 3:
                         # 残り3日の場合
@@ -211,6 +213,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
+                            print(limit.seconds)
 
                     if task.get('alert_level') == 4:
                         # 残り4日の場合
@@ -225,6 +228,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
+                            print(limit.seconds)
 
                     if task.get('alert_level') == 5:
                         # 残り5日の場合
@@ -240,6 +244,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
+                            print(limit.seconds)
 
                     # 10分前ならレベル関係なくアラートを出す
                     if limit.seconds < 600:
@@ -247,6 +252,12 @@ class Task_Loop(commands.Cog):
                             channel_id=int(task.get('task_channel')),
                             message=text
                         )
+                        print(limit.seconds)
+
+        # supabaseの制限対策
+        if now_time.strftime('%H:%M') == '04:00':
+            await db.connect()
+            await db.disconnect()
 
 def setup(bot:DBot):
     return bot.add_cog(Task_Loop(bot))

@@ -111,7 +111,7 @@ class ReqestDiscord:
         戻り値
         List[Discord_Member]
         """
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/members?limit={self.limit}',
@@ -123,9 +123,9 @@ class ReqestDiscord:
                 for member in res:
                     r = Discord_Member.new_from_json_dict(member)
                     member_list.append(r)
-        
+
         return member_list
-            
+
 
     async def role_get(self) -> List[Discord_Role]:
         """
@@ -234,12 +234,12 @@ class ReqestDiscord:
         戻り値
         message      変更後の文字列: str
         """
-        
+
         role_list = re.findall("@\S*?#role",message,re.S)
 
         if not role_list:
             return message
-        
+
         get_role_list = await self.role_get()
 
         for role in get_role_list:
@@ -257,8 +257,8 @@ class ReqestDiscord:
                 return message
 
         return message
-                
-        
+
+
     async def channel_select(self, channel_id: int, message: str) -> Tuple[int,str]:
         """
         テキストメッセージから送信場所を読み取り変更する。
@@ -269,12 +269,12 @@ class ReqestDiscord:
         channel_id      送信先のチャンネル      :id
         message         指定したチャンネル名    :str
         """
-        
+
         channel_list = re.findall("\A/\S*?#channel",message,re.S)
 
         if not channel_list or message.find('/') != 0:
             return channel_id, message
-        
+
         get_channel_list = await self.channel_get()
 
         for channel in get_channel_list:
@@ -298,7 +298,7 @@ class ReqestDiscord:
         message     :str
             テキストメッセージ
         """
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
@@ -309,9 +309,9 @@ class ReqestDiscord:
 
 
     async def send_discord_file(
-        self, 
-        channel_id: int, 
-        message: str, 
+        self,
+        channel_id: int,
+        message: str,
         fileobj:Audio_Files,
         content_type:str=None
     ) -> Dict:

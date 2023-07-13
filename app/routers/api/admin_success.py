@@ -54,7 +54,7 @@ async def admin_post(
         oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
         user_session=DiscordUser(**request.session.get('discord_user'))
     )
-    
+
     if check_code == 302:
         return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:

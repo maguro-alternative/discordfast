@@ -12,22 +12,22 @@ from core.pickes_save.bin.check_table import check_table_type
 
 VC_TABLE = 'guilds_vc_signal_'
 VC_COLUMNS = {
-    'vc_id': 'NUMERIC PRIMARY KEY', 
-    'guild_id': 'NUMERIC', 
-    'send_signal':'boolean',
-    'send_channel_id': 'NUMERIC', 
-    'join_bot': 'boolean',
-    'everyone_mention': 'boolean',
-    'mention_role_id':'NUMERIC[]'
+    'vc_id'             : 'NUMERIC PRIMARY KEY',
+    'guild_id'          : 'NUMERIC',
+    'send_signal'       : 'boolean',
+    'send_channel_id'   : 'NUMERIC',
+    'join_bot'          : 'boolean',
+    'everyone_mention'  : 'boolean',
+    'mention_role_id'   : 'NUMERIC[]'
 }
 VC_NEW_COLUMNS = {
-    'vc_id': 0, 
-    'guild_id': 0, 
-    'send_signal':True,
-    'send_channel_id': 0, 
-    'join_bot': True,
-    'everyone_mention': True,
-    'mention_role_id':[]
+    'vc_id'             : 0,
+    'guild_id'          : 0,
+    'send_signal'       : True,
+    'send_channel_id'   : 0,
+    'join_bot'          : True,
+    'everyone_mention'  : True,
+    'mention_role_id'   : []
 }
 # 取得するチャンネルのタイプ
 VC_TYPE = [2]
@@ -79,7 +79,7 @@ async def vc_pickle_save(
             table_columns_type = await db.get_columns_type(table_name=table_name)
             table_colums = [key for key in table_columns_type.keys()]
     else:
-         # データベース側のカラムの型を入手
+        # データベース側のカラムの型を入手
         table_columns_type = await db.get_columns_type(table_name=table_name)
         table_colums = [key for key in table_columns_type.keys()]
 
@@ -112,7 +112,7 @@ async def vc_pickle_save(
     if create_colum_flag:
         print(f'テーブル:{table_name}のカラム名一覧を作成します')
         table_colums = [key for key in table_fetch[0].keys()]
-        
+
     # カラムの構成が変更されていた場合、削除し新たに作成する
     if changed_table_flag or drop_table_flag:
         print(f'テーブル:{table_name}を削除します')
@@ -164,7 +164,7 @@ async def vc_pickle_save(
                 else:
                     value = values
                 row.update({key:value})
-            
+
             row_values.append(row)
 
             # 一つ一つ作成

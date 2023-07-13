@@ -11,7 +11,7 @@ import re
 from cryptography.fernet import Fernet
 
 from base.database import PostgresDB
-from base.aio_req import pickle_write
+from base.aio_req import pickle_write,encrypt_password
 from core.db_pickle import *
 from routers.api.chack.post_user_check import user_checker
 from routers.session_base.user_session import DiscordOAuthData,DiscordUser
@@ -49,7 +49,7 @@ async def line_set_success(request: Request):
         oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
         user_session=DiscordUser(**request.session.get('discord_user'))
     )
-    
+
     if check_code == 302:
         return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:
@@ -107,13 +107,3 @@ async def line_set_success(request: Request):
             'title':'成功'
         }
     )
-
-
-# 暗号化関数
-async def encrypt_password(password:str) -> bytes:
-    cipher_suite = Fernet(ENCRYPTED_KEY)
-    try:
-        encrypted_password = cipher_suite.encrypt(password.encode('utf-8'))
-        return encrypted_password
-    except:
-        return b''

@@ -78,7 +78,7 @@ class Todo(commands.Cog):
 
         if type(alert_user) is discord.User:
             alert_user_id = alert_user.id
-        
+
         respond_text = ""
         timelimit = datetime.strptime(
             f'{timelimit_year}-{timelimit_month}-{timelimit_day} {timelimit_hour}:{timelimit_minute}',
@@ -168,7 +168,7 @@ class Todo(commands.Cog):
         table_name = f"task_{ctx.guild_id}"
 
         await ctx.respond("処理中...")
-        
+
         try:
             table_fetch:List[Dict] = await pickle_read(
                 filename=table_name

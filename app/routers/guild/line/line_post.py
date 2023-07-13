@@ -16,9 +16,10 @@ from base.aio_req import (
     aio_get_request,
     pickle_read,
     return_permission,
-    oauth_check
+    oauth_check,
+    sort_discord_channel
 )
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from routers.session_base.user_session import DiscordOAuthData,DiscordUser,Threads
 
 from message_type.discord_type.message_creater import ReqestDiscord
 from base.guild_permission import Permission
@@ -97,8 +98,41 @@ async def line_post(
             'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
         }
     )
+
+    # アクティブスレッドを取得
+    active_threads = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/threads/active',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    # フォーラムチャンネルがあるか調べる
+    threads_list = [
+        t
+        for t in all_channel_sort
+        if int(t.get('type')) == 15
+    ]
+
+    for a_thead in active_threads.get('threads'):
+        all_channel_sort.append(a_thead)
+
+    archived_threads = list()
+
+    for thread in threads_list:
+        thread_id = thread.get('id')
+        # アーカイブスレッドを取得
+        archived_threads = await aio_get_request(
+            url = DISCORD_BASE_URL + f'/channels/{thread_id}/threads/archived/public',
+            headers = {
+                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+            }
+        )
+        for a_thead in archived_threads.get('threads'):
+            all_channel_sort.append(a_thead)
+
     role_list = [
-        g 
+        g
         for g in guild_user["roles"]
     ]
 
@@ -114,10 +148,10 @@ async def line_post(
 
     # キャッシュ読み取り
     guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
-    
+
     guild_table = [
-        g 
-        for g in guild_table_fetch 
+        g
+        for g in guild_table_fetch
         if int(g.get('guild_id')) == guild_id
     ]
     guild_permission_code = 8
@@ -126,7 +160,7 @@ async def line_post(
     if len(guild_table) > 0:
         guild_permission_code = int(guild_table[0].get('line_permission'))
         guild_permission_user = [
-            user 
+            user
             for user in guild_table[0].get('line_user_id_permission')
         ]
         guild_permission_role = [
@@ -139,7 +173,7 @@ async def line_post(
     user_permission:str = 'normal'
 
     # 許可されている場合、管理者の場合
-    if (and_code == permission_code or 
+    if (and_code == permission_code or
         admin_code == 8 or
         user_session.id in guild_permission_user or
         len(set(guild_permission_role) & set(role_list)) > 0
@@ -169,22 +203,22 @@ async def line_post(
                 }
             }
         )
-    
+
     # ローカルに保存されているチャンネルの数
     table_ids = [
-        int(tid["channel_id"]) 
+        int(tid["channel_id"])
         for tid in table_fetch
     ]
     # Discord側の現時点でのチャンネルの数(カテゴリーチャンネルを除く)
     guild_ids = [
         int(aid["id"]) 
-        for aid in all_channel_sort 
+        for aid in all_channel_sort
         if aid['type'] != 4
     ]
     # 新規で作られたチャンネルを取得
     new_channel = [
-        c 
-        for c in all_channel_sort 
+        c
+        for c in all_channel_sort
         if int(c['id']) not in table_ids and c['type'] != 4
     ]
     # 消されたチャンネルを取得
@@ -260,7 +294,7 @@ async def line_post(
     return templates.TemplateResponse(
         "guild/line/linepost.html",
         {
-            "request": request, 
+            "request": request,
             "guild": guild,
             "guild_id": guild_id,
             "guild_members":guild_members,
@@ -270,84 +304,3 @@ async def line_post(
             "title": "LINEへの送信設定/" + guild["name"]
         }
     )
-
-async def sort_discord_channel(
-    all_channel:List
-) -> List:
-     # 親カテゴリー格納用
-    position = []
-
-    # レスポンスのJSONからpositionでソートされたリストを作成
-    sorted_channels = sorted(all_channel, key=lambda c: c['position'])
-
-    # parent_idごとにチャンネルをまとめた辞書を作成
-    channel_dict = {}
-
-    for parent_id, group in groupby(
-        sorted_channels, 
-        key=lambda c: c['parent_id']
-    ):
-        if parent_id is None:
-            # 親カテゴリーのないチャンネルは、キーがNoneの辞書に追加される
-            parent_id = 'None'
-    
-        # キーがまだない場合、作成(同時に値も代入)
-        if channel_dict.get(str(parent_id)) == None:
-            channel_dict[str(parent_id)] = list(group)
-        # キーがある場合、リストを取り出して結合し代入
-        else:
-            listtmp:List = channel_dict[str(parent_id)]
-            listtmp.extend(list(group))
-            channel_dict[str(parent_id)] = listtmp
-            # リストを空にする
-            listtmp = list()
-
-    # 親カテゴリーがある場合、Noneから取り出す
-    for chan in channel_dict['None'][:]:
-        if chan['type'] == 4:
-            position.append(chan)
-            channel_dict['None'].remove(chan)
-
-    # 辞書を表示
-    position_index = 0
-
-    # 親カテゴリーの名前をリスト化
-    extracted_list = [d["name"] for d in position]
-    # カテゴリーに属しないチャンネルが存在する場合
-    if len(channel_dict['None']) != 0:
-        # 配列の長さをカテゴリー数+1にする
-        all_channels = [{}] * (len(extracted_list) + 1)
-    else:
-        all_channels = [{}] * len(extracted_list)
-
-    for parent_id, channel in channel_dict.items():
-        # カテゴリー内にチャンネルがある場合
-        if len(channel) != 0:
-            for d in position:
-                # カテゴリーを探索、あった場合positionを代入
-                if d['id'] == channel[0]['parent_id']:
-                    position_index = d['position']
-                    break
-        else:
-            position_index = len(extracted_list)
-    
-        if len(channel) != 0:
-            # 指定したリストの中身が空でない場合、空のリストを探す
-            while len(all_channels[position_index]) != 0:
-                if len(extracted_list) == position_index:
-                    position_index -= 1
-                else:
-                    position_index += 1
-
-            # 指定した位置にカテゴリー内のチャンネルを代入
-            all_channels[position_index] = channel
-
-            # 先頭がカテゴリーでない場合
-            if channel[0]['parent_id'] != None:
-                # 先頭にカテゴリーチャンネルを代入
-                all_channels[position_index].insert(0,d)
-    
-    # list(list),[[],[]]を一つのリストにする
-    all_channel_sort = list(chain.from_iterable(all_channels))
-
-    return all_channel_sort
