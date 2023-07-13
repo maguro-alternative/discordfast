@@ -171,6 +171,8 @@ async def line_pickle_save(
             # 一つ一つ作成
             # await db.insert_row(table_name=table_name,row_values=row)
 
+        print(row_values)
+
         # まとめて作成(バッジ)
         await db.batch_insert_row(
             table_name=table_name,
