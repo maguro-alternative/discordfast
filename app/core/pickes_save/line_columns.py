@@ -135,8 +135,15 @@ async def line_pickle_save(
             row_values=table_fetch
         )
 
+        # テーブルの要素を取得
+        table_fetch:List[Dict] = await db.select_rows(
+            table_name=f"{table_name}",
+            columns=[],
+            where_clause={}
+        )
+
     # 中身が空の場合
-    if len(table_fetch) == 0:
+    elif len(table_fetch) == 0 or (create_table_flag != changed_table_flag):
 
         # Discordのチャンネルを取得
         all_channel = await get_discord_channel(
