@@ -291,7 +291,7 @@ class Discord_Channel(Base):
         flags:int = None,
         parent_id:str = None,
         bitrate:int = None,
-        user_limit:int = None, 
+        user_limit:int = None,
         rtc_region:str = None,
         topic:str = None,
         guild_id:int = None,
@@ -308,7 +308,7 @@ class Discord_Channel(Base):
         self.flags = flags
         self.parent_id = parent_id
         self.bitrate = bitrate
-        self.user_limit = user_limit 
+        self.user_limit = user_limit
         self.rtc_region = rtc_region
         self.topic = topic
         self.guild_id = guild_id

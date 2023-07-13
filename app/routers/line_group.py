@@ -6,15 +6,14 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 load_dotenv()
 
-from cryptography.fernet import Fernet
-from itertools import groupby,chain
-
 import os
 from typing import List,Dict
 
 from base.aio_req import (
     aio_get_request,
-    pickle_read
+    pickle_read,
+    sort_discord_channel,
+    decrypt_password
 )
 
 LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
@@ -49,7 +48,7 @@ async def group(
             return RedirectResponse(url='/line-login')
     else:
         return RedirectResponse(url='/line-login')
-    
+
     # line_botテーブルを取得
     line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
 
@@ -90,6 +89,38 @@ async def group(
     # ソート後のチャンネル一覧
     all_channel_sort = await sort_discord_channel(all_channel=all_channel)
 
+    # アクティブスレッドを取得
+    active_threads = await aio_get_request(
+        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/threads/active',
+        headers = {
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    # フォーラムチャンネルがあるか調べる
+    threads_list = [
+        t
+        for t in all_channel_sort
+        if int(t.get('type')) == 15
+    ]
+
+    for a_thead in active_threads.get('threads'):
+        all_channel_sort.append(a_thead)
+
+    archived_threads = list()
+
+    for thread in threads_list:
+        thread_id = thread.get('id')
+        # アーカイブスレッドを取得
+        archived_threads = await aio_get_request(
+            url = DISCORD_BASE_URL + f'/channels/{thread_id}/threads/archived/public',
+            headers = {
+                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+            }
+        )
+        for a_thead in archived_threads.get('threads'):
+            all_channel_sort.append(a_thead)
+
 
     return templates.TemplateResponse(
         "linegroup.html",
@@ -101,94 +132,3 @@ async def group(
             "title":f"{request.session['line_user']['name']}のサーバ一覧"
         }
     )
-
-# 復号化関数
-async def decrypt_password(encrypted_password:bytes) -> str:
-    cipher_suite = Fernet(ENCRYPTED_KEY)
-    try:
-        decrypted_password = cipher_suite.decrypt(encrypted_password)
-        return decrypted_password.decode('utf-8')
-    # トークンが無効の場合
-    except:
-        return ''
-    
-async def sort_discord_channel(
-    all_channel:List
-) -> List:
-     # 親カテゴリー格納用
-    position = []
-
-    # レスポンスのJSONからpositionでソートされたリストを作成
-    sorted_channels = sorted(all_channel, key=lambda c: c['position'])
-
-    # parent_idごとにチャンネルをまとめた辞書を作成
-    channel_dict = {}
-
-    for parent_id, group in groupby(
-        sorted_channels, 
-        key=lambda c: c['parent_id']
-    ):
-        if parent_id is None:
-            # 親カテゴリーのないチャンネルは、キーがNoneの辞書に追加される
-            parent_id = 'None'
-    
-        # キーがまだない場合、作成(同時に値も代入)
-        if channel_dict.get(str(parent_id)) == None:
-            channel_dict[str(parent_id)] = list(group)
-        # キーがある場合、リストを取り出して結合し代入
-        else:
-            listtmp:List = channel_dict[str(parent_id)]
-            listtmp.extend(list(group))
-            channel_dict[str(parent_id)] = listtmp
-            # リストを空にする
-            listtmp = list()
-
-    # 親カテゴリーがある場合、Noneから取り出す
-    for chan in channel_dict['None'][:]:
-        if chan['type'] == 4:
-            position.append(chan)
-            channel_dict['None'].remove(chan)
-
-    # 辞書を表示
-    position_index = 0
-
-    # 親カテゴリーの名前をリスト化
-    extracted_list = [d["name"] for d in position]
-    # カテゴリーに属しないチャンネルが存在する場合
-    if len(channel_dict['None']) != 0:
-        # 配列の長さをカテゴリー数+1にする
-        all_channels = [{}] * (len(extracted_list) + 1)
-    else:
-        all_channels = [{}] * len(extracted_list)
-
-    for parent_id, channel in channel_dict.items():
-        # カテゴリー内にチャンネルがある場合
-        if len(channel) != 0:
-            for d in position:
-                # カテゴリーを探索、あった場合positionを代入
-                if d['id'] == channel[0]['parent_id']:
-                    position_index = d['position']
-                    break
-        else:
-            position_index = len(extracted_list)
-    
-        if len(channel) != 0:
-            # 指定したリストの中身が空でない場合、空のリストを探す
-            while len(all_channels[position_index]) != 0:
-                if len(extracted_list) == position_index:
-                    position_index -= 1
-                else:
-                    position_index += 1
-
-            # 指定した位置にカテゴリー内のチャンネルを代入
-            all_channels[position_index] = channel
-
-            # 先頭がカテゴリーでない場合
-            if channel[0]['parent_id'] != None:
-                # 先頭にカテゴリーチャンネルを代入
-                all_channels[position_index].insert(0,d)
-    
-    # list(list),[[],[]]を一つのリストにする
-    all_channel_sort = list(chain.from_iterable(all_channels))
-
-    return all_channel_sort

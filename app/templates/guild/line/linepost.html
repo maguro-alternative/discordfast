@@ -58,11 +58,13 @@
                                     テキストチャンネル　:
                                 {% elif all.type == 2 %}
                                     ボイスチャンネル　　:
+                                {% elif all.type == 15 or all.type == 11 %}
+                                    スレッド　　　　　　:
                                 {% endif %}
                                 {{all.name}}
                             </strong>
                         </summary>
-                        
+
                         <!--ng_channelの場合初めからチェックを付ける-->
                         <input type="checkbox"
                             {% if line_row[all.id]['line_ng_channel'] == true %}
@@ -91,6 +93,8 @@
                                 class="text_channel_bot"
                             {% elif all.type == 2 %}
                                 class="voice_channel_bot"
+                            {% elif all.type == 15 %}
+                                class="text_channel_bot"
                             {% endif %}
                         name="message_bot_{{all.id}}" value="True"/>
                         
@@ -99,19 +103,19 @@
                         <br/>
                         送信しないメッセージの種類:<br/>
                         
-                        <input type="checkbox" name="default_{{all.id}}" 
+                        <input type="checkbox" name="default_{{all.id}}"
                         {% if "MessageType.default" in line_row[all.id]['ng_message_type'] %}
-                            checked="checked" 
-                        {% endif %}    
+                            checked="checked"
+                        {% endif %}
                         value="MessageType.default"/>
                         
                         :デフォルト
                         <br/>
 
                         
-                        <input type="checkbox" name="recipient_add_{{all.id}}" 
+                        <input type="checkbox" name="recipient_add_{{all.id}}"
                         {% if "MessageType.recipient_add" in line_row[all.id]['ng_message_type'] %}
-                            checked="checked" 
+                            checked="checked"
                         {% endif %}
                         value="MessageType.default"/>
                         
@@ -119,12 +123,12 @@
                         <br/>
 
                         
-                        <input type="checkbox" name="pins_add_{{all.id}}" 
+                        <input type="checkbox" name="pins_add_{{all.id}}"
                         {% if "MessageType.pins_add" in line_row[all.id]['ng_message_type'] %}
-                            checked="checked" 
-                        {% endif %}    
+                            checked="checked"
+                        {% endif %}
                         value="MessageType.pins_add"/>
-                        
+
                         :ピン止め
                         <br/>
 

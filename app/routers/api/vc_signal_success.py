@@ -54,7 +54,7 @@ async def vc_post(
         oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
         user_session=DiscordUser(**request.session.get('discord_user'))
     )
-    
+
     if check_code == 302:
         return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:
@@ -65,8 +65,8 @@ async def vc_post(
 
     # "send_channel_id_"で始まるキーのみを抽出し、数字部分を取得する
     numbers = [
-        int(key.replace("send_channel_id_", "")) 
-        for key in form.keys() 
+        int(key.replace("send_channel_id_", ""))
+        for key in form.keys()
         if key.startswith("send_channel_id_")
     ]
 
@@ -90,7 +90,7 @@ async def vc_post(
             join_bot = True
         if form.get(f"everyone_mention_{vc_id}") != None:
             everyone_mention = True
-            
+
         row_values = {
             'send_signal':send_signal,
             'send_channel_id':form.get(f"send_channel_id_{vc_id}"),

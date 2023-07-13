@@ -10,34 +10,34 @@ from core.pickes_save.bin.check_table import check_table_type
 
 GUILD_SET_TABLE = 'guild_set_permissions'
 GUILD_SET_COLUMNS = {
-    'guild_id': 'NUMERIC PRIMARY KEY', 
-    'line_permission':'NUMERIC',
-    'line_user_id_permission':'NUMERIC[]',
-    'line_role_id_permission':'NUMERIC[]',
-    'line_bot_permission':'NUMERIC',
-    'line_bot_user_id_permission':'NUMERIC[]',
-    'line_bot_role_id_permission':'NUMERIC[]',
-    'vc_permission':'NUMERIC',
-    'vc_user_id_permission':'NUMERIC[]',
-    'vc_role_id_permission':'NUMERIC[]',
-    'webhook_permission':'NUMERIC',
-    'webhook_user_id_permission':'NUMERIC[]',
-    'webhook_role_id_permission':'NUMERIC[]'
+    'guild_id'                      : 'NUMERIC PRIMARY KEY',
+    'line_permission'               : 'NUMERIC',
+    'line_user_id_permission'       : 'NUMERIC[]',
+    'line_role_id_permission'       : 'NUMERIC[]',
+    'line_bot_permission'           : 'NUMERIC',
+    'line_bot_user_id_permission'   : 'NUMERIC[]',
+    'line_bot_role_id_permission'   : 'NUMERIC[]',
+    'vc_permission'                 : 'NUMERIC',
+    'vc_user_id_permission'         : 'NUMERIC[]',
+    'vc_role_id_permission'         : 'NUMERIC[]',
+    'webhook_permission'            : 'NUMERIC',
+    'webhook_user_id_permission'    : 'NUMERIC[]',
+    'webhook_role_id_permission'    : 'NUMERIC[]'
 }
 GUILD_SET_NEW_COLUMNS = {
-    'guild_id': 0, 
-    'line_permission':8,
-    'line_user_id_permission':[],
-    'line_role_id_permission':[],
-    'line_bot_permission':8,
-    'line_bot_user_id_permission':[],
-    'line_bot_role_id_permission':[],
-    'vc_permission':8,
-    'vc_user_id_permission':[],
-    'vc_role_id_permission':[],
-    'webhook_permission':8,
-    'webhook_user_id_permission':[],
-    'webhook_role_id_permission':[]
+    'guild_id'                      : 0,
+    'line_permission'               : 8,
+    'line_user_id_permission'       : [],
+    'line_role_id_permission'       : [],
+    'line_bot_permission'           : 8,
+    'line_bot_user_id_permission'   : [],
+    'line_bot_role_id_permission'   : [],
+    'vc_permission'                 : 8,
+    'vc_user_id_permission'         : [],
+    'vc_role_id_permission'         : [],
+    'webhook_permission'            : 8,
+    'webhook_user_id_permission'    : [],
+    'webhook_role_id_permission'    : []
 }
 
 async def guild_permissions_pickle_save(
@@ -110,7 +110,7 @@ async def guild_permissions_pickle_save(
     if create_colum_flag:
         print(f'テーブル:{table_name}のカラム名一覧を作成します')
         table_colums = [key for key in table_fetch[0].keys()]
-        
+
     # カラムの構成が変更されていた場合、削除し新たに作成する
     if changed_table_flag or drop_table_flag:
         print(f'テーブル:{table_name}を削除します')
@@ -151,7 +151,7 @@ async def guild_permissions_pickle_save(
         columns=[],
         where_clause={}
     )
-    
+
     print(f'{table_name}.pickleの書き込みをはじめます')
 
     # pickleファイルに書き込み

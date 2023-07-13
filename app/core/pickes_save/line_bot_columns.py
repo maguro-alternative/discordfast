@@ -11,26 +11,26 @@ from core.pickes_save.bin.check_table import check_table_type
 
 LINE_BOT_TABLE = 'line_bot'
 LINE_BOT_COLUMNS = {
-    'guild_id': 'NUMERIC PRIMARY KEY', 
-    'line_notify_token': 'BYTEA',
-    'line_bot_token': 'BYTEA',
-    'line_bot_secret': 'BYTEA',
-    'line_group_id': 'BYTEA',
-    'line_client_id': 'BYTEA',
+    'guild_id'          : 'NUMERIC PRIMARY KEY',
+    'line_notify_token' : 'BYTEA',
+    'line_bot_token'    : 'BYTEA',
+    'line_bot_secret'   : 'BYTEA',
+    'line_group_id'     : 'BYTEA',
+    'line_client_id'    : 'BYTEA',
     'line_client_secret': 'BYTEA',
-    'default_channel_id':'NUMERIC',
-    'debug_mode':'BOOLEAN'
+    'default_channel_id': 'NUMERIC',
+    'debug_mode'        : 'BOOLEAN'
 }
 LINE_BOT_NEW_COLUMNS = {
-    'guild_id': 0, 
-    'line_notify_token': b'',
-    'line_bot_token': b'',
-    'line_bot_secret': b'',
-    'line_group_id': b'',
-    'line_client_id': b'',
+    'guild_id'          : 0,
+    'line_notify_token' : b'',
+    'line_bot_token'    : b'',
+    'line_bot_secret'   : b'',
+    'line_group_id'     : b'',
+    'line_client_id'    : b'',
     'line_client_secret': b'',
-    'default_channel_id':0,
-    'debug_mode':False
+    'default_channel_id': 0,
+    'debug_mode'        : False
 }
 
 async def line_bot_pickle_save(
@@ -57,7 +57,7 @@ async def line_bot_pickle_save(
 
     # テーブルを削除するかのフラグ
     drop_table_flag = False
-    
+
     # テーブルの要素を取得
     table_fetch:List[Dict] = await db.select_rows(
         table_name=f"{table_name}",
@@ -70,11 +70,10 @@ async def line_bot_pickle_save(
     # テーブル内のカラム名配列
     channel_colums = [key for key in LINE_BOT_COLUMNS.keys()]
 
-    
     #print(table_columns_type)
 
     table_columns_type = await db.get_columns_type(table_name=table_name)
-    
+
     if len(table_columns_type) == 0:
         # テーブル未作成の場合、同じ型を宣言
         if (table_fetch[0] == f"{table_name} does not exist"):
@@ -126,7 +125,7 @@ async def line_bot_pickle_save(
     if create_colum_flag:
         print(f'テーブル:{table_name}のカラム名一覧を作成します')
         table_colums = [key for key in table_fetch[0].keys()]
-        
+
     # カラムの構成が変更されていた場合、削除し新たに作成する
     if changed_table_flag or drop_table_flag:
         print(f'テーブル:{table_name}を削除します')
@@ -140,8 +139,6 @@ async def line_bot_pickle_save(
             table_name=table_name,
             columns=LINE_BOT_COLUMNS
         )
-
-    
 
     # テーブルに変更があった場合
     if changed_table_flag and len(table_fetch) != 0:
@@ -169,7 +166,7 @@ async def line_bot_pickle_save(
             else:
                 value = values
             row.update({key:value})
-        
+
         row_values.append(row)
 
         # 一つ一つ作成

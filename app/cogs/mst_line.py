@@ -19,7 +19,7 @@ from pydub import AudioSegment
 from dotenv import load_dotenv
 load_dotenv()
 
-from base.aio_req import pickle_read
+from base.aio_req import pickle_read,decrypt_password
 
 try:
     from message_type.line_type.line_message import LineBotAPI,Voice_File
@@ -51,8 +51,8 @@ class mst_line(commands.Cog):
         # print(line_fetch)
 
         key_channel:List[dict] = [
-            g 
-            for g in line_fetch 
+            g
+            for g in line_fetch
             if int(g.get('channel_id')) == message.channel.id
         ]
 
@@ -98,7 +98,7 @@ class mst_line(commands.Cog):
         # line_bot_apiが定義されなかった場合、終了
         # 主な原因はLINEグループを作成していないサーバーからのメッセージ
         if not bool('line_bot_api' in locals()):
-            return 
+            return
 
         # LINEに送信する動画、画像、音声ファイルのリスト
         imagelist = []
@@ -217,7 +217,7 @@ class mst_line(commands.Cog):
         # いずれかの項目が未入力の場合、終了
         if len(line_bot_token) == 0 or len(line_notify_token) == 0 or len(line_group_id) == 0:
             await ctx.respond('LINEが登録されていません。')
-            
+
         line_signal = LineBotAPI(
             notify_token = line_notify_token,
             line_bot_token = line_bot_token,
@@ -318,7 +318,7 @@ async def voice_checker(
         if attachment.url.endswith(voice):
             # 音声ファイルをダウンロードする
             await attachment.save(attachment.filename)
-            
+
             # m4aの場合はそのまま格納
             if attachment.url.endswith('.m4a'):
                 voice_url = attachment.url
@@ -362,16 +362,6 @@ async def voice_checker(
             os.remove(attachment.filename)
 
     return voice_files, attachments
-
-# 復号化関数
-async def decrypt_password(encrypted_password:bytes) -> str:
-    cipher_suite = Fernet(ENCRYPTED_KEY)
-    try:
-        decrypted_password = cipher_suite.decrypt(encrypted_password)
-        return decrypted_password.decode('utf-8')
-    # トークンが無効の場合
-    except:
-        return ''
 
 def setup(bot:DBot):
     return bot.add_cog(mst_line(bot))

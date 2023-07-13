@@ -5,17 +5,17 @@
   <body bgcolor="#252525" text="#ffffff">
     <form action="/api/line-group-success" method="post">
         <h3>LINEからのメッセージの送信先チャンネル</h3>
-        
+
         <select name="default_channel_id" size="1">
 
             {% if default_channel_id|int == 0 %}
                 <option value="0">選択なし</option>
             {% endif %}
-            
+
             {% for chan in all_channel %}
                 <!--テキストチャンネルの場合-->
-                {% if chan.type == 0 %}
-                    <option value={{chan.id}} 
+                {% if chan.type == 0 or chan.type == 11 %}
+                    <option value={{chan.id}}
                         {% if chan.id|int == default_channel_id|int %}
                             selected
                         {% endif %}

@@ -125,3 +125,79 @@ class MatchGuild(BaseModel):
     permissions     :int
     features        :List[str]
     permissions_new :int
+
+
+class ThreadMetadata(BaseModel):
+    """
+    スレッドのメタデータ
+
+    archived                :bool
+        アーカイブされたいるかどうか
+    archive_timestamp       :str
+        アーカイブされた日時
+    auto_archive_duration   :int
+        アーカイブまでの残り秒数
+    locked                  :bool
+        ロックされているか
+    create_timestamp        :str
+        作成日時
+    """
+    archived                :bool
+    archive_timestamp       :str
+    auto_archive_duration   :int
+    locked                  :bool
+    create_timestamp        :str
+
+class Threads(BaseModel):
+    """
+    スレッド
+
+    id                  :int
+        スレッドid
+    type                :int
+        チャンネルタイプ
+    last_message_id     :int
+        最後の投稿id
+    flags               :int
+        用途不明
+    guild_id            :int
+        サーバーid
+    name                :str
+        スレッド名
+    parent_id           :int
+        親チャンネルのid
+    rate_limit_per_user :int
+        レートリミット?
+    bitrate             :int
+        ビットレート
+    user_limit          :int
+        ユーザリミット
+    rtc_region          :str
+        リージョン
+    owner_id            :int
+        ?
+    thread_metadata     :ThreadMetadata
+        スレッドのメタデータ
+    message_count       :int
+        スレッドのメッセージ数
+    member_count        :int
+        スレッドのメンバー数
+    total_message_sent  :int
+        トータルでのメッセージ数
+    """
+    id                  :int
+    type                :int
+    last_message_id     :int
+    flags               :int
+    guild_id            :int
+    name                :str
+    parent_id           :int
+    rate_limit_per_user :int
+    bitrate             :int
+    user_limit          :int
+    rtc_region          :str
+    owner_id            :int
+    thread_metadata     :ThreadMetadata
+    message_count       :int
+    member_count        :int
+    total_message_sent  :int

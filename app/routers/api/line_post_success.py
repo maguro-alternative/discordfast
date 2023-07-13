@@ -47,7 +47,7 @@ async def line_post_success(request: Request):
         oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
         user_session=DiscordUser(**request.session.get('discord_user'))
     )
-    
+
     if check_code == 302:
         return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:
@@ -106,8 +106,6 @@ async def line_post_success(request: Request):
         for key in form.keys() 
         if key.startswith(FORM_NAMES[5])
     ]
-    i:re.Match
-    
 
     # 重複している要素を取り除き、変更があったチャンネルのみを取り出す
     change_number = set(

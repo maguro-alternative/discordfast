@@ -53,7 +53,7 @@ async def webhook_post(
         oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
         user_session=DiscordUser(**request.session.get('discord_user'))
     )
-    
+
     if check_code == 302:
         return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
     elif check_code == 400:
@@ -92,7 +92,7 @@ async def webhook_post(
     # "webhookSelect_"で始まるキーのみを抽出し、数字部分を取得する
     # create_webhook_number = [1,2,3]
     create_webhook_number = [
-        int(key.replace(FORM_NAMES[0], "")) 
+        int(key.replace(FORM_NAMES[0], ""))
         for key in form.keys() 
         if key.startswith(FORM_NAMES[0])
     ]
@@ -100,7 +100,7 @@ async def webhook_post(
     # "webhookChange_"で始まるキーのみを抽出し、数字部分を取得する
     # change_webhook_number = [1,2,3]
     change_webhook_number = [
-        int(key.replace(FORM_NAMES[11], "")) 
+        int(key.replace(FORM_NAMES[11], ""))
         for key in form.keys() 
         if key.startswith(FORM_NAMES[11])
     ]
@@ -123,7 +123,7 @@ async def webhook_post(
         #uuid_uint64 = int.from_bytes(uuid_val.bytes, byteorder='big', signed=False)
         row = {
             'uuid':uuid_val,
-            'guild_id': int(form.get("guild_id")), 
+            'guild_id': int(form.get("guild_id")),
             'webhook_id':int(form.get(f"{FORM_NAMES[0]}{webhook_num}")),
             'subscription_type':form.get(f"{FORM_NAMES[1]}{webhook_num}"),
             'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
@@ -132,7 +132,7 @@ async def webhook_post(
         print(row)
 
         # 入力漏れがあった場合
-        if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or 
+        if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or
             len(form.get(f"{FORM_NAMES[2]}{webhook_num}")) == 0):
             none_flag = True
 
@@ -165,7 +165,7 @@ async def webhook_post(
             })
 
             # print(row)
-        
+
         # 登録した時刻を登録
         now_time = datetime.now(timezone.utc)
         now_str = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
@@ -254,7 +254,7 @@ async def webhook_post(
     )
 
     await db.disconnect()
-    
+
     # pickleファイルに書き込み
     await pickle_write(
         filename=TABLE,
