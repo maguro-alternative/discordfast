@@ -44,4 +44,6 @@ EXPOSE 8080
 
 WORKDIR /root/src/app
 
+RUN ls -a
+
 CMD [ "python", "-u", "main.py" ]
