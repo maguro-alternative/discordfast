@@ -39,10 +39,9 @@ RUN pip install -r requirements.txt
 # discord.pyをpy-cordにアップグレード
 RUN pip install git+https://github.com/Pycord-Development/pycord
 
-ENV VIRTUAL_ENV=/app/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 # ポート番号8080解放
 EXPOSE 8080
 
-CMD [ "/bin/bash", "-c", "cd", "app", "&&", "python", "-u", "main.py" ]
+WORKDIR /root/src/app
+
+CMD [ "/bin/bash", "-c", "python", "-u", "main.py" ]
