@@ -156,9 +156,10 @@ class ReadyLoad(commands.Cog):
         await server.serve()
 
         # 終了時
-        print("exit")
-        await server.shutdown()
-        await self.bot.close()
+        if os.environ.get("PORTS") != None:
+            print("exit")
+            await server.shutdown()
+            await self.bot.close()
 
 def setup(bot:DBot):
     return bot.add_cog(ReadyLoad(bot))
