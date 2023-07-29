@@ -161,8 +161,12 @@ class ReadyLoad(commands.Cog):
             await server.shutdown()
             await self.bot.close()
         else:
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(await server.serve())
+            await server.serve()
+            print("exit")
+            await server.shutdown()
+            await self.bot.close()
+            #loop = asyncio.new_event_loop()
+            #loop.run_until_complete(await server.serve())
 
 def setup(bot:DBot):
     return bot.add_cog(ReadyLoad(bot))
