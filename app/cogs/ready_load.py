@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
+import asyncio
 import uvicorn
 
 from dotenv import load_dotenv
@@ -152,8 +153,10 @@ class ReadyLoad(commands.Cog):
             activity=discord.Game(name = game_name)
         )
         print('起動しました')
+        loop = asyncio.new_event_loop()
 
-        await server.serve()
+        loop.run_until_complete(await server.serve())
+        #await server.serve()
 
         # 終了時
         if os.environ.get("PORTS") != None:
