@@ -134,7 +134,7 @@ class ReadyLoad(commands.Cog):
             hostname = "localhost"
             portnumber = int(os.getenv("PORTS", default=5000))
         else:
-            hostname = "ready_load:app"
+            hostname = "main:app"
             portnumber = int(os.getenv("PORT", default=8080))
 
         config = uvicorn.Config(
@@ -153,16 +153,16 @@ class ReadyLoad(commands.Cog):
             activity=discord.Game(name = game_name)
         )
         print('起動しました')
-        loop = asyncio.new_event_loop()
-
-        loop.run_until_complete(await server.serve())
-        #await server.serve()
 
         # 終了時
         if os.environ.get("PORTS") != None:
+            await server.serve()
             print("exit")
             await server.shutdown()
             await self.bot.close()
+        else:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(await server.serve())
 
 def setup(bot:DBot):
     return bot.add_cog(ReadyLoad(bot))
