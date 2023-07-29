@@ -19,6 +19,12 @@ from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
 from routers.api.chack.post_user_check import user_checker
 from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
+from discord.ext import commands
+try:
+    from core.start import DBot
+except ModuleNotFoundError:
+    from app.core.start import DBot
+
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
@@ -35,237 +41,239 @@ db = PostgresDB(
     host=HOST
 )
 
-
-router = APIRouter()
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-@router.post('/api/webhook-success')
-async def webhook_post(
-    request:Request
-):
-    form = await request.form()
+class WebhookSuccess(commands.Cog):
+    def __init__(self, bot: DBot):
+        self.bot = bot
+        self.router = APIRouter()
 
-    # OAuth2トークンが有効かどうか判断
-    check_code = await user_checker(
-        request=request,
-        oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
-        user_session=DiscordUser(**request.session.get('discord_user'))
-    )
+        @self.router.post('/api/webhook-success')
+        async def webhook_post(
+            request:Request
+        ):
+            form = await request.form()
 
-    if check_code == 302:
-        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
-    elif check_code == 400:
-        return JSONResponse(content={"message": "Fuck You. You are an idiot."})
+            # OAuth2トークンが有効かどうか判断
+            check_code = await user_checker(
+                request=request,
+                oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
+                user_session=DiscordUser(**request.session.get('discord_user'))
+            )
 
-    TABLE = f'webhook_{form.get("guild_id")}'
+            if check_code == 302:
+                return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
+            elif check_code == 400:
+                return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-    await db.connect()
+            TABLE = f'webhook_{form.get("guild_id")}'
 
-    FORM_NAMES = (
-        "webhookSelect_",
-        "subscType_",
-        "subscId_",             #2
-        "role_role_select_",
-        "member_member_select_",
-        "searchOrText",
-        "searchAndText",
-        "ngOrText",
-        "ngAndText",
-        "mentionOrText",
-        "mentionAndText",
+            await db.connect()
 
-        "webhookChange_",
-        "subscTypeChange_",
-        "subscIdChange_",       #13
-        "role_role_change_",
-        "member_member_change_",
-        "changeSearchOrText",
-        "changeSearchAndText",
-        "changeNgOrText",
-        "changeNgAndText",
-        "changeMentionOrText",
-        "changeMentionAndText"
-    )
+            FORM_NAMES = (
+                "webhookSelect_",
+                "subscType_",
+                "subscId_",             #2
+                "role_role_select_",
+                "member_member_select_",
+                "searchOrText",
+                "searchAndText",
+                "ngOrText",
+                "ngAndText",
+                "mentionOrText",
+                "mentionAndText",
 
-    # "webhookSelect_"で始まるキーのみを抽出し、数字部分を取得する
-    # create_webhook_number = [1,2,3]
-    create_webhook_number = [
-        int(key.replace(FORM_NAMES[0], ""))
-        for key in form.keys() 
-        if key.startswith(FORM_NAMES[0])
-    ]
+                "webhookChange_",
+                "subscTypeChange_",
+                "subscIdChange_",       #13
+                "role_role_change_",
+                "member_member_change_",
+                "changeSearchOrText",
+                "changeSearchAndText",
+                "changeNgOrText",
+                "changeNgAndText",
+                "changeMentionOrText",
+                "changeMentionAndText"
+            )
 
-    # "webhookChange_"で始まるキーのみを抽出し、数字部分を取得する
-    # change_webhook_number = [1,2,3]
-    change_webhook_number = [
-        int(key.replace(FORM_NAMES[11], ""))
-        for key in form.keys() 
-        if key.startswith(FORM_NAMES[11])
-    ]
+            # "webhookSelect_"で始まるキーのみを抽出し、数字部分を取得する
+            # create_webhook_number = [1,2,3]
+            create_webhook_number = [
+                int(key.replace(FORM_NAMES[0], ""))
+                for key in form.keys() 
+                if key.startswith(FORM_NAMES[0])
+            ]
 
-    create_webhook_list = []
+            # "webhookChange_"で始まるキーのみを抽出し、数字部分を取得する
+            # change_webhook_number = [1,2,3]
+            change_webhook_number = [
+                int(key.replace(FORM_NAMES[11], ""))
+                for key in form.keys() 
+                if key.startswith(FORM_NAMES[11])
+            ]
 
-    change_webhook_list = []
+            create_webhook_list = []
 
-    del_webhook_numbers = [
-        int(del_key.replace("delWebhook_",""))
-        for del_key in form.keys()
-        if del_key.startswith("delWebhook_")
-    ]
+            change_webhook_list = []
 
-    # 新規作成
-    for webhook_num in create_webhook_number:
-        none_flag = False
+            del_webhook_numbers = [
+                int(del_key.replace("delWebhook_",""))
+                for del_key in form.keys()
+                if del_key.startswith("delWebhook_")
+            ]
 
-        uuid_val = uuid.uuid4()
-        #uuid_uint64 = int.from_bytes(uuid_val.bytes, byteorder='big', signed=False)
-        row = {
-            'uuid':uuid_val,
-            'guild_id': int(form.get("guild_id")),
-            'webhook_id':int(form.get(f"{FORM_NAMES[0]}{webhook_num}")),
-            'subscription_type':form.get(f"{FORM_NAMES[1]}{webhook_num}"),
-            'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
-        }
+            # 新規作成
+            for webhook_num in create_webhook_number:
+                none_flag = False
 
-        print(row)
+                uuid_val = uuid.uuid4()
+                #uuid_uint64 = int.from_bytes(uuid_val.bytes, byteorder='big', signed=False)
+                row = {
+                    'uuid':uuid_val,
+                    'guild_id': int(form.get("guild_id")),
+                    'webhook_id':int(form.get(f"{FORM_NAMES[0]}{webhook_num}")),
+                    'subscription_type':form.get(f"{FORM_NAMES[1]}{webhook_num}"),
+                    'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
+                }
 
-        # 入力漏れがあった場合
-        if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or
-            len(form.get(f"{FORM_NAMES[2]}{webhook_num}")) == 0):
-            none_flag = True
+                print(row)
 
-        for row_name,form_name in {
-            'mention_roles'     :FORM_NAMES[3],
-            'mention_members'   :FORM_NAMES[4],
-            'search_or_word'    :FORM_NAMES[5],
-            'search_and_word'   :FORM_NAMES[6],
-            'ng_or_word'        :FORM_NAMES[7],
-            'ng_and_word'       :FORM_NAMES[8],
-            'mention_or_word'   :FORM_NAMES[9],
-            'mention_and_word'  :FORM_NAMES[10]
-        }.items():
-            row_list = list()
+                # 入力漏れがあった場合
+                if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or
+                    len(form.get(f"{FORM_NAMES[2]}{webhook_num}")) == 0):
+                    none_flag = True
 
-            # キーの数字を取り除いたキー名を格納するリストを作成
-            key_list = list()
-            for key in form.keys():
-                if f'{form_name}{webhook_num}_' in key:
-                    key_name = re.search(r'\d+$', key)  # キーから数字を取り除く
-                    key_list.append(int(key_name.group()))
-                    # print(key)
+                for row_name,form_name in {
+                    'mention_roles'     :FORM_NAMES[3],
+                    'mention_members'   :FORM_NAMES[4],
+                    'search_or_word'    :FORM_NAMES[5],
+                    'search_and_word'   :FORM_NAMES[6],
+                    'ng_or_word'        :FORM_NAMES[7],
+                    'ng_and_word'       :FORM_NAMES[8],
+                    'mention_or_word'   :FORM_NAMES[9],
+                    'mention_and_word'  :FORM_NAMES[10]
+                }.items():
+                    row_list = list()
 
-            for key in key_list:
-                row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
-                #print(f'{form_name}{webhook_num}_{key}',form.get(f'{form_name}{webhook_num}_{key}'))
+                    # キーの数字を取り除いたキー名を格納するリストを作成
+                    key_list = list()
+                    for key in form.keys():
+                        if f'{form_name}{webhook_num}_' in key:
+                            key_name = re.search(r'\d+$', key)  # キーから数字を取り除く
+                            key_list.append(int(key_name.group()))
+                            # print(key)
 
-            row.update({
-                row_name:row_list
-            })
+                    for key in key_list:
+                        row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
+                        #print(f'{form_name}{webhook_num}_{key}',form.get(f'{form_name}{webhook_num}_{key}'))
 
-            # print(row)
+                    row.update({
+                        row_name:row_list
+                    })
 
-        # 登録した時刻を登録
-        now_time = datetime.now(timezone.utc)
-        now_str = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
-        row.update({
-            'created_at':now_str
-        })
+                    # print(row)
 
-        # 必須のものに抜けがない場合、テーブルに追加
-        if none_flag == False:
-            create_webhook_list.append(row)
+                # 登録した時刻を登録
+                now_time = datetime.now(timezone.utc)
+                now_str = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
+                row.update({
+                    'created_at':now_str
+                })
 
-    # まとめて追加
-    if len(create_webhook_list) > 0:
-        await db.batch_insert_row(
-            table_name=TABLE,
-            row_values=create_webhook_list
-        )
-    #print(create_webhook_list)
+                # 必須のものに抜けがない場合、テーブルに追加
+                if none_flag == False:
+                    create_webhook_list.append(row)
 
-    # 更新
-    for webhook_num in change_webhook_number:
-        row = {
-            'guild_id': int(form.get("guild_id")), 
-            'webhook_id':int(form.get(f"{FORM_NAMES[11]}{webhook_num}")),
-            'subscription_type':form.get(f"{FORM_NAMES[12]}{webhook_num}"),
-            'subscription_id': form.get(f"{FORM_NAMES[13]}{webhook_num}")
-        }
+            # まとめて追加
+            if len(create_webhook_list) > 0:
+                await db.batch_insert_row(
+                    table_name=TABLE,
+                    row_values=create_webhook_list
+                )
+            #print(create_webhook_list)
 
-        for row_name,form_name in {
-            'mention_roles'     :FORM_NAMES[14],
-            'mention_members'   :FORM_NAMES[15],
-            'search_or_word'    :FORM_NAMES[16],
-            'search_and_word'   :FORM_NAMES[17],
-            'ng_or_word'        :FORM_NAMES[18],
-            'ng_and_word'       :FORM_NAMES[19],
-            'mention_or_word'   :FORM_NAMES[20],
-            'mention_and_word'  :FORM_NAMES[21]
-        }.items():
-            row_list = list()
+            # 更新
+            for webhook_num in change_webhook_number:
+                row = {
+                    'guild_id': int(form.get("guild_id")), 
+                    'webhook_id':int(form.get(f"{FORM_NAMES[11]}{webhook_num}")),
+                    'subscription_type':form.get(f"{FORM_NAMES[12]}{webhook_num}"),
+                    'subscription_id': form.get(f"{FORM_NAMES[13]}{webhook_num}")
+                }
 
-            # キーの数字を取り除いたキー名を格納するリストを作成
-            key_list = list()
-            for key in form.keys():
-                if f'{form_name}{webhook_num}_' in key:
-                    key_name = re.search(r'\d+$', key)  # キーから数字を取り除く
-                    key_list.append(int(key_name.group()))
+                for row_name,form_name in {
+                    'mention_roles'     :FORM_NAMES[14],
+                    'mention_members'   :FORM_NAMES[15],
+                    'search_or_word'    :FORM_NAMES[16],
+                    'search_and_word'   :FORM_NAMES[17],
+                    'ng_or_word'        :FORM_NAMES[18],
+                    'ng_and_word'       :FORM_NAMES[19],
+                    'mention_or_word'   :FORM_NAMES[20],
+                    'mention_and_word'  :FORM_NAMES[21]
+                }.items():
+                    row_list = list()
 
-            for key in key_list:
-                row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
+                    # キーの数字を取り除いたキー名を格納するリストを作成
+                    key_list = list()
+                    for key in form.keys():
+                        if f'{form_name}{webhook_num}_' in key:
+                            key_name = re.search(r'\d+$', key)  # キーから数字を取り除く
+                            key_list.append(int(key_name.group()))
 
-            row.update({
-                row_name:row_list
-            })
+                    for key in key_list:
+                        row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
 
-        # 時刻を引き継ぐ(csv形式への対応のため)
-        row.update({
-            'created_at':form.get(f"created_time_{webhook_num}")
-        })
+                    row.update({
+                        row_name:row_list
+                    })
 
-        change_webhook_list.append({
-            'where_clause':{'uuid':form.get(f'uuid_{webhook_num}')},
-            'row_values':row
-        })
+                # 時刻を引き継ぐ(csv形式への対応のため)
+                row.update({
+                    'created_at':form.get(f"created_time_{webhook_num}")
+                })
 
-    # まとめて更新
-    if len(change_webhook_list) > 0:
-        await db.primary_batch_update_rows(
-            table_name=TABLE,
-            set_values_and_where_columns=change_webhook_list,
-            table_colum=WEBHOOK_COLUMNS
-        )
+                change_webhook_list.append({
+                    'where_clause':{'uuid':form.get(f'uuid_{webhook_num}')},
+                    'row_values':row
+                })
 
-    # 削除
-    for del_num in del_webhook_numbers:
-        await db.delete_row(
-            table_name=TABLE,
-            where_clause={
-                'uuid':form.get(f'uuid_{del_num}')
-            }
-        )
+            # まとめて更新
+            if len(change_webhook_list) > 0:
+                await db.primary_batch_update_rows(
+                    table_name=TABLE,
+                    set_values_and_where_columns=change_webhook_list,
+                    table_colum=WEBHOOK_COLUMNS
+                )
 
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=[],
-        where_clause={}
-    )
+            # 削除
+            for del_num in del_webhook_numbers:
+                await db.delete_row(
+                    table_name=TABLE,
+                    where_clause={
+                        'uuid':form.get(f'uuid_{del_num}')
+                    }
+                )
 
-    await db.disconnect()
+            table_fetch = await db.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={}
+            )
 
-    # pickleファイルに書き込み
-    await pickle_write(
-        filename=TABLE,
-        table_fetch=table_fetch
-    )
+            await db.disconnect()
 
-    return templates.TemplateResponse(
-        'api/webhooksuccess.html',
-        {
-            'request': request,
-            'guild_id': form['guild_id'],
-            'title':'成功'
-        }
-    )
+            # pickleファイルに書き込み
+            await pickle_write(
+                filename=TABLE,
+                table_fetch=table_fetch
+            )
+
+            return templates.TemplateResponse(
+                'api/webhooksuccess.html',
+                {
+                    'request': request,
+                    'guild_id': form['guild_id'],
+                    'title':'成功'
+                }
+            )

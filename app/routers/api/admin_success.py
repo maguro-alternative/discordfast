@@ -20,6 +20,11 @@ DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=
 
 from core.db_pickle import *
 
+from discord.ext import commands
+try:
+    from core.start import DBot
+except ModuleNotFoundError:
+    from app.core.start import DBot
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -36,127 +41,129 @@ db = PostgresDB(
     host=HOST
 )
 
-router = APIRouter()
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
+class AdminSuccess(commands.Cog):
+    def __init__(self, bot: DBot):
+        self.bot = bot
+        self.router = APIRouter()
 
-@router.post('/api/admin-success')
-async def admin_post(
-    request:Request
-):
-    form = await request.form()
+        @self.router.post('/api/admin-success')
+        async def admin_post(
+            request:Request
+        ):
+            form = await request.form()
 
-    # OAuth2トークンが有効かどうか判断
-    check_code = await user_checker(
-        request=request,
-        oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
-        user_session=DiscordUser(**request.session.get('discord_user'))
-    )
+            # OAuth2トークンが有効かどうか判断
+            check_code = await user_checker(
+                request=request,
+                oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
+                user_session=DiscordUser(**request.session.get('discord_user'))
+            )
 
-    if check_code == 302:
-        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
-    elif check_code == 400:
-        return JSONResponse(content={"message": "Fuck You. You are an idiot."})
+            if check_code == 302:
+                return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
+            elif check_code == 400:
+                return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-    TABLE = 'guild_set_permissions'
+            TABLE = 'guild_set_permissions'
 
-    # 各権限コード
-    line_permission_code = form.get("line_permission_code")
-    line_bot_permission_code = form.get("line_bot_permission_code")
-    vc_permission_code = form.get("vc_permission_code")
-    webhook_permission_code = form.get("webhook_permission_code")
+            # 各権限コード
+            line_permission_code = form.get("line_permission_code")
+            line_bot_permission_code = form.get("line_bot_permission_code")
+            vc_permission_code = form.get("vc_permission_code")
+            webhook_permission_code = form.get("webhook_permission_code")
 
-    # ユーザidの取り出し
-    line_user_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('member_select_line_')
-    ]
-    line_bot_user_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('member_select_line_bot_')
-    ]
-    vc_user_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('member_select_vc_')
-    ]
-    webhook_user_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('member_select_webhook_')
-    ]
+            # ユーザidの取り出し
+            line_user_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('member_select_line_')
+            ]
+            line_bot_user_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('member_select_line_bot_')
+            ]
+            vc_user_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('member_select_vc_')
+            ]
+            webhook_user_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('member_select_webhook_')
+            ]
 
-    # ロールidの取り出し
-    line_role_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('role_select_line_')
-    ]
-    line_bot_role_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('role_select_line_bot_')
-    ]
-    vc_role_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('role_select_vc_')
-    ]
-    webhook_role_id_permission = [
-        int(form.get(key))
-        for key in form.keys()
-        if key.startswith('role_select_webhook_')
-    ]
+            # ロールidの取り出し
+            line_role_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('role_select_line_')
+            ]
+            line_bot_role_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('role_select_line_bot_')
+            ]
+            vc_role_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('role_select_vc_')
+            ]
+            webhook_role_id_permission = [
+                int(form.get(key))
+                for key in form.keys()
+                if key.startswith('role_select_webhook_')
+            ]
 
-    row_value = {
-        'line_permission'               :line_permission_code,
-        'line_user_id_permission'       :line_user_id_permission,
-        'line_role_id_permission'       :line_role_id_permission,
-        'line_bot_permission_code'      :line_bot_permission_code,
-        'line_bot_user_id_permission'   :line_bot_user_id_permission,
-        'line_bot_role_id_permission'   :line_bot_role_id_permission,
-        'vc_permission'                 :vc_permission_code,
-        'vc_user_id_permission'         :vc_user_id_permission,
-        'vc_role_id_permission'         :vc_role_id_permission,
-        'webhook_permission'            :webhook_permission_code,
-        'webhook_user_id_permission'    :webhook_user_id_permission,
-        'webhook_role_id_permission'    :webhook_role_id_permission
-    }
+            row_value = {
+                'line_permission'               :line_permission_code,
+                'line_user_id_permission'       :line_user_id_permission,
+                'line_role_id_permission'       :line_role_id_permission,
+                'line_bot_permission_code'      :line_bot_permission_code,
+                'line_bot_user_id_permission'   :line_bot_user_id_permission,
+                'line_bot_role_id_permission'   :line_bot_role_id_permission,
+                'vc_permission'                 :vc_permission_code,
+                'vc_user_id_permission'         :vc_user_id_permission,
+                'vc_role_id_permission'         :vc_role_id_permission,
+                'webhook_permission'            :webhook_permission_code,
+                'webhook_user_id_permission'    :webhook_user_id_permission,
+                'webhook_role_id_permission'    :webhook_role_id_permission
+            }
 
-    await db.connect()
+            await db.connect()
 
-    await db.update_row(
-        table_name=TABLE,
-        row_values=row_value,
-        where_clause={
-            'guild_id':form.get('guild_id')
-        }
-    )
+            await db.update_row(
+                table_name=TABLE,
+                row_values=row_value,
+                where_clause={
+                    'guild_id':form.get('guild_id')
+                }
+            )
 
-    # 更新後のテーブルを取得
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=[],
-        where_clause={}
-    )
+            # 更新後のテーブルを取得
+            table_fetch = await db.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={}
+            )
 
-    await db.disconnect()
+            await db.disconnect()
 
-    # pickleファイルに書き込み
-    await pickle_write(
-        filename=TABLE,
-        table_fetch=table_fetch
-    )
+            # pickleファイルに書き込み
+            await pickle_write(
+                filename=TABLE,
+                table_fetch=table_fetch
+            )
 
-    return templates.TemplateResponse(
-        'api/adminsuccess.html',
-        {
-            'request': request,
-            'guild_id': form['guild_id'],
-            'title':'成功'
-        }
-    )
+            return templates.TemplateResponse(
+                'api/adminsuccess.html',
+                {
+                    'request': request,
+                    'guild_id': form['guild_id'],
+                    'title':'成功'
+                }
+            )

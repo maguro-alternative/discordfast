@@ -5,10 +5,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from server_router import keep_alive
+#from server_router import keep_alive
 
 # サーバー立ち上げ
-keep_alive()
+#keep_alive()
 
 Token = os.environ['DISCORD_BOT_TOKEN']
 

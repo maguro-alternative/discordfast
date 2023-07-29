@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-import re
-from cryptography.fernet import Fernet
 
 from base.database import PostgresDB
 from base.aio_req import pickle_write,encrypt_password
@@ -16,7 +14,11 @@ from core.db_pickle import *
 from routers.api.chack.post_user_check import user_checker
 from routers.session_base.user_session import DiscordOAuthData,DiscordUser
 
-from core.pickes_save.line_bot_columns import LINE_BOT_COLUMNS
+from discord.ext import commands
+try:
+    from core.start import DBot
+except ModuleNotFoundError:
+    from app.core.start import DBot
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -33,77 +35,80 @@ db = PostgresDB(
     host=HOST
 )
 
-router = APIRouter()
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-@router.post('/api/line-set-success')
-async def line_set_success(request: Request):
+class LineSetSuccess(commands.Cog):
+    def __init__(self, bot: DBot):
+        self.bot = bot
+        self.router = APIRouter()
 
-    form = await request.form()
+        @self.router.post('/api/line-set-success')
+        async def line_set_success(request: Request):
 
-    # OAuth2トークンが有効かどうか判断
-    check_code = await user_checker(
-        request=request,
-        oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
-        user_session=DiscordUser(**request.session.get('discord_user'))
-    )
+            form = await request.form()
 
-    if check_code == 302:
-        return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
-    elif check_code == 400:
-        return JSONResponse(content={"message": "Fuck You. You are an idiot."})
+            # OAuth2トークンが有効かどうか判断
+            check_code = await user_checker(
+                request=request,
+                oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
+                user_session=DiscordUser(**request.session.get('discord_user'))
+            )
 
-    TABLE = f'line_bot'
+            if check_code == 302:
+                return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
+            elif check_code == 400:
+                return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-    hashed_notify_token:bytes = await encrypt_password(form.get('line_notify_token'))
-    hashed_bot_token:bytes = await encrypt_password(form.get('line_bot_token'))
-    hashed_bot_secret:bytes = await encrypt_password(form.get('line_bot_secret'))
-    hashed_group_id:bytes = await encrypt_password(form.get('line_group_id'))
-    hashed_client_id:bytes = await encrypt_password(form.get('line_client_id'))
-    hashed_client_secret:bytes = await encrypt_password(form.get('line_client_secret'))
-    default_channel_id:int = form.get('default_channel_id')
-    debug_mode:bool = bool(form.get('debug_mode',default=False))
+            TABLE = f'line_bot'
 
-    row_values = {
-        'line_notify_token':hashed_notify_token,
-        'line_bot_token':hashed_bot_token,
-        "line_bot_secret":hashed_bot_secret,
-        'line_group_id':hashed_group_id,
-        'line_client_id': hashed_client_id,
-        'line_client_secret': hashed_client_secret,
-        'default_channel_id':default_channel_id,
-        'debug_mode':debug_mode
-    }
+            hashed_notify_token:bytes = await encrypt_password(form.get('line_notify_token'))
+            hashed_bot_token:bytes = await encrypt_password(form.get('line_bot_token'))
+            hashed_bot_secret:bytes = await encrypt_password(form.get('line_bot_secret'))
+            hashed_group_id:bytes = await encrypt_password(form.get('line_group_id'))
+            hashed_client_id:bytes = await encrypt_password(form.get('line_client_id'))
+            hashed_client_secret:bytes = await encrypt_password(form.get('line_client_secret'))
+            default_channel_id:int = form.get('default_channel_id')
+            debug_mode:bool = bool(form.get('debug_mode',default=False))
 
-    await db.connect()
-    await db.update_row(
-        table_name=TABLE,
-        row_values=row_values,
-        where_clause={
-            'guild_id':form.get('guild_id')
-        }
-    )
-    # 更新後のテーブルを取得
-    table_fetch = await db.select_rows(
-        table_name=TABLE,
-        columns=[],
-        where_clause={}
-    )
-    await db.disconnect()
+            row_values = {
+                'line_notify_token':hashed_notify_token,
+                'line_bot_token':hashed_bot_token,
+                "line_bot_secret":hashed_bot_secret,
+                'line_group_id':hashed_group_id,
+                'line_client_id': hashed_client_id,
+                'line_client_secret': hashed_client_secret,
+                'default_channel_id':default_channel_id,
+                'debug_mode':debug_mode
+            }
 
-    # pickleファイルに書き込み
-    await pickle_write(
-        filename=TABLE,
-        table_fetch=table_fetch
-    )
+            await db.connect()
+            await db.update_row(
+                table_name=TABLE,
+                row_values=row_values,
+                where_clause={
+                    'guild_id':form.get('guild_id')
+                }
+            )
+            # 更新後のテーブルを取得
+            table_fetch = await db.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={}
+            )
+            await db.disconnect()
 
-    return templates.TemplateResponse(
-        'api/linesetsuccess.html',
-        {
-            'request': request,
-            'guild_id': form['guild_id'],
-            'title':'成功'
-        }
-    )
+            # pickleファイルに書き込み
+            await pickle_write(
+                filename=TABLE,
+                table_fetch=table_fetch
+            )
+
+            return templates.TemplateResponse(
+                'api/linesetsuccess.html',
+                {
+                    'request': request,
+                    'guild_id': form['guild_id'],
+                    'title':'成功'
+                }
+            )

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+    <html lang="ja">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width">
+
+            <title>Discord 権限コード計算</title>
+            <style>
+                body,html {
+                    height: 100%;
+                    width: 100%;
+                    margin: 0;
+                    outline: 0;
+                    padding: 0;
+                    font-family: Roboto,sans-serif;
+                    font-size: 16px
+                }
+
+                body {
+                    background-color: #2c2f33;
+                    color: #ddd
+                }
+
+                h3 {
+                    color: #fff;
+                    font-weight: 400
+                }
+
+                a.disabled {
+                    color: #999;
+                    cursor: not-allowed
+                }
+
+                a {
+                    color: #fff
+                }
+
+                .light {
+                    background-color: #fff;
+                    color: #2c2f33
+                }
+
+                .light h3 {
+                    color: #000;
+                    font-weight: 400
+                }
+
+                .light a {
+                    color: #00f
+                }
+
+                .light .eyes {
+                    filter: invert(1)
+                }
+
+                input[type=text] {
+                    background-color: transparent;
+                    border: none;
+                    border-bottom: 2px solid #7289da;
+                    color: #fff;
+                    outline: 0;
+                    padding: .25em
+                }
+
+                input[type=text].error {
+                    border-bottom: 2px solid red
+                }
+
+                input[type=text].success {
+                    border-bottom: 2px solid #2f2
+                }
+
+                .small {
+                    font-size: .8em
+                }
+
+                .container {
+                    margin: 0 auto;
+                    max-width: 1280px;
+                    padding: .5em
+                }
+
+                .footer,.header {
+                    background-color: #7289da;
+                    color: #fff
+                }
+
+                .header {
+                    max-height: 3rem;
+                    text-align: center;
+                    z-index: 1
+                }
+
+                .header .logo {
+                    height: 100%;
+                    width: auto;
+                    max-height: 2.5rem;
+                    max-width: 100%;
+                    object-fit: contain;
+                    vertical-align: middle
+                }
+
+                .header .right-link {
+                    float: right;
+                    padding: .75em 1em;
+                    text-decoration: none;
+                    z-index: 1
+                }
+
+                .header .right-link.eyes {
+                    padding: 0 .5em
+                }
+
+                .header .eyes img {
+                    height: 100%;
+                    width: auto;
+                    max-height: 3rem;
+                    max-width: 100%;
+                    object-fit: contain;
+                    vertical-align: middle
+                }
+
+                .header .title {
+                    font-size: 1.5rem;
+                    line-height: 3rem;
+                    height: 100%;
+                    vertical-align: middle
+                }
+
+                .result .equation {
+                    font-size: .8em
+                }
+
+                .result .permissions {
+                    font-size: 1.5em
+                }
+
+                .selector {
+                    margin-bottom: 1em;
+                    overflow: auto;
+                    margin-left: -.5em;
+                    margin-right: -.5em
+                }
+
+                .selector .col-me-maybe {
+                    float: left;
+                    margin: 0 auto;
+                    min-height: 1px;
+                    box-sizing: border-box;
+                    padding: 0 .5em;
+                    width: 100%
+                }
+
+                ul {
+                    display: inline-block;
+                    list-style: none;
+                    margin: 0;
+                    padding: 0
+                }
+
+                input[type=checkbox i] {
+                    box-sizing: border-box;
+                    color: inherit;
+                    margin: 0;
+                    padding: 0
+                }
+
+                input[type=checkbox i]:checked,input[type=checkbox i]:not(:checked) {
+                    position: absolute;
+                    left: -9999em;
+                    opacity: 0
+                }
+
+                input[type=checkbox i]+label {
+                    position: relative;
+                    padding-left: 1.75em;
+                    cursor: pointer;
+                    display: inline-block;
+                    height: 2em;
+                    line-height: 1.375em
+                }
+
+                input[type=checkbox i]+label:after,input[type=checkbox i]+label:before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 1em;
+                    height: 1em;
+                    border: 2px solid #888;
+                    border-radius: 2px;
+                    transition: .2s;
+                    z-index: 0
+                }
+
+                input[type=checkbox i]+label:before {
+                    border: 2px solid transparent
+                }
+
+                input[type=checkbox i]:checked+label:after,input[type=checkbox i]:checked+label:before {
+                    content: "";
+                    left: 0;
+                    position: absolute
+                }
+
+                input[type=checkbox i]:checked+label:after {
+                    background-color: #7289da;
+                    border-color: #7289da
+                }
+
+                input[type=checkbox i]:checked+label:before {
+                    top: 0;
+                    left: -.1em;
+                    width: .2em;
+                    height: .6em;
+                    border-top: .2em solid transparent;
+                    border-right: .2em solid #fff;
+                    border-bottom: .2em solid #fff;
+                    border-left: .2em solid transparent;
+                    transform: rotateZ(45deg);
+                    transform-origin: 100% 100%;
+                    z-index: 1
+                }
+
+                .footer {
+                    box-sizing: border-box;
+                    height: 3em;
+                    max-height: 3em;
+                    font-size: .8em;
+                    margin: 0;
+                    padding: 1em
+                }
+
+                .large-only {
+                    display: none
+                }
+
+                .oauth a {
+                    display: inline-block;
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    vertical-align: bottom;
+                    white-space: initial;
+                    word-wrap: break-word
+                }
+
+                .orangutan-not-orange {
+                    color: #faa61a
+                }
+
+                .light .orangutan-not-orange {
+                    color: #c88414
+                }
+
+                .container.stacky-footer {
+                    box-sizing: border-box;
+                    z-index: 0;
+                    min-height: calc(100vh - 3em - 3em)
+                }
+
+                @media only screen and (min-width: 640px) {
+                    .footer {
+                        font-size:1em
+                    }
+
+                    .large-only {
+                        display: inline-block
+                    }
+
+                    span.large-only {
+                        display: inline
+                    }
+
+                    .selector .col-me-maybe {
+                        width: 33.3333333333%
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <span class="title">Discord 権限コード計算</span>
+                <a class="right-link eyes" href="#" onclick="swapTheme()">
+                    <img src="https://abal.moe/eyes.png" alt="theme"/>
+                </a>
+            </div>
+            <div class="container stacky-footer">
+                <div class="result">
+                    <p>
+                        <span class="permissions">
+                            パーミッションコード: <code id="number">0</code>
+                            <button id="codeCopyButton" onclick="copyToClipboard(this,'number')">コードをコピー</button>
+                        </span>
+                        <br/>
+                        <span class="equation">
+                            演算式: <code id="equation">0x0</code>
+                        </span>
+                    </p>
+                </div>
+                <div class="selector">
+                    <div class="col-me-maybe">
+                        <h3>基本権限</h3>
+                        <ul>
+                            <li>
+                                <input id="generalViewChannels" type="checkbox" onclick="recalculate()">
+                                <label for="generalViewChannels">チャンネルを見る</label>
+                            </li>
+                            <li>
+                                <input id="generalManageChannels" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalManageChannels">チャンネル管理</label>
+                            </li>
+                            <li>
+                                <input id="generalManageRoles" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalManageRoles">ロール管理</label>
+                            </li>
+                            <li>
+                                <input id="generalManageEmojis" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalManageEmojis">絵文字、スタンプ管理</label>
+                            </li>
+                            <li>
+                                <input id="generalViewAuditLog" type="checkbox" onclick="recalculate()">
+                                <label for="generalViewAuditLog">監査ログの表示</label>
+                            </li>
+                            <li>
+                                <input id="generalViewGuildInsights" type="checkbox" onclick="recalculate()">
+                                <label for="generalViewGuildInsights">サーバーインサイトの表示</label>
+                            </li>
+                            <li>
+                                <input id="generalManageWebhooks" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalManageWebhooks">Webhookの管理</label>
+                            </li>
+                            <li>
+                                <input id="generalManageGuild" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalManageGuild">サーバーの管理</label>
+                            </li>
+                            <li>
+                                <input id="generalCreateInvite" type="checkbox" onclick="recalculate()">
+                                <label for="generalCreateInvite">招待リンクの作成</label>
+                            </li>
+                            <li>
+                                <input id="generalChangeNickname" type="checkbox" onclick="recalculate()">
+                                <label for="generalChangeNickname">ニックネームの変更</label>
+                            </li>
+                            <li>
+                                <input id="generalManageNicknames" type="checkbox" onclick="recalculate()">
+                                <label for="generalManageNicknames">ニックネームの管理</label>
+                            </li>
+                            <li>
+                                <input id="generalKickMembers" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalKickMembers">メンバーのキック</label>
+                            </li>
+                            <li>
+                                <input id="generalBanMembers" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalBanMembers">メンバーのBan</label>
+                            </li>
+                            <li>
+                                <input id="generalManageEvents" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalManageEvents">イベントの作成</label>
+                            </li>
+                            <li>
+                                <input id="generalAdministrator" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="generalAdministrator">管理者</label>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-me-maybe">
+                        <h3>テキスト権限</h3>
+                        <ul>
+                            <li>
+                                <input id="textSendMessages" type="checkbox" onclick="recalculate()">
+                                <label for="textSendMessages">メッセージの送信</label>
+                            </li>
+                            <li>
+                                <input id="textSendMessagesThreads" type="checkbox" onclick="recalculate()">
+                                <label for="textSendMessagesThreads">スレッドにメッセージを送信</label>
+                            </li>
+                            <li>
+                                <input id="textCreatePublicThreads" type="checkbox" onclick="recalculate()">
+                                <label for="textCreatePublicThreads">公開スレッドの作成</label>
+                            </li>
+                            <li>
+                                <input id="textCreatePrivateThreads" type="checkbox" onclick="recalculate()">
+                                <label for="textCreatePrivateThreads">非公開スレッドの作成</label>
+                            </li>
+                            <li>
+                                <input id="textEmbedLinks" type="checkbox" onclick="recalculate()">
+                                <label for="textEmbedLinks">リンクの埋め込み</label>
+                            </li>
+                            <li>
+                                <input id="textAttachFiles" type="checkbox" onclick="recalculate()">
+                                <label for="textAttachFiles">ファイルの送付</label>
+                            </li>
+                            <li>
+                                <input id="textAddReactions" type="checkbox" onclick="recalculate()">
+                                <label for="textAddReactions">リアクションの追加</label>
+                            </li>
+                            <li>
+                                <input id="textUseExternalEmojis" type="checkbox" onclick="recalculate()">
+                                <label for="textUseExternalEmojis">外部の絵文字の使用</label>
+                            </li>
+                            <li>
+                                <input id="textUseExternalStickers" type="checkbox" onclick="recalculate()">
+                                <label for="textUseExternalStickers">外部のスタンプの使用</label>
+                            </li>
+                            <li>
+                                <input id="textMentionEveryone" type="checkbox" onclick="recalculate()">
+                                <label for="textMentionEveryone">@everyone, @here, 及びすべてのロールへの通知許可</label>
+                            </li>
+                            <li>
+                                <input id="textManageMessages" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="textManageMessages">メッセージの管理</label>
+                            </li>
+                            <li>
+                                <input id="textManageThreads" type="checkbox" onclick="recalculate()">
+                                <label class="orangutan-not-orange" for="textManageThreads">スレッドの管理</label>
+                            </li>
+                            <li>
+                                <input id="textReadMessageHistory" type="checkbox" onclick="recalculate()">
+                                <label for="textReadMessageHistory">過去のメッセージを読む</label>
+                            </li>
+                            <li>
+                                <input id="textSendTTSMessages" type="checkbox" onclick="recalculate()">
+                                <label for="textSendTTSMessages">テキスト読み上げを使用</label>
+                            </li>
+                            <li>
+                                <input id="textUseSlashCommands" type="checkbox" onclick="recalculate()">
+                                <label for="textUseSlashCommands">スラッシュコマンドを使用</label>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-me-maybe">
+                        <h3>ボイス権限</h3>
+                        <ul>
+                            <li>
+                                <input id="voiceConnect" type="checkbox" onclick="recalculate()">
+                                <label for="voiceConnect">ボイスチャンネルへ接続</label>
+                            </li>
+                            <li>
+                                <input id="voiceSpeak" type="checkbox" onclick="recalculate()">
+                                <label for="voiceSpeak">ボイスチャンネルで発言</label>
+                            </li>
+                            <li>
+                                <input id="voiceStream" type="checkbox" onclick="recalculate()">
+                                <label for="voiceStream">画面共有</label>
+                            </li>
+                            <li>
+                                <input id="voiceStartActivities" type="checkbox" onclick="recalculate()">
+                                <label for="voiceStartActivities">アクティビティのプレイ</label>
+                            </li>
+                            <li>
+                                <input id="voiceUseVAD" type="checkbox" onclick="recalculate()">
+                                <label for="voiceUseVAD">音声アクティビティを使用</label>
+                            </li>
+                            <li>
+                                <input id="voicePrioritySpeaker" type="checkbox" onclick="recalculate()">
+                                <label for="voicePrioritySpeaker">優先スピーカー</label>
+                            </li>
+                            <li>
+                                <input id="voiceMuteMembers" type="checkbox" onclick="recalculate()">
+                                <label for="voiceMuteMembers">マイクミュートの管理</label>
+                            </li>
+                            <li>
+                                <input id="voiceDeafenMembers" type="checkbox" onclick="recalculate()">
+                                <label for="voiceDeafenMembers">スピーカーミュートの管理</label>
+                            </li>
+                            <li>
+                                <input id="voiceMoveMembers" type="checkbox" onclick="recalculate()">
+                                <label for="voiceMoveMembers">メンバーのボイスチャンネルの移動</label>
+                            </li>
+                            <li>
+                                <input id="voiceStageRequestSpeak" type="checkbox" onclick="recalculate()">
+                                <label for="voiceStageRequestSpeak">発言を要求</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <p>
+                    <span class="orangutan-not-orange">
+                        色付きの権限は、サーバーで 2FA が有効な場合、 ボット所有者は 
+                        <a href="https://support.discord.com/hc/en-us/articles/219576828-Setting-up-Two-Factor-Authentication">
+                            2段階認証
+                        </a>
+                        を有効にする必要があります。
+                    </span>
+                <hr/>
+                <div class="oauth">
+                    <h3>OAuth URL ジェネレーター</h3>
+                    <p>
+                        <span>
+                            Client ID: <input id="clientID" type="text" placeholder="Client IDを入力" onkeyup="recalculate()">
+                        </span>
+                        <br/>
+                        <div class="selector">
+                            <div class="col-me-maybe">
+                                <input id="oauthCodeGrant" type="checkbox" onclick="recalculate()">
+                                <label for="oauthCodeGrant">リダイレクトURI</label>
+                            </div>
+                            <div class="col-me-maybe">
+                                <span>
+                                    リダイレクトURI: <input id="oauthRedirect" type="text" placeholder="(オプション)" onkeyup="recalculate()">
+                                </span>
+                            </div>
+                            <div class="col-me-maybe">
+                                <span>
+                                    スコープ: <input id="oauthScopes" type="text" placeholder="bot" onkeyup="recalculate()">
+                                </span>
+                            </div>
+                        </div>
+                        <span>
+                            Link: <a href="#" id="invite"></a>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="footer">
+                <span class="credit">&copy;maguro</span>
+            </div>
+            <script src="/static/js/permissionCode.js" type="text/javascript"></script>
+        </body>
+    </html>
+</html>
