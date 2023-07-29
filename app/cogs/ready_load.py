@@ -134,7 +134,7 @@ class ReadyLoad(commands.Cog):
             hostname = "localhost"
             portnumber = int(os.getenv("PORTS", default=5000))
         else:
-            hostname = "main:app"
+            hostname = "0.0.0.0"
             portnumber = int(os.getenv("PORT", default=8080))
 
         config = uvicorn.Config(
