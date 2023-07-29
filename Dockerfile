@@ -44,4 +44,4 @@ EXPOSE 8080
 
 WORKDIR /root/src/app
 
-CMD [ "/bin/bash", "-c", "python", "-u", "main.py" ]
+CMD [ "python", "-u", "main.py" ]
