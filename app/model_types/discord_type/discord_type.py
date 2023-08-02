@@ -54,7 +54,7 @@ class Base(object):
         return not self.__eq__(other)
 
     def as_json_string(self):
-        """jsonの文字列を返します。 
+        """jsonの文字列を返します。
 
         :rtype: str
         """
@@ -97,7 +97,7 @@ class Base(object):
 """
 class Discord_Member(Base):
     def __init__(
-        self, 
+        self,
         id:int,
         username:str,
         discriminator:str,

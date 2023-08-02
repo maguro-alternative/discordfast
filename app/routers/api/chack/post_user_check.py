@@ -11,7 +11,7 @@ load_dotenv()
 import os
 from typing import Dict,List
 
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -40,7 +40,7 @@ async def user_checker(
                 access_token=oauth_session.access_token
             )):
             return 302
-        
+
         # サーバのメンバー一覧を取得
         guild_member = await aio_get_request(
             url = DISCORD_BASE_URL + f'/guilds/{form.get("guild_id")}/members/{user_session.id}',
@@ -48,12 +48,12 @@ async def user_checker(
                 'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
             }
         )
-        
+
         # ログインユーザがサーバーに所属していない場合(あり得ないリクエスト)
         if guild_member.get('message') != None:
             return 400
 
     except KeyError:
         return 400
-    
+
     return 200

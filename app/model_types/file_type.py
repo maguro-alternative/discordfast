@@ -4,7 +4,7 @@ import os
 class Audio_Files:
     """
     ファイルのバイナリのデータを格納するクラス
-    
+
     param:
     byte:bytes
     ファイルのバイトデータ

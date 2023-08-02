@@ -55,7 +55,7 @@ async def get_wav_second(wav_file_path) -> float:
 # Voicevoxの読み上げ
 class voicevox(commands.Cog):
     def __init__(self, bot : DBot):
-        self.bot = bot 
+        self.bot = bot
 
     @commands.slash_command(description="ずんだもんがしゃべってくれるぞ！！")
     async def zunda(
@@ -81,7 +81,6 @@ class voicevox(commands.Cog):
             # コマンドを打ったユーザーがボイスチャンネルに入っていない場合、終了
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
-        
 
         # 3がずんだもんの数字
         id = 3
@@ -101,7 +100,7 @@ class voicevox(commands.Cog):
                 # 音声をwavファイルで保存
                 async with aiofiles.open(f".\wave\zunda_{ctx.guild.id}.wav" ,mode='wb') as f: # wb でバイト型を書き込める
                     await f.write(r)
-        
+
         source = discord.FFmpegPCMAudio(f".\wave\zunda_{ctx.guild.id}.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source,volume = volume)
 
@@ -109,12 +108,12 @@ class voicevox(commands.Cog):
         if hasattr(ctx.guild.voice_client,'is_playing'):
             while ctx.guild.voice_client.is_playing():
                 await asyncio.sleep(1)
-        
+
         try:
             ctx.guild.voice_client.play(trans)  #音源再生
         except discord.errors.ClientException:
             await ctx.respond(f"<@{ctx.author.id}> 同時に音声は流せません。")
-        
+
     @commands.slash_command(description="ずんだもんとおさらばなのだ")
     async def stop_zunda(self,ctx:discord.ApplicationContext):
         await ctx.respond("切断しました。")

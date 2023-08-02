@@ -55,11 +55,16 @@ class DiscordUser(BaseModel):
     accent_color        :int
 
     locale              :str
-
+        言語
     mfa_enabled         :bool
 
     premium_type        :int
         Nitroユーザのランク
+    email               :str
+        ユーザが登録しているメールアドレス
+    verified            :Optional[bool]
+        認証済みかどうか
+    bio                 :Optional[str]
     """
     id                  :int
     username            :str
@@ -76,6 +81,9 @@ class DiscordUser(BaseModel):
     locale              :str
     mfa_enabled         :bool
     premium_type        :int
+    email               :Optional[str]
+    verified            :Optional[bool]
+    bio                 :Optional[str]
 
 class DiscordConnection(BaseModel):
     """
@@ -201,3 +209,54 @@ class Threads(BaseModel):
     message_count       :int
     member_count        :int
     total_message_sent  :int
+
+class DiscordGuild(BaseModel):
+    """
+    Discordのサーバークラス
+    使いません
+    """
+    id                              :int
+    name                            :str
+    icon                            :str
+    description                     :Optional[str]
+    home_header                     :Optional[str]
+    splash                          :Optional[str]
+    discovery_splash                :Optional[str]
+    features                        :List[str]
+    banner                          :Optional[str]
+    owner_id                        :int
+    application_id                  :Optional[int]
+    region                          :Optional[str]
+    afk_channel_id                  :Optional[int]
+    afk_timeout                     :int
+    system_channel_id               :Optional[int]
+    system_channel_flags            :int
+    widget_enabled                  :bool
+    widget_channel_id               :Optional[int]
+    verification_level              :int
+    roles                           :List
+    default_message_notifications   :int
+    mfa_level                       :int
+    explicit_content_filter         :int
+    max_presences                   :Optional[int]
+    max_members                     :int
+    max_stage_video_channel_users   :Optional[int]
+    max_video_channel_users         :Optional[int]
+    vanity_url_code                 :Optional[str]
+    premium_tier                    :int
+    premium_subscription_count      :int
+    preferred_locale                :str
+    rules_channel_id                :Optional[int]
+    safety_alerts_channel_id        :Optional[int]
+    public_updates_channel_id       :Optional[int]
+    hub_type                        :Optional[str]
+    premium_progress_bar_enabled    :bool
+    latest_onboarding_question_id   :Optional[int]
+    nsfw                            :bool
+    nsfw_level                      :int
+    emojis                          :List
+    stickers                        :List
+    incidents_data                  :Any
+    inventory_settings              :Any
+    embed_enabled                   :bool
+    embed_channel_id                :Optional[int]

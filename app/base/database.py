@@ -1,5 +1,5 @@
 import asyncpg
-from asyncpg.connection import Connection 
+from asyncpg.connection import Connection
 from asyncpg.exceptions import DuplicateTableError
 import asyncio
 import os
@@ -15,9 +15,9 @@ class DataBaseNotConnect(Warning):...
 class PostgresDB:
     def __init__(
             self,
-            user:str, 
-            password:str, 
-            database:str, 
+            user:str,
+            password:str,
+            database:str,
             host:str
     ):
         """
@@ -45,9 +45,9 @@ class PostgresDB:
         PostgreSQLへ接続
         """
         self.conn = await asyncpg.connect(
-            user=self.user, 
-            password=self.password, 
-            database=self.database, 
+            user=self.user,
+            password=self.password,
+            database=self.database,
             host=self.host
         )
 
@@ -81,7 +81,7 @@ class PostgresDB:
             return "ok"
         except DuplicateTableError:
             return "DuplicateTableError"
-        
+
     async def drop_table(self, table_name:str) -> None:
         """
         テーブルの削除
@@ -93,14 +93,14 @@ class PostgresDB:
         await self.conn.execute(sql)
 
     async def select_rows(
-        self, 
-        table_name:str, 
-        columns:List[str]=None, 
+        self,
+        table_name:str,
+        columns:List[str]=None,
         where_clause:dict=None
     ) -> List:
         """
         テーブルの参照
-        
+
         table_name  :str
             参照するテーブルの名前
         columns     :List[str]
@@ -142,13 +142,13 @@ class PostgresDB:
             return [f"{table_name} does not exist"]
 
     async def insert_row(
-        self, 
-        table_name:str, 
+        self,
+        table_name:str,
         row_values:dict
     ) -> bool:
         """
         行の追加
-        
+
         table_name:str
             対象のテーブルの名前
         row_values:dict
@@ -168,10 +168,10 @@ class PostgresDB:
             return True
         except asyncpg.exceptions.UniqueViolationError:
             return False
-        
+
     async def batch_insert_row(
-        self, 
-        table_name: str, 
+        self,
+        table_name: str,
         row_values: List[Dict[str, Any]]
     ) -> None:
         """
@@ -179,46 +179,46 @@ class PostgresDB:
         """
         if self.conn == None:
             raise DataBaseNotConnect
-        
+
         #print(row_values)
-        
+
         columns = row_values[0].keys()
 
         values = [
             tuple(
-                row[col] 
+                row[col]
                 for col in columns
-            ) 
+            )
             for row in row_values
         ]
 
         #print(columns)
         #print(values)
-        
+
         await self.conn.copy_records_to_table(
             table_name=table_name,
             records=values
         )
 
     async def update_row(
-        self, 
-        table_name:str, 
-        row_values:dict, 
+        self,
+        table_name:str,
+        row_values:dict,
         where_clause:dict
     ) -> None:
         """
         行の更新
-        
-        table_name  :str 
+
+        table_name  :str
             テーブルの名前
-        row_values  :dict 
+        row_values  :dict
             更新の内容
         where_clause:dict
             条件
         """
         if self.conn == None:
             raise DataBaseNotConnect
-        
+
         """
         set_clause = []
         for column, value in row_values.items():
@@ -233,7 +233,7 @@ class PostgresDB:
         set_clause_str = ', '.join(set_clause)
         """
 
-        
+
         set_clause_str = ', '.join(
             [
                 f"{column}=${i+1}" for i, column in enumerate(
@@ -241,7 +241,7 @@ class PostgresDB:
                 )
             ]
         )
-        
+
         where_clause_str = ' AND '.join(
             [
                 f"{column}=${i+len(row_values)+1}" for i, column in enumerate(
@@ -258,8 +258,8 @@ class PostgresDB:
         await self.conn.execute(sql, *values)
 
     async def primary_batch_update_rows(
-        self, 
-        table_name: str, 
+        self,
+        table_name: str,
         set_values_and_where_columns: List[Dict],
         table_colum:Dict
     ) -> None:
@@ -296,8 +296,8 @@ class PostgresDB:
             Postgresでcreateしたときのものを辞書型で表現すること
 
             table_colum = {
-                'channel_id': 'NUMERIC PRIMARY KEY', 
-                'guild_id': 'NUMERIC', 
+                'channel_id': 'NUMERIC PRIMARY KEY',
+                'guild_id': 'NUMERIC',
                 'line_ng_channel': 'boolean',
                 'ng_message_type': 'VARCHAR(50)[]',
                 'message_bot': 'boolean',
@@ -310,8 +310,8 @@ class PostgresDB:
 
         # 主キーを取り出す
         primary_key = [
-            key 
-            for key,value in table_colum.items() 
+            key
+            for key,value in table_colum.items()
             if 'PRIMARY KEY' in value
         ]
 
@@ -332,7 +332,6 @@ class PostgresDB:
             set_clause_flag = False
 
             for j, update in enumerate(updates):
-                
                 # 更新するカラムがあった場合
                 if update['row_values'].get(column) is not None:
                     # フラグを挙げる
@@ -362,19 +361,19 @@ class PostgresDB:
         await self.conn.execute(sql, *values)
 
     async def delete_row(
-        self, 
-        table_name:str, 
+        self,
+        table_name:str,
         where_clause:dict
     ) -> None:
         """
         行の削除
-        
+
         param:
-        table_name  :str 
+        table_name  :str
             テーブルの名前
         where_clause:dict
             条件
-        
+
         """
         if self.conn == None:
             raise DataBaseNotConnect
@@ -408,16 +407,16 @@ class PostgresDB:
         if self.conn == None:
             raise DataBaseNotConnect
         return await self.conn.fetch(sql_syntax)
-    
+
     async def get_columns_type(
-        self, 
+        self,
         table_name:str
     ) -> Dict:
         """
         指定されたテーブルの列の型を返す
 
         param:
-        table_name  :str 
+        table_name  :str
             テーブルの名前
 
         return:
@@ -426,8 +425,8 @@ class PostgresDB:
 
         """
         query = f"""
-            SELECT column_name, data_type 
-            FROM information_schema.columns 
+            SELECT column_name, data_type
+            FROM information_schema.columns
             WHERE table_name = '{table_name}';
         """
 
@@ -445,8 +444,8 @@ class PostgresDB:
             # 配列の場合
             if data_type.startswith('ARRAY'):
                 query = f"""
-                SELECT column_name, udt_name 
-                FROM information_schema.columns 
+                SELECT column_name, udt_name
+                FROM information_schema.columns
                 WHERE table_name = '{table_name}' AND column_name = '{column_name}'
                 """
 
@@ -488,7 +487,7 @@ async def main():
     # ローカル側のカラム(こちらに合わせる)
     columns = {
         'uuid':'UUID PRIMARY KEY',
-        'guild_id': 'NUMERIC', 
+        'guild_id': 'NUMERIC',
         'webhook_id':'NUMERIC',
         'subscription_type':'VARCHAR(50)',
         'subscription_id': 'VARCHAR(50)',
@@ -505,7 +504,7 @@ async def main():
 
     new_columns:Dict = {
         'uuid':'',
-        'guild_id': 0, 
+        'guild_id': 0,
         'webhook_id':0,
         'subscription_type':'',
         'subscription_id': '',
@@ -523,7 +522,7 @@ async def main():
     table_fetch = [
         {
             'uuid':uuid.UUID('e04ddf59-8f06-49e9-b0a1-b3a21724a22e'),
-            'guild_id': 0, 
+            'guild_id': 0,
             'webhook_id':0,
             'subscription_type':'twitter',
             'subscription_id': 'a',
@@ -537,7 +536,7 @@ async def main():
         },
         {
             'uuid':uuid.UUID('e04ddf59-8f06-49e9-b0a1-b3a21724a22e'),
-            'guild_id': 0, 
+            'guild_id': 0,
             'webhook_id':0,
             'subscription_type':'twitter',
             'subscription_id': 'a',
@@ -561,22 +560,22 @@ async def main():
 
     missing_items = [
         {key:value}
-        for key,value in new_columns.items() 
+        for key,value in new_columns.items()
         if key not in table_columns.keys()
     ]
     for column_name,data_type in columns.items():
         table_data_type:str = table_columns.get(column_name)
         # (数字)が含まれていた場合、取り除く
         data_type:str = re.sub(r'\(\d+\)','',data_type)
-        
+
         # データベース側になかった場合
         # 主キーで、変更があった場合
-        if (table_data_type == None or 
+        if (table_data_type == None or
             table_data_type not in data_type.lower() and (
             'PRIMARY KEY' in data_type or
             'primary key' in data_type
             )):
-            
+
             if isinstance(new_columns[column_name],list):
                 new_columns[column_name] = tuple(new_columns[column_name])
 
@@ -587,8 +586,8 @@ async def main():
             )
         # 完全一致(大文字小文字区別せず)あった場合
         # 主キーで、変更がない場合
-        elif (table_data_type == data_type.lower() or 
-              (table_data_type in data_type.lower() and (
+        elif (table_data_type == data_type.lower() or
+            (table_data_type in data_type.lower() and (
             'PRIMARY KEY' in data_type or
             'primary key' in data_type
             ))):
@@ -599,7 +598,7 @@ async def main():
             )
 
     #print(set_columns.values())
-    if (len(list(set_columns.values())) == 1 and 
+    if (len(list(set_columns.values())) == 1 and
         list(set_columns.values())[0] == "Unchanged"):
         unchanged = True
     else:
@@ -616,11 +615,6 @@ async def main():
 
         table_fetch[i] = table
         print(table)
-        
-
-    
-                
-
 
     await db.disconnect()
 

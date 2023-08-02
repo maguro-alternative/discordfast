@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 # カラオケ機能
 class karaoke(commands.Cog):
     def __init__(self, bot : DBot):
-        self.bot = bot 
+        self.bot = bot
         self.sing_user_id = 0   # 歌っているユーザーのid
 
     # 音源ダウンロード
@@ -34,16 +34,16 @@ class karaoke(commands.Cog):
                 if self.sing_user_id == ctx.author.id:
                     await ctx.respond("再生中です。")
                     return
-                
+
         karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
 
-        await ctx.respond("downloading...\n"+url) 
+        await ctx.respond("downloading...\n"+url)
         # youtube-dlでダウンロード
         try:
             await karaoke_ongen.song_dl(url)
         except youtube_dl.utils.DownloadError:
             await ctx.channel.send(f'<@{ctx.author.id}> 403エラー もう一度ダウンロードし直してください。')
-        
+
         song = AudioSegment.from_file(f".\wave\{ctx.author.id}_music.wav", format="wav")
         song.export(f".\wave\{ctx.author.id}_music.wav", format='wav')
 
@@ -85,8 +85,8 @@ class karaoke(commands.Cog):
 
         karaoke = Wav_Karaoke(user_id = ctx.author.id)
         self.sing_user_id = ctx.author.id
-        
-        #source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav") 
+
+        #source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")
         source = discord.FFmpegPCMAudio(f".\wave\{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         trans = discord.PCMVolumeTransformer(source, volume = volume)
 
@@ -94,7 +94,7 @@ class karaoke(commands.Cog):
         ctx.voice_client.start_recording(discord.sinks.MP3Sink(), finished_callback, ctx)
 
         vc.play(trans, after=check_error)  #音源再生
-        
+
         # 再生終了まで待つ
         second_wait = await karaoke.music_wav_second()
         for i in range(0,int(second_wait)):
@@ -102,7 +102,7 @@ class karaoke(commands.Cog):
                 await asyncio.sleep(1)
 
         ctx.voice_client.stop_recording() # 録音を停止し、直後にfinished_callbackが呼び出されます。
-        
+
         await ctx.respond("録音終了! /rank_Scoring で採点します")
         await ctx.voice_client.disconnect()
 
@@ -130,7 +130,7 @@ class karaoke(commands.Cog):
         await karaoke.limit_wav_duration()
         # 原曲と音声の長さを除算し、歌っているか判断
         wavRatio = await karaoke.voice_wav_second() / await karaoke.music_wav_second()
-        
+
         # 5割以下の場合は採点しない
         if wavRatio>=0.5:
             # 採点結果を表示
@@ -143,7 +143,7 @@ class karaoke(commands.Cog):
     @commands.slash_command(description = '録音を停止します。')
     async def stop_recording(self,ctx:discord.ApplicationContext):
         # 録音停止
-        ctx.voice_client.stop_recording() 
+        ctx.voice_client.stop_recording()
         await ctx.respond("録音停止!")
         await ctx.voice_client.disconnect()
 
@@ -163,7 +163,7 @@ class karaoke(commands.Cog):
         else:
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
-            
+
         ctx.voice_client.start_recording(discord.sinks.MP3Sink(), record_callback, ctx)
         for i in range(0,wait_second):
             await asyncio.sleep(1)
@@ -174,7 +174,7 @@ class karaoke(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         user_voice: Option(bool, required = False, description = '録音した音声を流すかどうか', default = False),
-        volume: Option(float, required=False, description="音量",default=0.3),   
+        volume: Option(float, required=False, description="音量",default=0.3),
     ):
         if not bool(os.path.isfile(f'.\wave\{ctx.author.id}_music.wav')):
             await ctx.respond('音源が見つかりません')
@@ -206,7 +206,7 @@ class karaoke(commands.Cog):
 
         trans = discord.PCMVolumeTransformer(source,volume = volume)
         vc.play(trans)  #音源再生
-        
+
         # 再生終了まで待つ
         for i in range(0, int(second_wait)):
             await asyncio.sleep(1)

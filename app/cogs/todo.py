@@ -24,7 +24,7 @@ from base.aio_req import (
     pickle_write
 )
 
-from message_type.discord_type.message_creater import ReqestDiscord
+from model_types.discord_type.message_creater import ReqestDiscord
 
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')

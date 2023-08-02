@@ -8,7 +8,11 @@ load_dotenv()
 
 import os
 
-router = APIRouter()
+from discord.ext import commands
+try:
+    from core.start import DBot
+except ModuleNotFoundError:
+    from app.core.start import DBot
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -17,42 +21,32 @@ DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
-@router.get("/discord-logout")
-async def discord_logout(request: Request):
-    # セッションの初期化
-    if request.session.get('discord_user') != None:
-        request.session.pop("discord_user")
-    if request.session.get('discord_connection') != None:
-        request.session.pop("discord_connection")
-    if request.session.get("discord_oauth_data") != None:
-        request.session.pop("discord_oauth_data")
 
-    # 旧セッションの初期化
-    if request.session.get('user') != None:
-        request.session.pop("user")
-    if request.session.get('connection') != None:
-        request.session.pop("connection")
-    if request.session.get("oauth_data") != None:
-        request.session.pop("oauth_data")
+class Logout(commands.Cog):
+    def __init__(self, bot: DBot):
+        self.bot = bot
+        self.router = APIRouter()
 
-    # ホームページにリダイレクトする
-    return RedirectResponse(url="/")
+        @self.router.get("/discord-logout")
+        async def discord_logout(request: Request):
+            # セッションの初期化
+            if request.session.get('discord_user') != None:
+                request.session.pop("discord_user")
+            if request.session.get('discord_connection') != None:
+                request.session.pop("discord_connection")
+            if request.session.get("discord_oauth_data") != None:
+                request.session.pop("discord_oauth_data")
 
-@router.get("/line-logout")
-async def line_logout(request: Request):
-    # セッションの初期化
-    if request.session.get('line_user') != None:
-        request.session.pop("line_user")
-    if request.session.get("line_oauth_data") != None:
-        request.session.pop("line_oauth_data")
+            # ホームページにリダイレクトする
+            return RedirectResponse(url="/")
 
-    # 旧セッションの初期化
-    if request.session.get('user') != None:
-        request.session.pop("user")
-    if request.session.get('connection') != None:
-        request.session.pop("connection")
-    if request.session.get("oauth_data") != None:
-        request.session.pop("oauth_data")
+        @self.router.get("/line-logout")
+        async def line_logout(request: Request):
+            # セッションの初期化
+            if request.session.get('line_user') != None:
+                request.session.pop("line_user")
+            if request.session.get("line_oauth_data") != None:
+                request.session.pop("line_oauth_data")
 
-    # ホームページにリダイレクトする
-    return RedirectResponse(url="/")
+            # ホームページにリダイレクトする
+            return RedirectResponse(url="/")

@@ -119,9 +119,9 @@ class Permission:
         result.use_public_threads = self.use_public_threads or other.use_public_threads
         result.use_private_threads = self.use_private_threads or other.use_private_threads
         result.use_external_stickers = self.use_external_stickers or other.use_external_stickers
-        
+
         return result
-    
+
     def __and__(self, other: 'Permission') -> 'Permission':
         """
         2つのPermissionオブジェクトを論理積演算して、新しいPermissionオブジェクトを返すメソッド
@@ -164,7 +164,7 @@ class Permission:
         result.use_public_threads = self.use_public_threads and other.use_public_threads
         result.use_private_threads = self.use_private_threads and other.use_private_threads
         result.use_external_stickers = self.use_external_stickers and other.use_external_stickers
-        
+
         return result
 
 
@@ -292,7 +292,7 @@ class Permission:
             permission_code += 137438953472
 
         return permission_code
-        
+
 
 
 if __name__ == '__main__':
