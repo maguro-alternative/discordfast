@@ -41,10 +41,10 @@ RUN pip install git+https://github.com/Pycord-Development/pycord
 
 # 以下はKoyebで運用する際に必要
 # ポート番号8080解放
-#EXPOSE 8080
+EXPOSE 8080
 
 # ディレクトリ /root/src/appに移動
-#WORKDIR /root/src/app
+WORKDIR /root/src/app
 
 # DiscordBotとFastAPIのサーバ起動
-#CMD [ "python", "-u", "main.py" ]
+CMD [ "python", "-u", "main.py" ]
