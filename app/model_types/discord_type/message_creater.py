@@ -12,8 +12,8 @@ load_dotenv()
 from typing import List,Tuple,Dict
 
 #from discord_type import Discord_Member,Discord_Role,Discord_Channel
-from message_type.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
-from message_type.file_type import Audio_Files
+from model_types.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
+from model_types.file_type import Audio_Files
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
@@ -176,7 +176,7 @@ class ReqestDiscord:
         param:
         channel_id:int
         チャンネルid
-        
+
         戻り値
         Discord_Channel
         """
@@ -188,7 +188,7 @@ class ReqestDiscord:
             ) as resp:
                 # 取得したチャンネルを展開
                 res = await resp.json()
-                
+
                 r = Discord_Channel.new_from_json_dict(res)
         return r
 
@@ -200,13 +200,13 @@ class ReqestDiscord:
         戻り値
         message      変更後の文字列: str
         """
-        
+
         # @{空白以外の0文字以上}#{0以上の数字}#member
         member_mention_list = re.findall("@\S*?#\d*?#member",message,re.S)
 
         if not member_mention_list:
             return message
-        
+
         get_member_list = await self.member_get()
 
         for member in get_member_list:
@@ -217,7 +217,7 @@ class ReqestDiscord:
             if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
                 message = message.replace(f'@{member.user.username}#{member.user.discreminator}#member',f'<@{member.user.id}>')
                 member_mention_list = [
-                    user for user in member_mention_list 
+                    user for user in member_mention_list
                     if user != f'@{member.user.username}#{member.user.discreminator}#member'
                 ]
             if not member_mention_list:
@@ -250,7 +250,7 @@ class ReqestDiscord:
             if f'@{role.name}#role' in role_list:
                 message = message.replace(f'@{role.name}#role',f'<@&{role.id}>')
                 role_list = [
-                    rolename for rolename in role_list 
+                    rolename for rolename in role_list
                     if rolename != f'@{role.name}#role'
                 ]
             if not role_list:
@@ -331,8 +331,8 @@ class ReqestDiscord:
             mpwriter.append(
                 obj=io.BytesIO(fileobj.byte)
             ).set_content_disposition(
-                disptype='form-data', 
-                name=fileobj.filename, 
+                disptype='form-data',
+                name=fileobj.filename,
                 filename=fileobj.filename
             )
 

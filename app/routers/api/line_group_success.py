@@ -17,8 +17,8 @@ try:
 except ModuleNotFoundError:
     from app.core.start import DBot
 
-from message_type.line_type.line_message import LineBotAPI
-from message_type.discord_type.message_creater import ReqestDiscord
+from model_types.line_type.line_message import LineBotAPI
+from model_types.discord_type.message_creater import ReqestDiscord
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"

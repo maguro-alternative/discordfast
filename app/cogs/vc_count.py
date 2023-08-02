@@ -17,13 +17,13 @@ from base.aio_req import pickle_read
 # ボイスチャンネルの入退室を通知
 class vc_count(commands.Cog):
     def __init__(self, bot : DBot):
-        self.bot = bot      
+        self.bot = bot
 
     @commands.Cog.listener(name='on_voice_state_update')
     async def voice_update(
-        self, 
-        member:discord.Member, 
-        before:discord.VoiceState, 
+        self,
+        member:discord.Member,
+        before:discord.VoiceState,
         after:discord.VoiceState
     ):
         # 参加するボイスチャンネルのid
@@ -40,8 +40,8 @@ class vc_count(commands.Cog):
         vc_fetch = await pickle_read(filename=TABLE)
 
         key_vc = [
-            g 
-            for g in vc_fetch 
+            g
+            for g in vc_fetch
             if int(g.get('vc_id')) == vc_channel_id
         ]
 
@@ -61,7 +61,7 @@ class vc_count(commands.Cog):
         if (bool(key_vc[0].get('join_bot')) == False and
             member.bot == True):
             return
-        
+
         # Discordのシステムチャンネル(welcomeメッセージが送られる場所)を取得
         send_channel_id = int(key_vc[0].get('send_channel_id'))
 
@@ -76,14 +76,14 @@ class vc_count(commands.Cog):
 
         # メンションするロールの取り出し
         mentions = [
-            f"<@&{int(role_id)}> " 
+            f"<@&{int(role_id)}> "
             for role_id in key_vc[0].get('mention_role_id')
         ]
 
         # 全体メンションが有効の場合@everyoneを追加
         if (bool(key_vc[0].get('everyone_mention')) == True):
             mentions.insert(0,"@everyone")
-        
+
         # listをstrに変換
         mention_str = " ".join(mentions)
 
@@ -119,7 +119,6 @@ class vc_count(commands.Cog):
         # 入室の場合
         if (before.channel is None or check):
             # ボイスチャンネルの残り人数を取得
-            
             embed = None
             # 一人目の入室(通話開始)の場合、サーバーアイコンの埋め込みを作成
             if len(after.channel.members) == 1:

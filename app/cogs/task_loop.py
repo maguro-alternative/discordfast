@@ -7,13 +7,13 @@ try:
     from app.cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from app.cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from app.cogs.bin.webhook_sub.youtube_sub import youtube_subsc
-    from app.message_type.discord_type.message_creater import ReqestDiscord
+    from app.model_types.discord_type.message_creater import ReqestDiscord
 except ModuleNotFoundError:
     from core.start import DBot
     from cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from cogs.bin.webhook_sub.youtube_sub import youtube_subsc
-    from message_type.discord_type.message_creater import ReqestDiscord
+    from model_types.discord_type.message_creater import ReqestDiscord
 
 from dotenv import load_dotenv
 load_dotenv()

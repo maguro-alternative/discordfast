@@ -17,7 +17,7 @@ from core.db_pickle import *
 from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
 
 from routers.api.chack.post_user_check import user_checker
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
 from discord.ext import commands
 try:
@@ -101,7 +101,7 @@ class WebhookSuccess(commands.Cog):
             # create_webhook_number = [1,2,3]
             create_webhook_number = [
                 int(key.replace(FORM_NAMES[0], ""))
-                for key in form.keys() 
+                for key in form.keys()
                 if key.startswith(FORM_NAMES[0])
             ]
 
@@ -109,7 +109,7 @@ class WebhookSuccess(commands.Cog):
             # change_webhook_number = [1,2,3]
             change_webhook_number = [
                 int(key.replace(FORM_NAMES[11], ""))
-                for key in form.keys() 
+                for key in form.keys()
                 if key.startswith(FORM_NAMES[11])
             ]
 
@@ -196,7 +196,7 @@ class WebhookSuccess(commands.Cog):
             # 更新
             for webhook_num in change_webhook_number:
                 row = {
-                    'guild_id': int(form.get("guild_id")), 
+                    'guild_id': int(form.get("guild_id")),
                     'webhook_id':int(form.get(f"{FORM_NAMES[11]}{webhook_num}")),
                     'subscription_type':form.get(f"{FORM_NAMES[12]}{webhook_num}"),
                     'subscription_id': form.get(f"{FORM_NAMES[13]}{webhook_num}")

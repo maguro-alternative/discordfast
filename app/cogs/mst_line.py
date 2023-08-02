@@ -22,10 +22,10 @@ load_dotenv()
 from base.aio_req import pickle_read,decrypt_password
 
 try:
-    from message_type.line_type.line_message import LineBotAPI,Voice_File
+    from model_types.line_type.line_message import LineBotAPI,Voice_File
     from core.start import DBot
 except ModuleNotFoundError:
-    from app.message_type.line_type.line_message import LineBotAPI,Voice_File
+    from app.model_types.line_type.line_message import LineBotAPI,Voice_File
     from app.core.start import DBot
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]

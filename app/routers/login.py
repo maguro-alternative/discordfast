@@ -66,7 +66,7 @@ class Login(commands.Cog):
             )
 
         @self.router.get("/line-login")
-        async def line_login(request: Request):
+        async def line_login_select(request: Request):
             # Botが所属しているサーバを取得
             bot_in_guild_get:List[Dict] = await aio_get_request(
                 url = DISCORD_BASE_URL + '/users/@me/guilds',

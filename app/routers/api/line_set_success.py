@@ -12,7 +12,7 @@ from base.database import PostgresDB
 from base.aio_req import pickle_write,encrypt_password
 from core.db_pickle import *
 from routers.api.chack.post_user_check import user_checker
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
 from discord.ext import commands
 try:

@@ -11,7 +11,7 @@ load_dotenv()
 import os
 from typing import Dict,List
 
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
 

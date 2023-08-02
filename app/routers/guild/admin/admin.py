@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.responses import RedirectResponse,HTMLResponse
+from fastapi.responses import RedirectResponse,HTMLResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -7,20 +7,39 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+
+from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
     pickle_read,
+    get_profile,
     return_permission,
-    oauth_check
+    oauth_check,
+    decrypt_password
 )
 from typing import List,Dict,Any,Tuple
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_request_type import DiscordBaseRequest
+
+from model_types.table_type import GuildSetPermission
 
 from discord.ext import commands
 try:
     from core.start import DBot
 except ModuleNotFoundError:
     from app.core.start import DBot
+
+USER = os.getenv('PGUSER')
+PASSWORD = os.getenv('PGPASSWORD')
+DATABASE = os.getenv('PGDATABASE')
+HOST = os.getenv('PGHOST')
+db = PostgresDB(
+    user=USER,
+    password=PASSWORD,
+    database=DATABASE,
+    host=HOST
+)
+
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -107,3 +126,74 @@ class AdminView(commands.Cog):
                     "title":request.session["discord_user"]['username']
                 }
             )
+
+        @self.router.post('/guild/admin')
+        async def admin(
+            request:DiscordBaseRequest
+        ) -> JSONResponse:
+            if db.conn == None:
+                await db.connect()
+            # アクセストークンの復号化
+            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+            # Discordのユーザ情報を取得
+            discord_user = await get_profile(access_token=access_token)
+            TABLE_NAME = 'guild_set_permissions'
+
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
+
+            for guild in self.bot.guilds:
+                if request.guild_id == guild.id:
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        guild_id=guild.id,
+                        user_id=discord_user.id,
+                        access_token=access_token
+                    )
+                    guild_members = [
+                        {
+                            'userId'            :member.id,
+                            'userName'          :member.name,
+                            'userDisplayName'   :member.display_name
+                        }
+                        for member in guild.members
+                    ]
+                    guild_roles = [
+                        {
+                            'roleId'    :role.id,
+                            'roleName'  :role.name
+                        }
+                        for role in guild.roles
+                    ]
+                    p = await db.select_rows(
+                        table_name=TABLE_NAME,
+                        columns=[],
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
+
+                    # 管理者ではない場合、該当するサーバーidがない場合、終了
+                    if permission.administrator == False or len(p) == 0:
+                        return JSONResponse(content={'message':'404'})
+                    guild_permission = GuildSetPermission(**p[0])
+
+                    json_content = {
+                        'guildMembers'              :guild_members,
+                        'guildRoles'                :guild_roles,
+                        'linePermission'            :guild_permission.line_permission,
+                        'lineUserIdPermission'      :guild_permission.line_user_id_permission,
+                        'lineRoleIdPermission'      :guild_permission.line_role_id_permission,
+                        'lineBotPermission'         :guild_permission.line_bot_permission,
+                        'lineBotUserIdPermission'   :guild_permission.line_bot_user_id_permission,
+                        'lineBotRoleIdPermission'   :guild_permission.line_bot_role_id_permission,
+                        'vcPermission'              :guild_permission.vc_permission,
+                        'vcUserIdPermission'        :guild_permission.vc_user_id_permission,
+                        'vcRoleIdPermission'        :guild_permission.vc_role_id_permission,
+                        'webhookPermission'         :guild_permission.webhook_permission,
+                        'webhookUserIdPermission'   :guild_permission.webhook_user_id_permission,
+                        'webhookRoleIdPermission'   :guild_permission.webhook_role_id_permission
+                    }
+
+                    return JSONResponse(content=json_content)

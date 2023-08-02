@@ -11,7 +11,7 @@ import os
 from base.database import PostgresDB
 from base.aio_req import pickle_write
 from routers.api.chack.post_user_check import user_checker
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
 from core.pickes_save.guild_permissions_columns import GUILD_SET_COLUMNS
 

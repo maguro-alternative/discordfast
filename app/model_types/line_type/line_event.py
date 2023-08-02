@@ -150,7 +150,7 @@ class Line_Responses(BaseModel):
 
     destination:str
         BotのユーザID
-    
+
     events:List[Line_Events] or Line_Events
         LINE側でのイベント内容
         応答確認の場合はlistで返す。

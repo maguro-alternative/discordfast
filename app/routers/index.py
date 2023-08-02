@@ -8,7 +8,7 @@ from base.aio_req import (
     aio_get_request,
     oauth_check
 )
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
 
 from discord.ext import commands

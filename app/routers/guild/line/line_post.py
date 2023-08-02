@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -15,9 +15,14 @@ from base.aio_req import (
     pickle_read,
     return_permission,
     oauth_check,
-    sort_discord_channel
+    get_profile,
+    sort_discord_channel,
+    decrypt_password
 )
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_request_type import DiscordBaseRequest
+
+from model_types.table_type import GuildLineChannel
 
 from discord.ext import commands
 try:
@@ -310,3 +315,39 @@ class LinePostView(commands.Cog):
                     "title": "LINEへの送信設定/" + guild["name"]
                 }
             )
+
+        @self.router.post('/guild/line-post')
+        async def line_post(
+            request:DiscordBaseRequest
+        ):
+            if db.conn == None:
+                await db.connect()
+            # アクセストークンの復号化
+            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+            # Discordのユーザ情報を取得
+            discord_user = await get_profile(access_token=access_token)
+
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
+
+            for guild in self.bot.guilds:
+                if request.guild_id == guild.id:
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        guild_id=guild.id,
+                        user_id=discord_user.id,
+                        access_token=access_token
+                    )
+                    # 使用するデータベースのテーブル名
+                    TABLE = f'guilds_line_channel_{guild.id}'
+                    guild.channels[0]
+
+                    c = await db.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={}
+                    )
+                    all_channel = list()
+                    for channel in c:
+                        (GuildLineChannel(**channel))

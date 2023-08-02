@@ -19,7 +19,7 @@ from base.aio_req import (
     sort_discord_channel,
     decrypt_password
 )
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
 from discord.ext import commands
 try:

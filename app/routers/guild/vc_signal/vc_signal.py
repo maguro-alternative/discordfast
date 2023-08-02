@@ -17,9 +17,9 @@ from base.aio_req import (
     pickle_read,
     return_permission,
     oauth_check,
-    sort_discord_channel
+    sort_discord_vc_channel
 )
-from routers.session_base.user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
 from discord.ext import commands
 try:
@@ -78,7 +78,7 @@ class VcSignalView(commands.Cog):
             )
 
             # チャンネルのソート
-            all_channel_sort,all_channels,vc_channels = await sort_discord_channel(all_channel=all_channel)
+            all_channel_sort,all_channels,vc_channels = await sort_discord_vc_channel(all_channel=all_channel)
 
             vc_cate_sort = [
                 tmp

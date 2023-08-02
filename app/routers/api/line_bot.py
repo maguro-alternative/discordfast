@@ -11,13 +11,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from message_type.line_type.line_event import Line_Responses
-    from message_type.discord_type.message_creater import ReqestDiscord
-    from message_type.line_type.line_message import LineBotAPI
+    from model_types.line_type.line_event import Line_Responses
+    from model_types.discord_type.message_creater import ReqestDiscord
+    from model_types.line_type.line_message import LineBotAPI
 except ModuleNotFoundError:
-    from app.message_type.line_type.line_event import Line_Responses
-    from app.message_type.discord_type.message_creater import ReqestDiscord
-    from app.message_type.line_type.line_message import LineBotAPI
+    from app.model_types.line_type.line_event import Line_Responses
+    from app.model_types.discord_type.message_creater import ReqestDiscord
+    from app.model_types.line_type.line_message import LineBotAPI
 # ./venv/Scripts/activate.bat
 
 import os

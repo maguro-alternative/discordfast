@@ -39,11 +39,12 @@ RUN pip install -r requirements.txt
 # discord.pyをpy-cordにアップグレード
 RUN pip install git+https://github.com/Pycord-Development/pycord
 
+# 以下はKoyebで運用する際に必要
 # ポート番号8080解放
 EXPOSE 8080
 
+# ディレクトリ /root/src/appに移動
 WORKDIR /root/src/app
 
-RUN ls -a
-
+# DiscordBotとFastAPIのサーバ起動
 CMD [ "python", "-u", "main.py" ]
