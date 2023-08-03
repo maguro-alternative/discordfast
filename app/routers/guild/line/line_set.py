@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -16,10 +16,14 @@ from base.aio_req import (
     pickle_read,
     return_permission,
     oauth_check,
+    get_profile,
     sort_discord_channel,
     decrypt_password
 )
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_request_type import DiscordBaseRequest
+
+from model_types.table_type import LineBotColunm
 
 from discord.ext import commands
 try:
@@ -220,3 +224,29 @@ class LineSetView(commands.Cog):
                     "title": "LINEBOTおよびグループ設定/" + guild['name']
                 }
             )
+
+        @self.router.post('/guild/line-set')
+        async def line_post(
+            request:DiscordBaseRequest
+        ):
+            if db.conn == None:
+                await db.connect()
+            # アクセストークンの復号化
+            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+            # Discordのユーザ情報を取得
+            discord_user = await get_profile(access_token=access_token)
+
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
+
+            for guild in self.bot.guilds:
+                if request.guild_id == guild.id:
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        guild_id=guild.id,
+                        user_id=discord_user.id,
+                        access_token=access_token
+                    )
+                    guild.threads[0]
+                    await guild.active_threads()

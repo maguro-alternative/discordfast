@@ -64,6 +64,9 @@ class Task_Loop(commands.Cog):
         # なので起動時の読み込みでは機能しない
         now_time = datetime.now()
         for guild in self.bot.guilds:
+            #print(guild.name)
+            #for channel in guild.channels:
+                #print(f"    {channel.position}:{channel.category}:{channel.name}")
             webhook_table_name = f"webhook_{guild.id}"
             task_table_name = f"task_{guild.id}"
 

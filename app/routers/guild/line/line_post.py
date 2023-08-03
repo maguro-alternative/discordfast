@@ -19,11 +19,12 @@ from base.aio_req import (
     sort_discord_channel,
     decrypt_password
 )
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser,DiscordChannel
 from model_types.discord_type.discord_request_type import DiscordBaseRequest
 
 from model_types.table_type import GuildLineChannel
 
+from discord.guild import GuildChannel
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -222,7 +223,7 @@ class LinePostView(commands.Cog):
             ]
             # Discord側の現時点でのチャンネルの数(カテゴリーチャンネルを除く)
             guild_ids = [
-                int(aid["id"]) 
+                int(aid["id"])
                 for aid in all_channel_sort
                 if aid['type'] != 4
             ]
@@ -341,13 +342,39 @@ class LinePostView(commands.Cog):
                     )
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_line_channel_{guild.id}'
-                    guild.channels[0]
 
-                    c = await db.select_rows(
+                    c:List[Dict] = await db.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={}
                     )
-                    all_channel = list()
-                    for channel in c:
-                        (GuildLineChannel(**channel))
+
+        async def sort_channels(
+            self,
+            channels:List[GuildChannel]
+        ):
+            # カテゴリーチャンネルを抽出
+            categorys = [
+                chan
+                for chan in channels
+                if chan.category_id == 4
+            ]
+            # 配列の長さをカテゴリー数+1にする
+            category_list = [[GuildChannel]] * (len(categorys) + 1)
+
+            category_dict = dict()
+
+            # カテゴリーソート
+            categorys = sorted(categorys,key=lambda c:c.position)
+
+            for i,category in enumerate(categorys):
+                for chan in channels:
+                    # カテゴリーチャンネルがある場合
+                    if chan.category_id == category.id:
+                        category_list[i].append(chan)
+                    # カテゴリー所属がない場合、末尾に入れる
+                    elif chan.category_id == None:
+                        category_list[-1].append(chan)
+
+                # カテゴリー内のチャンネルごとにソート
+                category_list[i] = sorted(category_list[i],key=lambda c:c.position)

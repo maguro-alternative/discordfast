@@ -24,6 +24,61 @@ class DiscordOAuthData(BaseModel):
     scope           :str
     token_type      :str
 
+class PermissionOverwrites(BaseModel):
+    """
+    Discordのチャンネルの権限のクラス
+    上書きする際に使用
+
+    id          :チャンネルのid
+    type        :チャンネルのタイプ
+    allow       :許可されている権限
+    deny        :禁止されている権限
+    allow_new   :新たなに許可する権限
+    deny_new    :新たに禁止する権限
+    """
+    id          :int
+    type        :str
+    allow       :int
+    deny        :int
+    allow_new   :int
+    deny_new    :int
+
+
+class DiscordChannel(BaseModel):
+    """
+    Discordのチャンネルのクラス
+
+    id                      :チャンネルid
+    last_message_id         :最後に発言されたメッセージのid
+    type                    :チャンネルのタイプ(0の場合、テキストチャンネル)
+    name                    :チャンネル名
+    position                :チャンネルの順番
+    flags                   :用途不明
+    parent_id               :親チャンネルのid
+    bitrate                 :音声のビットレート
+    user_limit              :ボイスチャンネルのユーザーの上限
+    rtc_region              :音声のリージョン
+    topic                   :チャンネルのトピックス
+    guild_id                :サーバーid
+    premission_overwrites   :新たに設定する権限
+    rate_limit_per_user     :低速モードで再び発言できるまでの秒数
+    nsfw                    :閲覧注意チャンネルかどうか
+    """
+    id                      :int
+    last_message_id         :Optional[int]
+    type                    :int
+    name                    :str
+    position                :int
+    flags                   :int
+    parent_id               :Optional[int]
+    bitrate                 :Optional[int]
+    user_limit              :Optional[int]
+    rtc_region              :Optional[str]
+    topic                   :Optional[str]
+    guild_id                :int
+    permission_overwrites   :List[PermissionOverwrites]
+    rate_limit_per_user     :int
+    nsfw                    :bool
 
 class DiscordUser(BaseModel):
     """
