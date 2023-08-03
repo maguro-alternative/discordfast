@@ -28,8 +28,7 @@ from discord.channel import (
     VoiceChannel,
     StageChannel,
     TextChannel,
-    CategoryChannel,
-    StoreChannel
+    CategoryChannel
 )
 from discord.ext import commands
 try:
@@ -57,8 +56,7 @@ GuildChannel = Union[
     VoiceChannel,
     StageChannel,
     TextChannel,
-    CategoryChannel,
-    StoreChannel
+    CategoryChannel
 ]
 
 router = APIRouter()
