@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any
+from typing import List,Dict,Any,Union
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -24,7 +24,13 @@ from model_types.discord_type.discord_request_type import DiscordBaseRequest
 
 from model_types.table_type import GuildLineChannel
 
-from discord.guild import GuildChannel
+from discord.channel import (
+    VoiceChannel,
+    StageChannel,
+    TextChannel,
+    CategoryChannel,
+    StoreChannel
+)
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -46,6 +52,14 @@ db = PostgresDB(
     database=DATABASE,
     host=HOST
 )
+
+GuildChannel = Union[
+    VoiceChannel,
+    StageChannel,
+    TextChannel,
+    CategoryChannel,
+    StoreChannel
+]
 
 router = APIRouter()
 
@@ -378,3 +392,6 @@ class LinePostView(commands.Cog):
 
                 # カテゴリー内のチャンネルごとにソート
                 category_list[i] = sorted(category_list[i],key=lambda c:c.position)
+                category_dict.update({
+                    str(category.id) : category_list[i]
+                })
