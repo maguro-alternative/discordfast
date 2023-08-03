@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any,Union
+from typing import List,Dict,Any,Union,Tuple
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -30,6 +30,7 @@ from discord.channel import (
     TextChannel,
     CategoryChannel
 )
+from discord import ChannelType
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -332,21 +333,28 @@ class LinePostView(commands.Cog):
         @self.router.post('/guild/line-post')
         async def line_post(
             request:DiscordBaseRequest
+            #request:Request
         ):
-            if db.conn == None:
+            if db.conn != None:
                 await db.connect()
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
+                # アクセストークンの復号化
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
+                #if request.get('guild_id') == guild.id:
                     # サーバの権限を取得
+
+                    category_dict,category_index = await sort_channels(channels=guild.channels)
+
+                    print(category_dict)
+                    return {'messagfe':''}
                     permission = await return_permission(
                         guild_id=guild.id,
                         user_id=discord_user.id,
@@ -361,35 +369,51 @@ class LinePostView(commands.Cog):
                         where_clause={}
                     )
 
-        async def sort_channels(
-            self,
-            channels:List[GuildChannel]
-        ):
-            # カテゴリーチャンネルを抽出
-            categorys = [
-                chan
-                for chan in channels
-                if chan.category_id == 4
-            ]
-            # 配列の長さをカテゴリー数+1にする
-            category_list = [[GuildChannel]] * (len(categorys) + 1)
 
-            category_dict = dict()
 
-            # カテゴリーソート
-            categorys = sorted(categorys,key=lambda c:c.position)
+async def sort_channels(
+    channels:List[GuildChannel]
+) -> Tuple[
+    Dict[str,List[GuildChannel]],
+    Dict[str,List[GuildChannel]]
+]:
+    # カテゴリーチャンネルを抽出
+    categorys = [
+        chan
+        for chan in channels
+        if chan.type == ChannelType.category
+    ]
 
-            for i,category in enumerate(categorys):
-                for chan in channels:
-                    # カテゴリーチャンネルがある場合
-                    if chan.category_id == category.id:
-                        category_list[i].append(chan)
-                    # カテゴリー所属がない場合、末尾に入れる
-                    elif chan.category_id == None:
-                        category_list[-1].append(chan)
+    # 配列の長さをカテゴリー数+1にする
+    category_list = [[]] * (len(categorys) + 1)
 
-                # カテゴリー内のチャンネルごとにソート
-                category_list[i] = sorted(category_list[i],key=lambda c:c.position)
-                category_dict.update({
-                    str(category.id) : category_list[i]
-                })
+    category_index = dict()
+    category_dict = dict()
+
+    # カテゴリーソート
+    categorys = sorted(categorys,key=lambda c:c.position)
+
+    for i,category in enumerate(categorys):
+        for chan in channels:
+            # カテゴリーチャンネルがある場合
+            if chan.category_id == category.id:
+                category_list[i].append(chan)
+            # カテゴリー所属がない場合、末尾に入れる
+            elif chan.category_id == None:
+                category_list[-1].append(chan)
+
+        print(category_list[i])
+
+        # カテゴリー内のチャンネルごとにソート
+        channel_cate = category_list[i]
+        category_list[i] = sorted(channel_cate,key=lambda cc:cc.position)
+        print(category_list[i])
+        category_dict.update({
+            str(category.id) : category_list[i]
+        })
+
+        category_index.update({
+            str(category.id) : category
+        })
+
+    return category_dict,category_index
