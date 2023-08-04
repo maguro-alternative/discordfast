@@ -30,6 +30,9 @@ from discord.channel import (
     TextChannel,
     CategoryChannel
 )
+
+import pprint
+
 from discord import ChannelType
 from discord.ext import commands
 try:
@@ -353,7 +356,8 @@ class LinePostView(commands.Cog):
 
                     category_dict,category_index = await sort_channels(channels=guild.channels)
 
-                    print(category_dict)
+                    #print(category_dict)
+                    pprint.pprint(category_dict)
                     return {'messagfe':''}
                     permission = await return_permission(
                         guild_id=guild.id,
@@ -384,8 +388,9 @@ async def sort_channels(
         if chan.type == ChannelType.category
     ]
 
-    # 配列の長さをカテゴリー数+1にする
-    category_list = [[]] * (len(categorys) + 1)
+    # 配列の長さをカテゴリー数+1にする(要素を入れるとappendをする際にすべてのlistに入ってしまう)
+    category_list = [[] for _ in range((len(categorys) + 1))]
+    print(len(category_list))
 
     category_index = dict()
     category_dict = dict()
@@ -393,21 +398,24 @@ async def sort_channels(
     # カテゴリーソート
     categorys = sorted(categorys,key=lambda c:c.position)
 
+    pprint.pprint(channels)
+
     for i,category in enumerate(categorys):
         for chan in channels:
             # カテゴリーチャンネルがある場合
             if chan.category_id == category.id:
                 category_list[i].append(chan)
+                print(f'{i}_{category.name}:{chan.name}')
             # カテゴリー所属がない場合、末尾に入れる
-            elif chan.category_id == None:
+            elif chan.category_id == None and chan not in category_list[-1]:
                 category_list[-1].append(chan)
-
-        print(category_list[i])
+                print(f'{i}_None:{chan.name}')
 
         # カテゴリー内のチャンネルごとにソート
         channel_cate = category_list[i]
+        #pprint.pprint(category_list)
         category_list[i] = sorted(channel_cate,key=lambda cc:cc.position)
-        print(category_list[i])
+        #print(category_list[i])
         category_dict.update({
             str(category.id) : category_list[i]
         })
@@ -415,5 +423,9 @@ async def sort_channels(
         category_index.update({
             str(category.id) : category
         })
+
+    category_dict.update({
+        'None' : category_list[-1]
+    })
 
     return category_dict,category_index
