@@ -351,14 +351,62 @@ class LinePostView(commands.Cog):
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
-                #if request.get('guild_id') == guild.id:
                     # サーバの権限を取得
 
                     category_dict,category_index = await sort_channels(channels=guild.channels)
 
-                    #print(category_dict)
-                    pprint.pprint(category_dict)
-                    return {'messagfe':''}
+                    channels_json = dict()
+                    channels_dict = dict()
+
+                    channels_list = list()
+                    category_list = list()
+                    for category_id,category_value in category_index.items():
+                        # カテゴリーチャンネル一覧
+                        category_list.append({
+                            'id'    :category_value.id,
+                            'name'  :category_value.name
+                        })
+                        # カテゴリー内のチャンネル一覧
+                        channels_list = [
+                            {
+                                'id'    :chan.id,
+                                'name'  :chan.name,
+                                'type'  :type(chan).__name__
+                            }
+                            for chan in category_dict.get(category_id)
+                        ]
+                        channels_dict.update({
+                            category_id:channels_list
+                        })
+
+                    # カテゴリーなしのチャンネル一覧
+                    channels_dict.update({
+                        'None':[
+                            {
+                                'id'    :none_channel.id,
+                                'name'  :none_channel.name,
+                                'type'  :type(none_channel).__name__
+                            }
+                            for none_channel in category_dict.get('None')
+                        ]
+                    })
+
+                    # スレッド一覧
+                    threads = [
+                        {
+                            'id'    :thread.id,
+                            'name'  :thread.name
+                        }
+                        for thread in guild.threads
+                    ]
+
+                    channels_json.update({
+                        'categorys' :category_list,
+                        'channels'  :channels_dict,
+                        'threads'   :threads
+                    })
+
+                    return {'message':channels_json}
                     permission = await return_permission(
                         guild_id=guild.id,
                         user_id=discord_user.id,
@@ -379,7 +427,7 @@ async def sort_channels(
     channels:List[GuildChannel]
 ) -> Tuple[
     Dict[str,List[GuildChannel]],
-    Dict[str,List[GuildChannel]]
+    Dict[str,GuildChannel]
 ]:
     # カテゴリーチャンネルを抽出
     categorys = [
@@ -390,7 +438,6 @@ async def sort_channels(
 
     # 配列の長さをカテゴリー数+1にする(要素を入れるとappendをする際にすべてのlistに入ってしまう)
     category_list = [[] for _ in range((len(categorys) + 1))]
-    print(len(category_list))
 
     category_index = dict()
     category_dict = dict()
@@ -398,23 +445,21 @@ async def sort_channels(
     # カテゴリーソート
     categorys = sorted(categorys,key=lambda c:c.position)
 
-    pprint.pprint(channels)
-
     for i,category in enumerate(categorys):
         for chan in channels:
             # カテゴリーチャンネルがある場合
             if chan.category_id == category.id:
                 category_list[i].append(chan)
-                print(f'{i}_{category.name}:{chan.name}')
+                #print(f'{i}_{category.name}:{chan.name}')
             # カテゴリー所属がない場合、末尾に入れる
-            elif chan.category_id == None and chan not in category_list[-1]:
+            elif (chan.category_id == None and
+                chan not in category_list[-1] and
+                chan.type != ChannelType.category):
                 category_list[-1].append(chan)
-                print(f'{i}_None:{chan.name}')
+                #print(f'{i}_None:{chan.name}')
 
         # カテゴリー内のチャンネルごとにソート
-        channel_cate = category_list[i]
-        #pprint.pprint(category_list)
-        category_list[i] = sorted(channel_cate,key=lambda cc:cc.position)
+        category_list[i] = sorted(category_list[i],key=lambda cc:cc.position)
         #print(category_list[i])
         category_dict.update({
             str(category.id) : category_list[i]
@@ -427,5 +472,6 @@ async def sort_channels(
     category_dict.update({
         'None' : category_list[-1]
     })
+    #categorys.append({'None':Dict})
 
     return category_dict,category_index
