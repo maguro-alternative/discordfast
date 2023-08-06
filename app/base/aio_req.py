@@ -1,7 +1,16 @@
 import aiohttp
 import aiofiles
 
-from typing import List,Any,Dict,Optional,Tuple
+from discord.channel import (
+    VoiceChannel,
+    StageChannel,
+    TextChannel,
+    CategoryChannel
+)
+from discord import Guild
+from discord import ChannelType
+
+from typing import List,Any,Dict,Optional,Tuple,Union
 
 import os
 import io
@@ -18,6 +27,13 @@ DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+
+GuildChannel = Union[
+    VoiceChannel,
+    StageChannel,
+    TextChannel,
+    CategoryChannel
+]
 
 # getリクエストを行う
 async def aio_get_request(url: str, headers: dict) -> Dict:
@@ -539,6 +555,68 @@ async def sort_discord_vc_channel(
     all_channel_sort = list(chain.from_iterable(all_channels))
 
     return all_channel_sort,all_channels,vc_channels
+
+async def sort_channels(
+    channels:List[GuildChannel]
+) -> Tuple[
+    Dict[str,List[GuildChannel]],
+    Dict[str,GuildChannel]
+]:
+    """
+    Discordのサーバ内のチャンネルをカテゴリーごとにソートする
+
+    Args:
+        channels (List[GuildChannel]):
+        Discordのチャンネル一覧
+
+    Returns:
+        Tuple[ Dict[str,List[GuildChannel]], Dict[str,GuildChannel] ]:
+        それぞれ
+        カテゴリーごとにソートされたチャンネル一覧
+        カテゴリー一覧
+    """
+    # カテゴリーチャンネルを抽出
+    categorys = [
+        chan
+        for chan in channels
+        if chan.type == ChannelType.category
+    ]
+
+    # 配列の長さをカテゴリー数+1にする(要素を入れるとappendをする際にすべてのlistに入ってしまう)
+    category_list = [[] for _ in range((len(categorys) + 1))]
+
+    category_index = dict()
+    category_dict = dict()
+
+    # カテゴリーソート
+    categorys = sorted(categorys,key=lambda c:c.position)
+
+    for i,category in enumerate(categorys):
+        for chan in channels:
+            # カテゴリーチャンネルがある場合
+            if chan.category_id == category.id:
+                category_list[i].append(chan)
+            # カテゴリー所属がない場合、末尾に入れる
+            elif (chan.category_id == None and
+                chan not in category_list[-1] and
+                chan.type != ChannelType.category):
+                category_list[-1].append(chan)
+
+        # カテゴリー内のチャンネルごとにソート
+        category_list[i] = sorted(category_list[i],key=lambda cc:cc.position)
+        category_dict.update({
+            str(category.id) : category_list[i]
+        })
+
+        category_index.update({
+            str(category.id) : category
+        })
+
+    category_dict.update({
+        'None' : category_list[-1]
+    })
+
+    return category_dict,category_index
 
 # 復号化関数
 async def decrypt_password(encrypted_password:bytes) -> str:

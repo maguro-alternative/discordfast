@@ -20,11 +20,14 @@ from base.aio_req import (
     sort_discord_channel,
     decrypt_password
 )
+
+from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 from model_types.discord_type.discord_request_type import DiscordBaseRequest
 
-from model_types.table_type import LineBotColunm
+from model_types.table_type import LineBotColunm,GuildSetPermission
 
+from discord import Guild
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -248,5 +251,77 @@ class LineSetView(commands.Cog):
                         user_id=discord_user.id,
                         access_token=access_token
                     )
-                    guild.threads[0]
-                    await guild.active_threads()
+                    # 編集可能かどうか
+                    chenge_permission = await chenge_permission_check(
+                        user_id=discord_user.id,
+                        permission=permission,
+                        guild=guild
+                    )
+                    # 使用するデータベースのテーブル名
+                    TABLE = f'line_bot'
+
+                    db_line_bot:List[Dict] = await db.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
+                    line_bot = LineBotColunm(**db_line_bot[0])
+
+
+
+async def chenge_permission_check(
+    user_id:int,
+    permission:Permission,
+    guild:Guild
+) -> bool:
+    """
+    ログインユーザが編集可能かどうか識別
+
+    Args:
+        user_id (int):
+            DiscordUserのid
+        permission (Permission):
+            ユーザの権限
+        guild (Guild):
+            サーバ情報
+
+    Returns:
+        bool: 編集可能かどうか
+    """
+    # パーミッションの番号を取得
+    permission_code = await permission.get_permission_code()
+
+    # アクセス権限の設定を取得
+    guild_p:List[Dict] = await db.select_rows(
+        table_name='guild_set_permissions',
+        columns=[],
+        where_clause={
+            'guild_id':guild.id
+        }
+    )
+    guild_line_permission = GuildSetPermission(**guild_p[0])
+
+    # 指定された権限を持っているか、管理者権限を持っているか
+    and_code = guild_line_permission.line_bot_permission & permission_code
+    admin_code = 8 & permission_code
+
+    # ロールid一覧を取得
+    guild_user_data = guild.get_member(user_id)
+    guild_user_roles = [
+        role.id
+        for role in guild_user_data.roles
+    ]
+
+    # 許可されている場合、管理者の場合
+    if (and_code == permission_code or
+        admin_code == 8 or
+        user_id in guild_line_permission.line_bot_user_id_permission or
+        len(set(guild_line_permission.line_bot_role_id_permission) & set(guild_user_roles)) > 0
+        ):
+        # 変更可能
+        return True
+    else:
+        # 変更不可
+        return False

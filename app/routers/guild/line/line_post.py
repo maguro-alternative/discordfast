@@ -8,6 +8,8 @@ load_dotenv()
 
 import os
 from typing import List,Dict,Any,Union,Tuple
+import pprint
+
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -17,8 +19,10 @@ from base.aio_req import (
     oauth_check,
     get_profile,
     sort_discord_channel,
+    sort_channels,
     decrypt_password
 )
+from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser,DiscordChannel
 from model_types.discord_type.discord_request_type import DiscordBaseRequest
 
@@ -30,10 +34,7 @@ from discord.channel import (
     TextChannel,
     CategoryChannel
 )
-
-import pprint
-
-from discord import ChannelType
+from discord import Guild
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -337,7 +338,7 @@ class LinePostView(commands.Cog):
         async def line_post(
             request:DiscordBaseRequest
             #request:Request
-        ):
+        ) -> JSONResponse:
             if db.conn == None:
                 await db.connect()
             # アクセストークンの復号化
@@ -358,41 +359,12 @@ class LinePostView(commands.Cog):
                         access_token=access_token
                     )
 
-                    # パーミッションの番号を取得
-                    permission_code = await permission.get_permission_code()
-
-                    # アクセス権限の設定を取得
-                    guild_p:List[Dict] = await db.select_rows(
-                        table_name='guild_set_permissions',
-                        columns=[],
-                        where_clause={
-                            'guild_id':guild.id
-                        }
+                    # 編集可能かどうか
+                    chenge_permission = await chenge_permission_check(
+                        user_id=discord_user.id,
+                        permission=permission,
+                        guild=guild
                     )
-                    guild_line_permission = GuildSetPermission(**guild_p[0])
-
-                    # 指定された権限を持っているか、管理者権限を持っているか
-                    and_code = guild_line_permission.line_permission & permission_code
-                    admin_code = 8 & permission_code
-
-                    # ロールid一覧を取得
-                    guild_user_data = guild.get_member(discord_user.id)
-                    guild_user_roles = [
-                        role.id
-                        for role in guild_user_data.roles
-                    ]
-
-                    # 許可されている場合、管理者の場合
-                    if (and_code == permission_code or
-                        admin_code == 8 or
-                        discord_user.id in guild_line_permission.line_user_id_permission or
-                        len(set(guild_line_permission.line_role_id_permission) & set(guild_user_roles)) > 0
-                        ):
-                        # 変更可能
-                        chenge_permission = True
-                    else:
-                        # 変更不可
-                        chenge_permission = False
 
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_line_channel_{guild.id}'
@@ -559,56 +531,57 @@ class LinePostView(commands.Cog):
                     return JSONResponse(content=channels_json)
 
 
+async def chenge_permission_check(
+    user_id:int,
+    permission:Permission,
+    guild:Guild
+) -> bool:
+    """
+    ログインユーザが編集可能かどうか識別
 
-async def sort_channels(
-    channels:List[GuildChannel]
-) -> Tuple[
-    Dict[str,List[GuildChannel]],
-    Dict[str,GuildChannel]
-]:
-    # カテゴリーチャンネルを抽出
-    categorys = [
-        chan
-        for chan in channels
-        if chan.type == ChannelType.category
+    Args:
+        user_id (int):
+            DiscordUserのid
+        permission (Permission):
+            ユーザの権限
+        guild (Guild):
+            サーバ情報
+
+    Returns:
+        bool: 編集可能かどうか
+    """
+    # パーミッションの番号を取得
+    permission_code = await permission.get_permission_code()
+
+    # アクセス権限の設定を取得
+    guild_p:List[Dict] = await db.select_rows(
+        table_name='guild_set_permissions',
+        columns=[],
+        where_clause={
+            'guild_id':guild.id
+        }
+    )
+    guild_line_permission = GuildSetPermission(**guild_p[0])
+
+    # 指定された権限を持っているか、管理者権限を持っているか
+    and_code = guild_line_permission.line_permission & permission_code
+    admin_code = 8 & permission_code
+
+    # ロールid一覧を取得
+    guild_user_data = guild.get_member(user_id)
+    guild_user_roles = [
+        role.id
+        for role in guild_user_data.roles
     ]
 
-    # 配列の長さをカテゴリー数+1にする(要素を入れるとappendをする際にすべてのlistに入ってしまう)
-    category_list = [[] for _ in range((len(categorys) + 1))]
-
-    category_index = dict()
-    category_dict = dict()
-
-    # カテゴリーソート
-    categorys = sorted(categorys,key=lambda c:c.position)
-
-    for i,category in enumerate(categorys):
-        for chan in channels:
-            # カテゴリーチャンネルがある場合
-            if chan.category_id == category.id:
-                category_list[i].append(chan)
-                #print(f'{i}_{category.name}:{chan.name}')
-            # カテゴリー所属がない場合、末尾に入れる
-            elif (chan.category_id == None and
-                chan not in category_list[-1] and
-                chan.type != ChannelType.category):
-                category_list[-1].append(chan)
-                #print(f'{i}_None:{chan.name}')
-
-        # カテゴリー内のチャンネルごとにソート
-        category_list[i] = sorted(category_list[i],key=lambda cc:cc.position)
-        #print(category_list[i])
-        category_dict.update({
-            str(category.id) : category_list[i]
-        })
-
-        category_index.update({
-            str(category.id) : category
-        })
-
-    category_dict.update({
-        'None' : category_list[-1]
-    })
-    #categorys.append({'None':Dict})
-
-    return category_dict,category_index
+    # 許可されている場合、管理者の場合
+    if (and_code == permission_code or
+        admin_code == 8 or
+        user_id in guild_line_permission.line_user_id_permission or
+        len(set(guild_line_permission.line_role_id_permission) & set(guild_user_roles)) > 0
+        ):
+        # 変更可能
+        return True
+    else:
+        # 変更不可
+        return False
