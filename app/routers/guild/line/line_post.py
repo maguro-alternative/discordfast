@@ -338,21 +338,92 @@ class LinePostView(commands.Cog):
             request:DiscordBaseRequest
             #request:Request
         ):
-            if db.conn != None:
+            if db.conn == None:
                 await db.connect()
-                # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-                # Discordのユーザ情報を取得
-                discord_user = await get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+            # Discordのユーザ情報を取得
+            discord_user = await get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
                     # サーバの権限を取得
+                    permission = await return_permission(
+                        guild_id=guild.id,
+                        user_id=discord_user.id,
+                        access_token=access_token
+                    )
+                    # 使用するデータベースのテーブル名
+                    TABLE = f'guilds_line_channel_{guild.id}'
 
+                    db_channels:List[Dict] = await db.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={}
+                    )
+
+                    # データベース内のチャンネルとスレッドの一覧
+                    guild_db_list_id = [
+                        int(cc.get('channel_id'))
+                        for cc in db_channels
+                    ]
+
+                    # チャンネルとスレッドのid一覧
+                    guild_id_list = [
+                        g.id
+                        for g in guild.channels
+                    ]
+                    for thread in guild.threads:
+                        guild_id_list.append(thread.id)
+
+                    # 新しくチャンネルが作成された場合
+                    if set(guild_db_list_id) != set(guild_id_list):
+                        # 新しく作られたチャンネルを抜き出す
+                        missing_channels = [
+                            item
+                            for item in guild_id_list
+                            if item not in guild_db_list_id
+                        ]
+                        # デフォルトで作成
+                        for channel_id in missing_channels:
+                            await db.insert_row(
+                                table_name=TABLE,
+                                row_values={
+                                    'channel_id'        :channel_id,
+                                    'guild_id'          :guild.id,
+                                    'line_ng_channel'   :False,
+                                    'ng_message_type'   :[],
+                                    'message_bot'       :True,
+                                    'ng_users'          :[]
+                                }
+                            )
+                        # 新規作成がない場合、削除されたチャンネルを抜き出す
+                        if len(missing_channels) == 0:
+                            missing_channels = [
+                                item
+                                for item in guild_db_list_id
+                                if item not in guild_id_list
+                            ]
+                            # データベースから削除
+                            for channel_id in missing_channels:
+                                await db.delete_row(
+                                    table_name=TABLE,
+                                    where_clause={
+                                        'channel_id':channel_id
+                                    }
+                                )
+
+                        db_channels:List[Dict] = await db.select_rows(
+                            table_name=TABLE,
+                            columns=[],
+                            where_clause={}
+                        )
+
+                    # カテゴリーごとにチャンネルをソート
                     category_dict,category_index = await sort_channels(channels=guild.channels)
 
                     channels_json = dict()
@@ -360,7 +431,16 @@ class LinePostView(commands.Cog):
 
                     channels_list = list()
                     category_list = list()
+
                     for category_id,category_value in category_index.items():
+                        # ソートしたチャンネルと同じ順番にするため配列番号一覧を格納
+                        index_list = [
+                            list(map(
+                                lambda x:int(x.get('channel_id')),
+                                db_channels
+                            )).index(index.id)
+                            for index in category_dict.get(category_id)
+                        ]
                         # カテゴリーチャンネル一覧
                         category_list.append({
                             'id'    :category_value.id,
@@ -369,35 +449,66 @@ class LinePostView(commands.Cog):
                         # カテゴリー内のチャンネル一覧
                         channels_list = [
                             {
-                                'id'    :chan.id,
-                                'name'  :chan.name,
-                                'type'  :type(chan).__name__
+                                'id'                :chan.id,
+                                'name'              :chan.name,
+                                'type'              :type(chan).__name__,
+                                'line_ng_channel'   :bool(db_channels[i].get('line_ng_channel')),
+                                'ng_message_type'   :db_channels[i].get('ng_message_type'),
+                                'message_bot'       :bool(db_channels[i].get('message_bot')),
+                                'ng_users'          :db_channels[i].get('ng_users')
                             }
-                            for chan in category_dict.get(category_id)
+                            for chan,i in zip(category_dict.get(category_id),index_list)
                         ]
                         channels_dict.update({
                             category_id:channels_list
                         })
 
+
+                    # ソートしたチャンネルと同じ順番にするため配列番号一覧を格納
+                    index_list = [
+                        list(map(
+                            lambda x:int(x.get('channel_id')),
+                            db_channels
+                        )).index(index.id)
+                        for index in category_dict.get('None')
+                    ]
+
                     # カテゴリーなしのチャンネル一覧
                     channels_dict.update({
                         'None':[
                             {
-                                'id'    :none_channel.id,
-                                'name'  :none_channel.name,
-                                'type'  :type(none_channel).__name__
+                                'id'                :none_channel.id,
+                                'name'              :none_channel.name,
+                                'type'              :type(none_channel).__name__,
+                                'line_ng_channel'   :bool(db_channels[i].get('line_ng_channel')),
+                                'ng_message_type'   :db_channels[i].get('ng_message_type'),
+                                'message_bot'       :bool(db_channels[i].get('message_bot')),
+                                'ng_users'          :db_channels[i].get('ng_users')
                             }
-                            for none_channel in category_dict.get('None')
+                            for none_channel,i in zip(category_dict.get('None'),index_list)
                         ]
                     })
+
+                    # ソートしたチャンネルと同じ順番にするため配列番号一覧を格納
+                    index_list = [
+                        list(map(
+                            lambda x:int(x.get('channel_id')),
+                            db_channels
+                        )).index(index.id)
+                        for index in guild.threads
+                    ]
 
                     # スレッド一覧
                     threads = [
                         {
-                            'id'    :thread.id,
-                            'name'  :thread.name
+                            'id'                :thread.id,
+                            'name'              :thread.name,
+                            'line_ng_channel'   :bool(db_channels[i].get('line_ng_channel')),
+                            'ng_message_type'   :db_channels[i].get('ng_message_type'),
+                            'message_bot'       :bool(db_channels[i].get('message_bot')),
+                            'ng_users'          :db_channels[i].get('ng_users')
                         }
-                        for thread in guild.threads
+                        for thread,i in zip(guild.threads,index_list)
                     ]
 
                     channels_json.update({
@@ -407,19 +518,6 @@ class LinePostView(commands.Cog):
                     })
 
                     return {'message':channels_json}
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
-                    # 使用するデータベースのテーブル名
-                    TABLE = f'guilds_line_channel_{guild.id}'
-
-                    c:List[Dict] = await db.select_rows(
-                        table_name=TABLE,
-                        columns=[],
-                        where_clause={}
-                    )
 
 
 
