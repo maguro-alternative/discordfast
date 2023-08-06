@@ -22,7 +22,7 @@ from base.aio_req import (
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser,DiscordChannel
 from model_types.discord_type.discord_request_type import DiscordBaseRequest
 
-from model_types.table_type import GuildLineChannel
+from model_types.table_type import GuildLineChannel,GuildSetPermission
 
 from discord.channel import (
     VoiceChannel,
@@ -357,6 +357,43 @@ class LinePostView(commands.Cog):
                         user_id=discord_user.id,
                         access_token=access_token
                     )
+
+                    # パーミッションの番号を取得
+                    permission_code = await permission.get_permission_code()
+
+                    # アクセス権限の設定を取得
+                    guild_p:List[Dict] = await db.select_rows(
+                        table_name='guild_set_permissions',
+                        columns=[],
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
+                    guild_line_permission = GuildSetPermission(**guild_p[0])
+
+                    # 指定された権限を持っているか、管理者権限を持っているか
+                    and_code = guild_line_permission.line_permission & permission_code
+                    admin_code = 8 & permission_code
+
+                    # ロールid一覧を取得
+                    guild_user_data = guild.get_member(discord_user.id)
+                    guild_user_roles = [
+                        role.id
+                        for role in guild_user_data.roles
+                    ]
+
+                    # 許可されている場合、管理者の場合
+                    if (and_code == permission_code or
+                        admin_code == 8 or
+                        discord_user.id in guild_line_permission.line_user_id_permission or
+                        len(set(guild_line_permission.line_role_id_permission) & set(guild_user_roles)) > 0
+                        ):
+                        # 変更可能
+                        chenge_permission = True
+                    else:
+                        # 変更不可
+                        chenge_permission = False
+
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_line_channel_{guild.id}'
 
@@ -512,12 +549,14 @@ class LinePostView(commands.Cog):
                     ]
 
                     channels_json.update({
-                        'categorys' :category_list,
-                        'channels'  :channels_dict,
-                        'threads'   :threads
+                        'categorys'         :category_list,
+                        'channels'          :channels_dict,
+                        'threads'           :threads,
+                        'chenge_permission' :chenge_permission
                     })
 
-                    return {'message':channels_json}
+                    #return {'message':channels_json}
+                    return JSONResponse(content=channels_json)
 
 
 
