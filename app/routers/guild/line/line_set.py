@@ -17,6 +17,7 @@ from base.aio_req import (
     return_permission,
     oauth_check,
     get_profile,
+    sort_channels,
     sort_discord_channel,
     decrypt_password
 )
@@ -267,7 +268,79 @@ class LineSetView(commands.Cog):
                             'guild_id':guild.id
                         }
                     )
+
                     line_bot = LineBotColunm(**db_line_bot[0])
+
+                    line_notify_token:str = await decrypt_password(encrypted_password=line_bot.line_notify_token)
+                    line_bot_token:str = await decrypt_password(encrypted_password=line_bot.line_bot_token)
+                    line_bot_secret:str = await decrypt_password(encrypted_password=line_bot.line_bot_secret)
+                    line_group_id:str = await decrypt_password(encrypted_password=line_bot.line_group_id)
+                    line_client_id:str = await decrypt_password(encrypted_password=line_bot.line_client_id)
+                    line_client_secret:str = await decrypt_password(encrypted_password=line_bot.line_client_secret)
+
+                    # カテゴリーごとにチャンネルをソート
+                    category_dict,category_index = await sort_channels(channels=guild.channels)
+
+                    channels_json = dict()
+                    channels_dict = dict()
+
+                    channels_list = list()
+                    category_list = list()
+
+                    for category_id,category_value in category_index.items():
+                        # カテゴリーチャンネル一覧
+                        category_list.append({
+                            'id'    :category_value.id,
+                            'name'  :category_value.name
+                        })
+                        # カテゴリー内のチャンネル一覧
+                        channels_list = [
+                            {
+                                'id'    :chan.id,
+                                'name'  :chan.name,
+                                'type'  :type(chan).__name__
+                            }
+                            for chan in category_dict.get(category_id)
+                        ]
+                        channels_dict.update({
+                            category_id:channels_list
+                        })
+                    # カテゴリーなしのチャンネル一覧
+                    channels_dict.update({
+                        'None':[
+                            {
+                                'id'    :chan.id,
+                                'name'  :chan.name,
+                                'type'  :type(chan).__name__
+                            }
+                            for chan in category_dict.get('None')
+                        ]
+                    })
+
+                    # スレッド一覧
+                    threads = [
+                        {
+                            'id'    :thread.id,
+                            'name'  :thread.name
+                        }
+                        for thread in guild.threads
+                    ]
+
+                    # フロント側に送るjsonを作成(linebotの情報は先頭3桁のみ)
+                    channels_json.update({
+                        'categorys'         :category_list,
+                        'channels'          :channels_dict,
+                        'threads'           :threads,
+                        'chenge_permission' :chenge_permission,
+                        'line_notify_token' :line_notify_token[:3],
+                        'line_bot_token'    :line_bot_token[:3],
+                        'line_bot_secret'   :line_bot_secret[:3],
+                        'line_group_id'     :line_group_id[:3],
+                        'line_client_id'    :line_client_id[:3],
+                        'line_client_secret':line_client_secret[:3]
+                    })
+
+                return JSONResponse(content=channels_json)
 
 
 
