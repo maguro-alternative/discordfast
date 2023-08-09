@@ -27,6 +27,8 @@ except ModuleNotFoundError:
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
@@ -92,14 +94,29 @@ class GuildsView(commands.Cog):
             Returns:
                 _type_: サーバー一覧
             """
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # ログインユーザが所属しているサーバを取得
-            user_in_guild_get:List[Dict] = await aio_get_request(
-                url = DISCORD_BASE_URL + '/users/@me/guilds',
-                headers = {
-                    'Authorization': f'Bearer {access_token}'
-                }
-            )
+            # デバッグモード
+            if DEBUG_MODE == False:
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # ログインユーザが所属しているサーバを取得
+                user_in_guild_get:List[Dict] = await aio_get_request(
+                    url=f'{DISCORD_BASE_URL}/users/@me/guilds',
+                    headers={
+                        'Authorization': f'Bearer {access_token}'
+                    }
+                )
+            else:
+                user_in_guild_get:List[Dict] = [
+                    {
+                        'id'                :bot_guild.id,
+                        'name'              :bot_guild.name,
+                        'icon'              :bot_guild.icon,
+                        'owner'             :bot_guild.owner,
+                        'permissions'       :bot_guild.premium_tier,
+                        'features'          :bot_guild.features,
+                        'permissions_new'   :bot_guild.premium_tier
+                    }
+                    for bot_guild in self.bot.guilds
+                ]
             user_guild_id = [
                 bot_guild.id
                 for bot_guild in self.bot.guilds

@@ -16,8 +16,6 @@ from base.aio_req import (
     return_permission,
     oauth_check,
     get_profile,
-    sort_discord_channel,
-    sort_channels,
     decrypt_password
 )
 from model_types.discord_type.guild_permission import Permission

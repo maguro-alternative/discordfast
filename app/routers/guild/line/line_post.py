@@ -549,7 +549,7 @@ class LinePostView(commands.Cog):
                         'channels'          :channels_dict,
                         'threads'           :threads,
                         'users'             :guild_users,
-                        'chengePermission' :chenge_permission
+                        'chengePermission'  :chenge_permission
                     })
 
                     #return {'message':channels_json}
