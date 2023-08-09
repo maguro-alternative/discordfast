@@ -417,14 +417,13 @@ class VcSignalView(commands.Cog):
                             {
                                 'id'                :chan.id,
                                 'name'              :chan.name,
-                                'send_signal'       :db_vc_channels[i].send_signal,
-                                'send_channel_id'   :db_vc_channels[i].send_channel_id,
-                                'join_bot'          :db_vc_channels[i].join_bot,
-                                'everyone_mention'  :db_vc_channels[i].everyone_mention,
-                                'mention_role_id'   :db_vc_channels[i].mention_role_id
+                                'sendSignal'        :db_vc_channels[i].send_signal,
+                                'sendChannelId'     :db_vc_channels[i].send_channel_id,
+                                'joinBot'           :db_vc_channels[i].join_bot,
+                                'everyoneMention'   :db_vc_channels[i].everyone_mention,
+                                'mentionRoleId'     :db_vc_channels[i].mention_role_id
                             }
                             for chan,i in zip(vc_list,index_list)
-                            #if chan.type == ChannelType.voice
                         ]
 
                         vc_channel_dict.update({
@@ -471,11 +470,11 @@ class VcSignalView(commands.Cog):
                             {
                                 'id'                :none_channel.id,
                                 'name'              :none_channel.name,
-                                'send_signal'       :db_vc_channels[i].send_signal,
-                                'send_channel_id'   :db_vc_channels[i].send_channel_id,
-                                'join_bot'          :db_vc_channels[i].join_bot,
-                                'everyone_mention'  :db_vc_channels[i].everyone_mention,
-                                'mention_role_id'   :db_vc_channels[i].mention_role_id
+                                'sendSignal'        :db_vc_channels[i].send_signal,
+                                'sendChannelId'     :db_vc_channels[i].send_channel_id,
+                                'joinBot'           :db_vc_channels[i].join_bot,
+                                'everyoneMention'   :db_vc_channels[i].everyone_mention,
+                                'mentionRoleId'     :db_vc_channels[i].mention_role_id
                             }
                             for none_channel,i in zip(vc_list,index_list)
                         ]
@@ -505,8 +504,9 @@ class VcSignalView(commands.Cog):
                     # サーバー内のメンバー一覧
                     guild_users = [
                         {
-                            'id'    :user.id,
-                            'name'  :user.name
+                            'id'                :user.id,
+                            'name'              :user.name,
+                            'userDisplayName'   :user.display_name
                         }
                         for user in guild.members
                     ]
@@ -523,11 +523,11 @@ class VcSignalView(commands.Cog):
                     channels_json.update({
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
-                        'vc_channels'       :vc_channel_dict,
+                        'vcChannels'        :vc_channel_dict,
                         'threads'           :threads,
                         'users'             :guild_users,
                         'roles'             :guild_roles,
-                        'chenge_permission' :chenge_permission
+                        'chengePermission'  :chenge_permission
                     })
 
                     return JSONResponse(content=channels_json)

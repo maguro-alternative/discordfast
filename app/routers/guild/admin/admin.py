@@ -46,6 +46,9 @@ DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
@@ -133,24 +136,32 @@ class AdminView(commands.Cog):
         ) -> JSONResponse:
             if db.conn == None:
                 await db.connect()
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
-            TABLE_NAME = 'guild_set_permissions'
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
+            TABLE_NAME = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
-                    # サーバの権限を取得
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+                    else:
+                        from model_types.discord_type.guild_permission import Permission
+                        permission = Permission()
+                        permission.administrator = True
                     guild_members = [
                         {
                             'userId'            :member.id,
@@ -166,7 +177,7 @@ class AdminView(commands.Cog):
                         }
                         for role in guild.roles
                     ]
-                    p = await db.select_rows(
+                    p:List[Dict] = await db.select_rows(
                         table_name=TABLE_NAME,
                         columns=[],
                         where_clause={

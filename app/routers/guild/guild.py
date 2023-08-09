@@ -37,6 +37,8 @@ db = PostgresDB(
     host=HOST
 )
 
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -113,23 +115,31 @@ class GuildSetView(commands.Cog):
             Returns:
                 JSONResponse: _description_
             """
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
-                    # サーバの権限を取得
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+
+                        permission_code = await permission.get_permission_code()
+                    else:
+                        permission_code = 0
                     if guild.icon == None:
                         guild_icon_url = ''
                     else:
@@ -148,7 +158,8 @@ class GuildSetView(commands.Cog):
 
                     json_content = {
                         'guildIconUrl'  :guild_icon_url,
-                        'permissionCode':await permission.get_permission_code(),
+                        'guildName'     :guild.name,
+                        'permissionCode':permission_code,
                         # 'taskList':task_list
                     }
                     return JSONResponse(content=json_content)

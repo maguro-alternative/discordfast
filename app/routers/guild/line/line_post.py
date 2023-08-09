@@ -472,13 +472,13 @@ class LinePostView(commands.Cog):
                         # カテゴリー内のチャンネル一覧
                         channels_list = [
                             {
-                                'id'                :chan.id,
-                                'name'              :chan.name,
-                                'type'              :type(chan).__name__,
-                                'line_ng_channel'   :db_channels[i].line_ng_channel,
-                                'ng_message_type'   :db_channels[i].ng_message_type,
-                                'message_bot'       :db_channels[i].message_bot,
-                                'ng_users'          :db_channels[i].ng_users
+                                'id'            :chan.id,
+                                'name'          :chan.name,
+                                'type'          :type(chan).__name__,
+                                'lineNgChannel' :db_channels[i].line_ng_channel,
+                                'ngMessageType' :db_channels[i].ng_message_type,
+                                'messageBot'    :db_channels[i].message_bot,
+                                'ngUsers'       :db_channels[i].ng_users
                             }
                             for chan,i in zip(category_dict.get(category_id),index_list)
                         ]
@@ -500,13 +500,13 @@ class LinePostView(commands.Cog):
                     channels_dict.update({
                         'None':[
                             {
-                                'id'                :none_channel.id,
-                                'name'              :none_channel.name,
-                                'type'              :type(none_channel).__name__,
-                                'line_ng_channel'   :db_channels[i].line_ng_channel,
-                                'ng_message_type'   :db_channels[i].ng_message_type,
-                                'message_bot'       :db_channels[i].message_bot,
-                                'ng_users'          :db_channels[i].ng_users
+                                'id'            :none_channel.id,
+                                'name'          :none_channel.name,
+                                'type'          :type(none_channel).__name__,
+                                'lineNgChannel' :db_channels[i].line_ng_channel,
+                                'ngMessageType' :db_channels[i].ng_message_type,
+                                'messageBot'    :db_channels[i].message_bot,
+                                'ngUsers'       :db_channels[i].ng_users
                             }
                             for none_channel,i in zip(category_dict.get('None'),index_list)
                         ]
@@ -524,12 +524,12 @@ class LinePostView(commands.Cog):
                     # スレッド一覧
                     threads = [
                         {
-                            'id'                :thread.id,
-                            'name'              :thread.name,
-                            'line_ng_channel'   :db_channels[i].line_ng_channel,
-                            'ng_message_type'   :db_channels[i].ng_message_type,
-                            'message_bot'       :db_channels[i].message_bot,
-                            'ng_users'          :db_channels[i].ng_users
+                            'id'            :thread.id,
+                            'name'          :thread.name,
+                            'lineNgChannel' :db_channels[i].line_ng_channel,
+                            'ngMessageType' :db_channels[i].ng_message_type,
+                            'messageBot'    :db_channels[i].message_bot,
+                            'ngUsers'       :db_channels[i].ng_users
                         }
                         for thread,i in zip(guild.threads,index_list)
                     ]
@@ -537,8 +537,9 @@ class LinePostView(commands.Cog):
                     # サーバー内のメンバー一覧
                     guild_users = [
                         {
-                            'id'    :user.id,
-                            'name'  :user.name
+                            'id'                :user.id,
+                            'name'              :user.name,
+                            'userDisplayName'   :user.display_name
                         }
                         for user in guild.members
                     ]
@@ -548,7 +549,7 @@ class LinePostView(commands.Cog):
                         'channels'          :channels_dict,
                         'threads'           :threads,
                         'users'             :guild_users,
-                        'chenge_permission' :chenge_permission
+                        'chengePermission' :chenge_permission
                     })
 
                     #return {'message':channels_json}

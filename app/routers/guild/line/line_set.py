@@ -340,13 +340,13 @@ class LineSetView(commands.Cog):
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
                         'threads'           :threads,
-                        'chenge_permission' :chenge_permission,
-                        'line_notify_token' :line_notify_token[:3],
-                        'line_bot_token'    :line_bot_token[:3],
-                        'line_bot_secret'   :line_bot_secret[:3],
-                        'line_group_id'     :line_group_id[:3],
-                        'line_client_id'    :line_client_id[:3],
-                        'line_client_secret':line_client_secret[:3]
+                        'chengePermission'  :chenge_permission,
+                        'lineNotifyToken'   :line_notify_token[:3],
+                        'lineBotToken'      :line_bot_token[:3],
+                        'lineBotSecret'     :line_bot_secret[:3],
+                        'lineGroupId'       :line_group_id[:3],
+                        'lineClientId'      :line_client_id[:3],
+                        'lineClientSecret'  :line_client_secret[:3]
                     })
 
                 return JSONResponse(content=channels_json)

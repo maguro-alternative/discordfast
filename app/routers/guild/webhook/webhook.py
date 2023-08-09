@@ -261,8 +261,8 @@ class WebhookView(commands.Cog):
                         {
                             'id'            :w.id,
                             'name'          :w.name,
-                            'channel_id'    :w.channel_id,
-                            'channel_name'  :guild.get_channel(w.channel_id).name
+                            'channelId'     :w.channel_id,
+                            'channelName'   :guild.get_channel(w.channel_id).name
                         }
                         for w in all_webhook
                     ]
@@ -270,8 +270,9 @@ class WebhookView(commands.Cog):
                     # サーバー内のメンバー一覧
                     guild_users = [
                         {
-                            'id'    :user.id,
-                            'name'  :user.name
+                            'id'                :user.id,
+                            'name'              :user.name,
+                            'userDisplayName'   :user.display_name
                         }
                         for user in guild.members
                     ]
@@ -287,10 +288,10 @@ class WebhookView(commands.Cog):
 
                     channels_json.update({
                         'webhooks'          :webhooks,
-                        'guild_users'       :guild_users,
-                        'guild_roles'       :guild_roles,
-                        'chenge_permission' :chenge_permission,
-                        'webhook_set'       :db_webhooks
+                        'guildUsers'        :guild_users,
+                        'guildRoles'        :guild_roles,
+                        'chengePermission'  :chenge_permission,
+                        'webhookSet'        :db_webhooks
                     })
 
                     return JSONResponse(content=channels_json)
