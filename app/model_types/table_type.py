@@ -1,6 +1,37 @@
 from pydantic import BaseModel,validator
 from typing import List,Optional,Union,Any
 
+class GuildVcChannel(BaseModel):
+    """
+    ボイスチャンネルの入退室管理をするテーブル
+    param:
+    vc_id           :int
+        PRIMARY KEY
+        ボイスチャンネルのid
+    guild_id        :int
+        Discordのサーバid
+    send_signal     :bool
+        入退室があった場合通知するかどうか
+        Trueで通知する
+    send_channel_id :int
+        入退室の旨を送信するチャンネルのid
+    join_bot        :bool
+        Botが入退室した場合通知するか
+        Trueだと通知しない
+    everyone_mention:bool
+        @everyoneメンションで通知するか
+        Trueで通知する
+    mention_role_id :List[int]
+        入退室があった場合に通知するロールのid
+    """
+    vc_id           :int
+    guild_id        :int
+    send_signal     :bool
+    send_channel_id :int
+    join_bot        :bool
+    everyone_mention:bool
+    mention_role_id :List[int]
+
 class GuildLineChannel(BaseModel):
     """
     DiscordからLINEへの送信設定を管理するテーブル

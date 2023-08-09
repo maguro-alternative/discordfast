@@ -41,6 +41,8 @@ DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
 
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
@@ -235,29 +237,36 @@ class LineSetView(commands.Cog):
         ):
             if db.conn == None:
                 await db.connect()
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
-                    # サーバの権限を取得
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
-                    # 編集可能かどうか
-                    chenge_permission = await chenge_permission_check(
-                        user_id=discord_user.id,
-                        permission=permission,
-                        guild=guild
-                    )
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+
+                        # 編集可能かどうか
+                        chenge_permission = await chenge_permission_check(
+                            user_id=discord_user.id,
+                            permission=permission,
+                            guild=guild
+                        )
+                    else:
+                        chenge_permission = False
                     # 使用するデータベースのテーブル名
                     TABLE = f'line_bot'
 

@@ -46,6 +46,9 @@ DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+
 USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
 DATABASE = os.getenv('PGDATABASE')
@@ -341,30 +344,36 @@ class LinePostView(commands.Cog):
         ) -> JSONResponse:
             if db.conn == None:
                 await db.connect()
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
-                    # サーバの権限を取得
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
 
-                    # 編集可能かどうか
-                    chenge_permission = await chenge_permission_check(
-                        user_id=discord_user.id,
-                        permission=permission,
-                        guild=guild
-                    )
+                        # 編集可能かどうか
+                        chenge_permission = await chenge_permission_check(
+                            user_id=discord_user.id,
+                            permission=permission,
+                            guild=guild
+                        )
+                    else:
+                        chenge_permission = False
 
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_line_channel_{guild.id}'
@@ -432,6 +441,11 @@ class LinePostView(commands.Cog):
                             where_clause={}
                         )
 
+                    db_channels:List[GuildLineChannel] = [
+                        GuildLineChannel(**b)
+                        for b in db_channels
+                    ]
+
                     # カテゴリーごとにチャンネルをソート
                     category_dict,category_index = await sort_channels(channels=guild.channels)
 
@@ -445,7 +459,7 @@ class LinePostView(commands.Cog):
                         # ソートしたチャンネルと同じ順番にするため配列番号一覧を格納
                         index_list = [
                             list(map(
-                                lambda x:int(x.get('channel_id')),
+                                lambda x:int(x.channel_id),
                                 db_channels
                             )).index(index.id)
                             for index in category_dict.get(category_id)
@@ -461,10 +475,10 @@ class LinePostView(commands.Cog):
                                 'id'                :chan.id,
                                 'name'              :chan.name,
                                 'type'              :type(chan).__name__,
-                                'line_ng_channel'   :bool(db_channels[i].get('line_ng_channel')),
-                                'ng_message_type'   :db_channels[i].get('ng_message_type'),
-                                'message_bot'       :bool(db_channels[i].get('message_bot')),
-                                'ng_users'          :db_channels[i].get('ng_users')
+                                'line_ng_channel'   :db_channels[i].line_ng_channel,
+                                'ng_message_type'   :db_channels[i].ng_message_type,
+                                'message_bot'       :db_channels[i].message_bot,
+                                'ng_users'          :db_channels[i].ng_users
                             }
                             for chan,i in zip(category_dict.get(category_id),index_list)
                         ]
@@ -476,7 +490,7 @@ class LinePostView(commands.Cog):
                     # ソートしたチャンネルと同じ順番にするため配列番号一覧を格納
                     index_list = [
                         list(map(
-                            lambda x:int(x.get('channel_id')),
+                            lambda x:int(x.channel_id),
                             db_channels
                         )).index(index.id)
                         for index in category_dict.get('None')
@@ -489,10 +503,10 @@ class LinePostView(commands.Cog):
                                 'id'                :none_channel.id,
                                 'name'              :none_channel.name,
                                 'type'              :type(none_channel).__name__,
-                                'line_ng_channel'   :bool(db_channels[i].get('line_ng_channel')),
-                                'ng_message_type'   :db_channels[i].get('ng_message_type'),
-                                'message_bot'       :bool(db_channels[i].get('message_bot')),
-                                'ng_users'          :db_channels[i].get('ng_users')
+                                'line_ng_channel'   :db_channels[i].line_ng_channel,
+                                'ng_message_type'   :db_channels[i].ng_message_type,
+                                'message_bot'       :db_channels[i].message_bot,
+                                'ng_users'          :db_channels[i].ng_users
                             }
                             for none_channel,i in zip(category_dict.get('None'),index_list)
                         ]
@@ -501,7 +515,7 @@ class LinePostView(commands.Cog):
                     # ソートしたチャンネルと同じ順番にするため配列番号一覧を格納
                     index_list = [
                         list(map(
-                            lambda x:int(x.get('channel_id')),
+                            lambda x:int(x.channel_id),
                             db_channels
                         )).index(index.id)
                         for index in guild.threads
@@ -512,10 +526,10 @@ class LinePostView(commands.Cog):
                         {
                             'id'                :thread.id,
                             'name'              :thread.name,
-                            'line_ng_channel'   :bool(db_channels[i].get('line_ng_channel')),
-                            'ng_message_type'   :db_channels[i].get('ng_message_type'),
-                            'message_bot'       :bool(db_channels[i].get('message_bot')),
-                            'ng_users'          :db_channels[i].get('ng_users')
+                            'line_ng_channel'   :db_channels[i].line_ng_channel,
+                            'ng_message_type'   :db_channels[i].ng_message_type,
+                            'message_bot'       :db_channels[i].message_bot,
+                            'ng_users'          :db_channels[i].ng_users
                         }
                         for thread,i in zip(guild.threads,index_list)
                     ]
