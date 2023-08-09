@@ -502,11 +502,31 @@ class VcSignalView(commands.Cog):
                         for thread in guild.threads
                     ]
 
+                    # サーバー内のメンバー一覧
+                    guild_users = [
+                        {
+                            'id'    :user.id,
+                            'name'  :user.name
+                        }
+                        for user in guild.members
+                    ]
+
+                    # サーバー内でのロール一覧
+                    guild_roles = [
+                        {
+                            'id'    :user.id,
+                            'name'  :user.name
+                        }
+                        for user in guild.roles
+                    ]
+
                     channels_json.update({
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
                         'vc_channels'       :vc_channel_dict,
                         'threads'           :threads,
+                        'users'             :guild_users,
+                        'roles'             :guild_roles,
                         'chenge_permission' :chenge_permission
                     })
 

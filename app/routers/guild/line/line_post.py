@@ -534,10 +534,20 @@ class LinePostView(commands.Cog):
                         for thread,i in zip(guild.threads,index_list)
                     ]
 
+                    # サーバー内のメンバー一覧
+                    guild_users = [
+                        {
+                            'id'    :user.id,
+                            'name'  :user.name
+                        }
+                        for user in guild.members
+                    ]
+
                     channels_json.update({
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
                         'threads'           :threads,
+                        'users'             :guild_users,
                         'chenge_permission' :chenge_permission
                     })
 
