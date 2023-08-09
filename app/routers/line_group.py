@@ -173,7 +173,7 @@ class LineGroup(commands.Cog):
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
                 access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-                # Discordのユーザ情報を取得
+                # LINEのユーザ情報を取得
                 line_user = await aio_get_request(
                     url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
                     headers={}
