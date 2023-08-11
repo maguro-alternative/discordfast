@@ -240,14 +240,14 @@ class LineGroupSuccess(commands.Cog):
                         # 変更URL
                         #url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/group/'
 
-                        change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel(request.default_channel_id)}」に変更されました。"
+                        change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel_or_thread(request.default_channel_id).name}」に変更されました。"
                         #change_text += f"\n変更はこちらから\n{url}"
 
                         # LINEのインスタンスを作成
                         line_bot_api = LineBotAPI(
-                            notify_token = line_notify_token,
-                            line_bot_token = line_bot_token,
-                            line_group_id = line_group_id
+                            notify_token=line_notify_token,
+                            line_bot_token=line_bot_token,
+                            line_group_id=line_group_id
                         )
                         # LINEとDiscord双方に変更を送信
                         await line_bot_api.push_message_notify(

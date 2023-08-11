@@ -1,5 +1,36 @@
 from pydantic import BaseModel,validator
 from typing import List,Optional,Union,Any
+from uuid import UUID
+
+class LinePostChannelList(BaseModel):
+    channel_id      :int
+    line_ng_channel :bool
+    ng_message_type :List[str]
+    message_bot     :bool
+    ng_users        :List[int]
+
+class VcSignalChannelList(BaseModel):
+    vc_id           :int
+    send_signal     :bool
+    send_channel_id :int
+    join_bot        :bool
+    everyone_mention:bool
+    mention_role_id :List[int]
+
+class WebhookList(BaseModel):
+    webhook_uuid        :Union[UUID,str]
+    webhook_id          :int
+    subscription_type   :str
+    subscription_id     :str
+    mention_roles       :List[int]
+    mention_members     :List[int]
+    ng_or_word          :List[str]
+    ng_and_word         :List[str]
+    search_or_word      :List[str]
+    search_and_word     :List[str]
+    mention_or_word     :List[str]
+    mention_and_word    :List[str]
+    created_at          :str
 
 class AdminSuccessJson(BaseModel):
     """
@@ -71,3 +102,30 @@ class LineGroupSuccessJson(BaseModel):
     access_token        :str
     default_channel_id  :int
     change_alert        :bool
+
+class LinePostSuccessJson(BaseModel):
+    guild_id    :int
+    access_token:str
+    channel_list:List[LinePostChannelList]
+
+class LineSetSuccessJson(BaseModel):
+    guild_id            :int
+    access_token        :str
+    line_notify_token   :Optional[str]
+    line_bot_token      :Optional[str]
+    line_bot_secret     :Optional[str]
+    line_group_id       :Optional[str]
+    line_client_id      :Optional[str]
+    line_client_secret  :Optional[str]
+    default_channel_id  :int
+    debug_mode          :bool
+
+class VcSignalSuccessJson(BaseModel):
+    guild_id            :int
+    access_token        :str
+    vc_channel_list     :List[VcSignalChannelList]
+
+class WebhookSuccessJson(BaseModel):
+    guild_id    :int
+    access_token:str
+    webhook_list:List[WebhookList]

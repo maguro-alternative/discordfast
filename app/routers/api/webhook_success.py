@@ -12,12 +12,15 @@ import uuid
 from datetime import datetime,timezone
 
 from base.database import PostgresDB
-from base.aio_req import pickle_write
+from base.aio_req import pickle_write,return_permission,get_profile,decrypt_password
 from core.db_pickle import *
 from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
 
 from routers.api.chack.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+
+from model_types.table_type import GuildSetPermission,WebhookSet
+from model_types.post_json_type import WebhookSuccessJson
 
 from discord.ext import commands
 try:
@@ -40,6 +43,9 @@ db = PostgresDB(
     database=DATABASE,
     host=HOST
 )
+
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -277,3 +283,124 @@ class WebhookSuccess(commands.Cog):
                     'title':'成功'
                 }
             )
+
+        @self.router.post('/api/webhook-success-json')
+        async def webhook_post(
+            request:WebhookSuccessJson
+        ):
+            if db.conn == None:
+                await db.connect()
+
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
+
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
+
+            ADMIN_TABLE = 'guild_set_permissions'
+
+            for guild in self.bot.guilds:
+                if request.guild_id == guild.id:
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+                        per = await db.select_rows(
+                            table_name=ADMIN_TABLE,
+                            columns=[],
+                            where_clause={
+                                'guild_id':guild.id
+                            }
+                        )
+                        member_roles = [
+                            role.id
+                            for role in guild.get_member(discord_user.id).roles
+                        ]
+                        line_post_per = GuildSetPermission(**per[0])
+                        permission_code = await permission.get_permission_code()
+
+                        # 編集可能かどうか
+                        if((line_post_per & permission_code) and
+                        discord_user.id in line_post_per.line_user_id_permission and
+                        len(set(member_roles) & set(line_post_per.line_role_id_permission))):
+                            pass
+                        else:
+                            return JSONResponse(content={'message':'access token Unauthorized'})
+                    else:
+                        from model_types.discord_type.guild_permission import Permission
+                        permission = Permission()
+                        permission.administrator = True
+
+                    TABLE = f'webhook_{guild.id}'
+
+                    db_webhook = await db.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={}
+                    )
+
+                    db_webhook = [
+                        WebhookSet(**webhook)
+                        for webhook in db_webhook
+                    ]
+
+                    db_webhook_id_list = [
+                        webhook_id.uuid
+                        for webhook_id in db_webhook
+                    ]
+
+                    for webhook in request.webhook_list:
+                        row_value = {
+                            'webhook_id'        :webhook.webhook_id,
+                            'subscription_type' :webhook.subscription_type,
+                            'subscription_id'   :webhook.subscription_id,
+                            'mention_roles'     :webhook.mention_roles,
+                            'mention_members'   :webhook.mention_members,
+                            'ng_or_word'        :webhook.ng_or_word,
+                            'ng_and_word'       :webhook.ng_and_word,
+                            'search_or_word'    :webhook.search_or_word,
+                            'search_and_word'   :webhook.search_and_word,
+                            'mention_or_word'   :webhook.mention_or_word,
+                            'mention_and_word'  :webhook.mention_and_word
+                        }
+                        # 更新
+                        if webhook.webhook_uuid in db_webhook_id_list:
+                            # デバッグモード
+                            if DEBUG_MODE == False:
+                                await db.update_row(
+                                    table_name=TABLE,
+                                    row_values=row_value,
+                                    where_clause={
+                                        'uuid':webhook.webhook_uuid
+                                    }
+                                )
+                            else:
+                                from pprint import pprint
+                                pprint(row_value)
+
+                        else:
+                            uuid_val = uuid.uuid4()
+                            row_value.update({
+                                'uuid'      :uuid_val,
+                                'guild_id'  :guild.id
+                            })
+                            # デバッグモード
+                            if DEBUG_MODE == False:
+                                await db.insert_row(
+                                    table_name=TABLE,
+                                    row_values={}
+                                )
+                            else:
+                                from pprint import pprint
+                                pprint(row_value)
+
+                    return JSONResponse(content={'message':'success!!'})
