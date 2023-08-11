@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Header
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any,Union,Tuple
+from typing import List,Dict,Any,Union,Optional
 import pprint
 
 
@@ -337,17 +337,17 @@ class LinePostView(commands.Cog):
                 }
             )
 
-        @self.router.post('/guild/line-post')
+        @self.router.get('/guild/{guild_id}/line-post/view')
         async def line_post(
-            request:DiscordBaseRequest
-            #request:Request
+            guild_id:int,
+            token   :Optional[str]=Header(None)
         ) -> JSONResponse:
             if db.conn == None:
                 await db.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -356,7 +356,7 @@ class LinePostView(commands.Cog):
                     return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if guild_id == guild.id:
                     # デバッグモード
                     if DEBUG_MODE == False:
                         # サーバの権限を取得

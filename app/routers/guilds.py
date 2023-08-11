@@ -83,8 +83,10 @@ class GuildsView(commands.Cog):
                 }
             )
 
-        @self.router.post('/guilds')
-        async def guilds(request:DiscordGuildsRequest):
+        @self.router.post('/guilds/view')
+        async def guilds(
+            request:DiscordGuildsRequest
+        ):
             """
             サーバー一覧を取得
 

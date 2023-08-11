@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException,Header
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict
+from typing import List,Dict,Optional
 
 from base.database import PostgresDB
 from base.aio_req import (
@@ -163,16 +163,19 @@ class LineGroup(commands.Cog):
                 }
             )
 
-        @self.router.post('/group')
+        @self.router.get('/group/{guild_id}/view')
         async def group(
-            request:LineBaseRequest
+            guild_id:int,
+            token   :Optional[str]=Header(None),
+            sub     :Optional[str]=Header(None)
         ):
             if db.conn == None:
                 await db.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
+                user_sub:str = await decrypt_password(decrypt_password=sub.encode('utf-8'))
                 # LINEのユーザ情報を取得
                 line_user = await aio_get_request(
                     url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
@@ -194,12 +197,12 @@ class LineGroup(commands.Cog):
             TABLE = 'line_bot'
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if guild_id == guild.id:
                     l = await db.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={
-                            'guild_id':request.guild_id
+                            'guild_id':guild_id
                         }
                     )
 
@@ -216,7 +219,7 @@ class LineGroup(commands.Cog):
                     if DEBUG_MODE == False:
                         # グループIDが有効かどうか判断
                         r = await aio_get_request(
-                            url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{request.sub}",
+                            url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{user_sub}",
                             headers={
                                 'Authorization': f'Bearer {line_bot_token}'
                             }
