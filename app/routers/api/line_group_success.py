@@ -22,8 +22,10 @@ from core.db_pickle import *
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
 
 from model_types.line_type.line_message import LineBotAPI
 from model_types.discord_type.message_creater import ReqestDiscord
@@ -38,17 +40,6 @@ LINE_BOT_URL = 'https://api.line.me/v2/bot'
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -69,7 +60,8 @@ class LineGroupSuccess(commands.Cog):
             form = await request.form()
             default_channel_id:int = int(form.get('default_channel_id'))
 
-            await db.connect()
+            if db.conn == None:
+                await db.connect()
             await db.update_row(
                 table_name=TABLE,
                 row_values={
@@ -80,25 +72,22 @@ class LineGroupSuccess(commands.Cog):
                 }
             )
             # 更新後のテーブルを取得
-            table_fetch = await db.select_rows(
+            table_fetch:List[dict] = await db.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
-            await db.disconnect()
+            #await db.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             # LINE Botのトークンなどを取り出す
-            line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
+            #line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
 
             bot_info:List[dict] = [
                 bot
-                for bot in line_bot_fetch
+                for bot in table_fetch #line_bot_fetch
                 if int(bot.get('guild_id')) == int(form.get('guild_id'))
             ]
 
@@ -109,9 +98,9 @@ class LineGroupSuccess(commands.Cog):
 
             # LINEのインスタンスを作成
             line_bot_api = LineBotAPI(
-                notify_token = line_notify_token,
-                line_bot_token = line_bot_token,
-                line_group_id = line_group_id
+                notify_token=line_notify_token,
+                line_bot_token=line_bot_token,
+                line_group_id=line_group_id
             )
 
             # Discordのインスタンスを作成

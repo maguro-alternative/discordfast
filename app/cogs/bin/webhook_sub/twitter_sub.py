@@ -3,9 +3,13 @@ import aiohttp
 try:
     from app.cogs.bin.tweetget import Twitter_Get_Tweet
     from app.cogs.bin.base_type.tweet_type import TwitterTweet
+    from app.core.db_pickle import db
+    from app.model_types.table_type import WebhookSet
 except ModuleNotFoundError:
     from cogs.bin.tweetget import Twitter_Get_Tweet
     from cogs.bin.base_type.tweet_type import TwitterTweet
+    from core.db_pickle import db
+    from model_types.table_type import WebhookSet
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -19,19 +23,8 @@ from base.aio_req import (
     pickle_write
 )
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
 async def twitter_subsc(
-    webhook:Dict,
+    webhook:WebhookSet,
     webhook_url:str,
     table_name:str
 ) -> None:
@@ -39,7 +32,7 @@ async def twitter_subsc(
     twitterの最新ツイートを取得し、WebHookで投稿する
 
     pream:
-    webhook:Dict
+    webhook:WebhookSet
         webhookの情報を示す辞書型オブジェクト
     webhook_url
         webhookのurl
@@ -48,17 +41,17 @@ async def twitter_subsc(
     """
     # クラスを宣言
     twitter = Twitter_Get_Tweet(
-        screen_name=webhook.get('subscription_id'),
+        screen_name=webhook.subscription_id,
         search_word=""
     )
-    
+
     # 最新ツイートと更新日時を取得(ない場合はそのまま)
     tweetlist, create_at = await twitter.mention_tweet_make(
         webhook_fetch=webhook
     )
 
     #print(tweetlist)
-    
+
     async with aiohttp.ClientSession() as sessions:
         # 取得したツイートを一つ一つwebhookで送信
         for tweet in tweetlist:
@@ -73,7 +66,7 @@ async def twitter_subsc(
                 data.update({'username':username})
             if image_url != None:
                 data.update({'avatar_url':image_url})
-            
+
             async with sessions.post(
                 url=webhook_url,
                 data=data
@@ -91,7 +84,7 @@ async def twitter_subsc(
                             'created_at':create_at
                         },
                         where_clause={
-                            'uuid':webhook.get('uuid')
+                            'uuid':webhook.uuid
                         }
                     )
                     table_fetch = await db.select_rows(
@@ -100,10 +93,10 @@ async def twitter_subsc(
                         where_clause={}
                     )
 
-                    await db.disconnect()
+                    #await db.disconnect()
 
                     # pickleファイルに書き込み
-                    await pickle_write(
-                        filename=table_name,
-                        table_fetch=table_fetch
-                    )
+                    #await pickle_write(
+                        #filename=table_name,
+                        #table_fetch=table_fetch
+                    #)

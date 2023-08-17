@@ -27,20 +27,10 @@ from model_types.table_type import GuildSetPermission
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
+    from app.core.db_pickle import db
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -102,12 +92,23 @@ class AdminView(commands.Cog):
             )
 
             # キャッシュ読み取り
-            guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE_NAME)
+            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE_NAME)
             guild_table = [
-                g
-                for g in guild_table_fetch
-                if int(g.get('guild_id')) == guild_id
+                #g
+                #for g in guild_table_fetch
+                #if int(g.get('guild_id')) == guild_id
             ]
+
+            if db.conn == None:
+                await db.connect()
+
+            guild_table:List[Dict[str,Any]] = await db.select_rows(
+                table_name=TABLE_NAME,
+                columns=[],
+                where_clause={
+                    'guild_id':guild_id
+                }
+            )
 
             user_permission:str = 'normal'
 

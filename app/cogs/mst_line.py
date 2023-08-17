@@ -19,16 +19,20 @@ from pydub import AudioSegment
 from dotenv import load_dotenv
 load_dotenv()
 
-from base.aio_req import pickle_read,decrypt_password
-
+from base.aio_req import decrypt_password
 try:
     from model_types.line_type.line_message import LineBotAPI,Voice_File
+    from model_types.table_type import GuildLineChannel,LineBotColunm,GuildSetPermission
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.model_types.line_type.line_message import LineBotAPI,Voice_File
+    from app.model_types.table_type import GuildLineChannel,LineBotColunm,GuildSetPermission
     from app.core.start import DBot
+    from app.core.db_pickle import db
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+
 
 class mst_line(commands.Cog):
     def __init__(self, bot : DBot):
@@ -41,48 +45,50 @@ class mst_line(commands.Cog):
         # 使用するデータベースのテーブル名
         TABLE = f'guilds_line_channel_{message.guild.id}'
 
+        if db.conn == None:
+            await db.connect()
+
         # 読み取り
-        line_fetch:List[dict] = await pickle_read(filename=TABLE)
-        line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
+        line_bot_tabel_fetch:List[dict] = await db.select_rows(
+            table_name='line_bot',
+            columns=[],
+            where_clause={
+                'guild_id':message.guild.id
+            }
+        )
+        line_tabel_fetch:List[dict] = await db.select_rows(
+            table_name=TABLE,
+            columns=[],
+            where_clause={
+                'channel_id':message.channel.id
+            }
+        )
+
+        line_bot_fetch = LineBotColunm(**line_bot_tabel_fetch[0])
+        line_fetch = GuildLineChannel(**line_tabel_fetch[0])
 
         bot_message = False
         ng_channel = False
 
-        # print(line_fetch)
+        # メッセージがbotの場合
+        if (line_fetch.message_bot and message.author.bot):
+            # 禁止されていた場合終了
+            bot_message = True
 
-        key_channel:List[dict] = [
-            g
-            for g in line_fetch
-            if int(g.get('channel_id')) == message.channel.id
-        ]
+        # 送信が禁止されていた場合終了
+        if line_fetch.line_ng_channel:
+            ng_channel = True
 
-        bot_info:List[dict] = [
-            b
-            for b in line_bot_fetch
-            if int(b.get('guild_id')) == message.guild.id
-        ]
+        # ピン止め、ボイスチャンネルの場合終了
+        # 送信NGのチャンネル名の場合、終了
+        if (bot_message or ng_channel or
+            str(message.type) in line_fetch.ng_message_type or
+            message.author.id in line_fetch.ng_users):
+            return
 
-        if len(key_channel) > 0:
-            # メッセージがbotの場合
-            if (bool(key_channel[0].get('message_bot')) == True and
-                message.author.bot == True):
-                # 禁止されていた場合終了
-                bot_message = True
-
-            # 送信が禁止されていた場合終了
-            if (bool(key_channel[0].get('line_ng_channel')) == True):
-                ng_channel = True
-
-            # ピン止め、ボイスチャンネルの場合終了
-            # 送信NGのチャンネル名の場合、終了
-            if (bot_message or ng_channel or
-                str(message.type) in key_channel[0].get('ng_message_type') or
-                Decimal(message.author.id) in key_channel[0].get('ng_users')):
-                return
-
-        line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_notify_token')))
-        line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_bot_token')))
-        line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_group_id')))
+        line_notify_token:str = await decrypt_password(encrypted_password=bytes(line_bot_fetch.line_notify_token))
+        line_bot_token:str = await decrypt_password(encrypted_password=bytes(line_bot_fetch.line_bot_token))
+        line_group_id:str = await decrypt_password(encrypted_password=bytes(line_bot_fetch.line_group_id))
 
         # いずれかの項目が未入力の場合、終了
         if len(line_bot_token) == 0 or len(line_notify_token) == 0 or len(line_group_id) == 0:
@@ -195,24 +201,29 @@ class mst_line(commands.Cog):
     @commands.slash_command(description="LINEの利用状況を確認します")
     async def test_signal(self,ctx:discord.ApplicationContext):
 
+        if db.conn == None:
+            await db.connect()
+
         # 読み取り
-        line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
+        line_bot_tabel_fetch:List[dict] = await db.select_rows(
+            table_name='line_bot',
+            columns=[],
+            where_clause={
+                'guild_id':ctx.guild.id
+            }
+        )
 
-        bot_info:List[dict] = [
-            b
-            for b in line_bot_fetch
-            if int(b.get('guild_id')) == ctx.guild.id
-        ]
-
-        if len(bot_info) == 0:
+        if len(line_bot_tabel_fetch) == 0:
             await ctx.respond('LINE Notfiyが登録されていません。')
             return
 
+        bot_info = LineBotColunm(**line_bot_tabel_fetch[0])
+
         await ctx.respond("LINE連携の利用状況です。")
 
-        line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_notify_token')))
-        line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_bot_token')))
-        line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info[0].get('line_group_id')))
+        line_notify_token:str = await decrypt_password(encrypted_password=bot_info.line_notify_token)
+        line_bot_token:str = await decrypt_password(encrypted_password=bot_info.line_bot_token)
+        line_group_id:str = await decrypt_password(encrypted_password=bot_info.line_group_id)
 
         # いずれかの項目が未入力の場合、終了
         if len(line_bot_token) == 0 or len(line_notify_token) == 0 or len(line_group_id) == 0:
@@ -226,15 +237,19 @@ class mst_line(commands.Cog):
 
         states = await line_signal.notify_status()
 
+        pushlimit = await line_signal.pushlimit()
+        totalpush = await line_signal.totalpush()
+        member_count = await line_signal.group_or_friend_count()
+
         embed = discord.Embed(
             title = ctx.guild.name,
             description = f"""
             一か月のメッセージ送信上限(基本1000,23年6月以降は200):
-                **{await line_signal.pushlimit()}**\n
+                **{pushlimit}**\n
             今月の送信数:
-                **{await line_signal.totalpush()}**\n
+                **{totalpush.totalUsage}**\n
             友達、グループ人数:
-                **{await line_signal.friend()}**\n
+                **{member_count}**\n
             1時間当たりのメッセージ送信上限(1000):
                 **{states.rate_limit}**\n
             1時間当たりの残りメッセージ送信数:

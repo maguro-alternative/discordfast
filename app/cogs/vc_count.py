@@ -5,14 +5,22 @@ try:
     # Botのみ起動の場合
     from app.cogs.bin import activity
     from app.core.start import DBot
+    from app.core.db_pickle import db
+    from app.model_types.table_type import GuildVcChannel
 except ModuleNotFoundError:
     from cogs.bin import activity
     from core.start import DBot
+    from core.db_pickle import db
+    from model_types.table_type import GuildVcChannel
 
 from dotenv import load_dotenv
 load_dotenv()
 
 from base.aio_req import pickle_read
+from base.database import PostgresDB
+
+import os
+from typing import List
 
 # ボイスチャンネルの入退室を通知
 class vc_count(commands.Cog):
@@ -36,34 +44,39 @@ class vc_count(commands.Cog):
         # 使用するデータベースのテーブル名
         TABLE = f'guilds_vc_signal_{member.guild.id}'
 
-        # 読み取り
-        vc_fetch = await pickle_read(filename=TABLE)
+        if db.conn == None:
+            await db.connect()
 
-        key_vc = [
-            g
-            for g in vc_fetch
-            if int(g.get('vc_id')) == vc_channel_id
-        ]
+        # 読み取り
+        vc_table_fetch:List[dict] = await db.select_rows(
+            table_name=TABLE,
+            columns=[],
+            where_clause={
+                'vc_id':vc_channel_id
+            }
+        )
+
+        vc_channel = GuildVcChannel(**vc_table_fetch[0])
 
         # 通知が拒否されていた場合、終了
         if hasattr(before.channel,'id'):
-            if int(key_vc[0].get('vc_id')) == before.channel.id:
-                if bool(key_vc[0].get('send_signal')) == False:
+            if vc_channel.vc_id == before.channel.id:
+                if vc_channel.send_signal == False:
                     return
 
         # 通知が拒否されていた場合、終了
         if hasattr(after.channel,'id'):
-            if int(key_vc[0].get('vc_id')) == after.channel.id:
-                if bool(key_vc[0].get('send_signal')) == False:
+            if vc_channel.vc_id == after.channel.id:
+                if vc_channel.send_signal == False:
                     return
 
         # Botの場合終了
-        if (bool(key_vc[0].get('join_bot')) == False and
+        if (vc_channel.join_bot == False and
             member.bot == True):
             return
 
         # Discordのシステムチャンネル(welcomeメッセージが送られる場所)を取得
-        send_channel_id = int(key_vc[0].get('send_channel_id'))
+        send_channel_id = vc_channel.send_channel_id
 
         # ない場合システムチャンネルのidを代入
         if send_channel_id == None or send_channel_id == 0:
@@ -76,12 +89,12 @@ class vc_count(commands.Cog):
 
         # メンションするロールの取り出し
         mentions = [
-            f"<@&{int(role_id)}> "
-            for role_id in key_vc[0].get('mention_role_id')
+            f"<@&{role_id}> "
+            for role_id in vc_channel.mention_role_id
         ]
 
         # 全体メンションが有効の場合@everyoneを追加
-        if (bool(key_vc[0].get('everyone_mention')) == True):
+        if vc_channel.everyone_mention:
             mentions.insert(0,"@everyone")
 
         # listをstrに変換

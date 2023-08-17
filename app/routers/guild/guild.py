@@ -9,7 +9,6 @@ load_dotenv()
 import os
 from typing import Optional
 
-from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
     oauth_check,
@@ -26,17 +25,6 @@ try:
     from core.start import DBot
 except ModuleNotFoundError:
     from app.core.start import DBot
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # デバッグモード
 DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))

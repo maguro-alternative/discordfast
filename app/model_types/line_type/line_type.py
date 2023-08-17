@@ -93,7 +93,6 @@ async def to_camel_case(text:str):
     split = text.split('_')
     return split[0] + "".join(x.title() for x in split[1:])
 
-# 
 class Profile(Base):
     """
     LINE Message APIのProfileクラス
@@ -128,12 +127,12 @@ class GyazoJson(Base):
     type            :拡張子のタイプ
     """
     def __init__(self,
-                 image_id:str=None,
-                 permalink_url:str=None,
-                 thumb_url:str=None,
-                 url:str=None,
-                 type:str=None,
-                 **kwargs
+                image_id:str=None,
+                permalink_url:str=None,
+                thumb_url:str=None,
+                url:str=None,
+                type:str=None,
+                **kwargs
     ):
         self.image_id = image_id
         self.premalink_url = permalink_url
@@ -144,7 +143,7 @@ class GyazoJson(Base):
 
 if __name__ == "__main__":
     import os
-    
+
     from dotenv import load_dotenv
     load_dotenv()
 
@@ -167,4 +166,3 @@ if __name__ == "__main__":
 
     l = loop.run_until_complete(Profile.new_from_json_dict(data=gro))
     print(l.display_name)
-    

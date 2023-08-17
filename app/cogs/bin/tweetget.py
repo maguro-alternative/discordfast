@@ -13,6 +13,8 @@ from datetime import datetime,timezone
 
 from typing import List,Dict,Tuple,Any,Union
 
+from model_types.table_type import WebhookSet
+
 TWEET_GET_BASE_URL = "https://api.twitter.com/1.1/search/tweets.json?q=from%3A"
 TWITTER_BEARER_TOKEN = os.environ.get('TWITTER_BEARER_TOKEN')
 
@@ -62,7 +64,7 @@ class Twitter_Get_Tweet:
         # ツイートが取得できなかった場合、空の配列を渡して終了
         if tweet_statuses == None:
             return list()
-        
+
         twitter_tweet = [
             TwitterTweet(**t)
             for t in tweet_statuses
@@ -73,7 +75,7 @@ class Twitter_Get_Tweet:
     async def get_image_and_name(self) -> Tuple[str,str]:
         """
         アイコンのurlとユーザ名を取得する
-        
+
         return:
         Tuple[str,str]
             順にアイコンurl,ユーザ名
@@ -101,7 +103,7 @@ class Twitter_Get_Tweet:
 
     async def mention_tweet_make(
         self,
-        webhook_fetch:Dict[str,Any]
+        webhook_fetch:WebhookSet
     ) -> Tuple[List[str],str]:
         """
         ツイートの文章を解析し、メンションするツイートか判断する
@@ -115,16 +117,16 @@ class Twitter_Get_Tweet:
         """
         tweet = await self.get_tweet()
         tweetlist = list()
-        lastUpdateStr = webhook_fetch.get('created_at')
+        lastUpdateStr = webhook_fetch.created_at
         for i,tweets in enumerate(tweet):
             # 最新ツイート投稿時刻
             lastUpdate = datetime.strptime(
-                tweets.create_at, 
+                tweets.create_at,
                 '%a %b %d %H:%M:%S %z %Y'
             )
             # Webhookに最後にアップロードした時刻
             strTime = datetime.strptime(
-                webhook_fetch.get('created_at'), 
+                webhook_fetch.created_at,
                 '%a %b %d %H:%M:%S %z %Y'
             )
 
@@ -139,13 +141,13 @@ class Twitter_Get_Tweet:
 
 
                 # ORでNGワード検索
-                for word in webhook_fetch.get('ng_or_word'):
+                for word in webhook_fetch.ng_or_word:
                     # NGワードに登録されている場合、False
                     if word in tweets.text:
                         upload_flag = False
 
                 # ANDでNGワードを検索
-                for word in webhook_fetch.get('ng_and_word'):
+                for word in webhook_fetch.ng_and_word:
                     # NGワードに登録されている場合、Falseを返し続ける
                     if word in tweets.text:
                         upload_flag = False
@@ -155,29 +157,29 @@ class Twitter_Get_Tweet:
                         break
 
                 # ANDでキーワードを検索
-                for word in webhook_fetch.get('search_and_word'):
+                for word in webhook_fetch.search_and_word:
                     # 条件にそぐわない場合終了
                     if word not in tweets.text:
                         upload_flag = False
 
                 # ORでキーワード検索
-                for word in webhook_fetch.get('search_or_word'):
+                for word in webhook_fetch.search_or_word:
                     if word in tweets.text:
                         upload_flag = True
 
                 # 検索条件がなかった場合、すべて送信
-                if (len(webhook_fetch.get('search_or_word')) == 0 and
-                    len(webhook_fetch.get('search_and_word')) == 0):
+                if (len(webhook_fetch.search_or_word) == 0 and
+                    len(webhook_fetch.search_and_word) == 0):
                     upload_flag = True
 
                 # ORでメンションするかどうか判断
-                for word in webhook_fetch.get('mention_or_word'):
+                for word in webhook_fetch.mention_or_word:
                     if word in tweets.text:
                         mention_flag = True
                         upload_flag = True
 
                 # ANDでメンションするかどうか判断
-                for word in webhook_fetch.get('mention_and_word'):
+                for word in webhook_fetch.mention_and_word:
                     if word not in tweets.text:
                         mention_flag = False
                         upload_flag = True
@@ -187,16 +189,16 @@ class Twitter_Get_Tweet:
                     if mention_flag:
                         # メンションするロールの取り出し
                         mentions = [
-                            f"<@&{int(role_id)}> " 
-                            for role_id in webhook_fetch.get('mention_roles')
+                            f"<@&{int(role_id)}> "
+                            for role_id in webhook_fetch.mention_roles
                         ]
                         members = [
-                            f"<@{int(member_id)}> " 
-                            for member_id in webhook_fetch.get('mention_members')
+                            f"<@{int(member_id)}> "
+                            for member_id in webhook_fetch.mention_members
                         ]
                         text = " ".join(mentions) + " " + " ".join(members) + "\n"
 
-                    text += f'{tweets.text}\n{tweet_url}' 
+                    text += f'{tweets.text}\n{tweet_url}'
 
                     tweetlist.append(text)
 

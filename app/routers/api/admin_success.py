@@ -15,6 +15,7 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Disco
 from model_types.post_json_type import AdminSuccessJson
 
 from core.pickes_save.guild_permissions_columns import GUILD_SET_COLUMNS
+from core.db_pickle import db
 
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
@@ -30,17 +31,6 @@ except ModuleNotFoundError:
 DISCORD_BASE_URL = "https://discord.com/api"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # デバッグモード
 DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
@@ -138,7 +128,8 @@ class AdminSuccess(commands.Cog):
                 'webhook_role_id_permission'    :webhook_role_id_permission
             }
 
-            await db.connect()
+            if db.conn == None:
+                await db.connect()
 
             await db.update_row(
                 table_name=TABLE,
@@ -155,13 +146,10 @@ class AdminSuccess(commands.Cog):
                 where_clause={}
             )
 
-            await db.disconnect()
+            #await db.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/adminsuccess.html',

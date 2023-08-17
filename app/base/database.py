@@ -50,6 +50,7 @@ class PostgresDB:
             database=self.database,
             host=self.host
         )
+        print('connect')
 
     async def disconnect(self):
         """
@@ -58,6 +59,7 @@ class PostgresDB:
         if self.conn == None:
             raise DataBaseNotConnect
         await self.conn.close()
+        print('disconnect')
 
     async def create_table(self, table_name:str, columns:dict) -> str:
         """

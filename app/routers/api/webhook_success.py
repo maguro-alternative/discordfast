@@ -25,24 +25,15 @@ from model_types.post_json_type import WebhookSuccessJson
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
 
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # デバッグモード
 DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
@@ -75,7 +66,8 @@ class WebhookSuccess(commands.Cog):
 
             TABLE = f'webhook_{form.get("guild_id")}'
 
-            await db.connect()
+            if db.conn == None:
+                await db.connect()
 
             FORM_NAMES = (
                 "webhookSelect_",
@@ -143,7 +135,7 @@ class WebhookSuccess(commands.Cog):
                     'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
                 }
 
-                print(row)
+                #print(row)
 
                 # 入力漏れがあった場合
                 if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or
@@ -267,13 +259,10 @@ class WebhookSuccess(commands.Cog):
                 where_clause={}
             )
 
-            await db.disconnect()
+            #await db.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/webhooksuccess.html',

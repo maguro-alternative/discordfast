@@ -14,22 +14,27 @@ try:
     from model_types.line_type.line_event import Line_Responses
     from model_types.discord_type.message_creater import ReqestDiscord
     from model_types.line_type.line_message import LineBotAPI
+    from model_types.table_type import LineBotColunm
 except ModuleNotFoundError:
     from app.model_types.line_type.line_event import Line_Responses
     from app.model_types.discord_type.message_creater import ReqestDiscord
     from app.model_types.line_type.line_message import LineBotAPI
+    from app.model_types.table_type import LineBotColunm
 # ./venv/Scripts/activate.bat
 
 import os
 from typing import List,Tuple,Union
 
+from base.database import PostgresDB
 from base.aio_req import pickle_read,decrypt_password
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
 
 
 TOKEN = os.environ['DISCORD_BOT_TOKEN']
@@ -66,8 +71,17 @@ class LineBotWebhook(commands.Cog):
             boo = await byte_body.body()
             body = boo.decode('utf-8')
 
+            if db.conn == None:
+                await db.connect()
+
             # LINE Botのトークンなどを取り出す
-            line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
+            #line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
+
+            line_bot_fetch:List[dict] = await db.select_rows(
+                table_name='line_bot',
+                columns=[],
+                where_clause={}
+            )
 
             for bot_info in line_bot_fetch:
                 line_bot_secret:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_bot_secret')))
@@ -82,28 +96,30 @@ class LineBotWebhook(commands.Cog):
                 signature = base64.b64encode(hash)
                 decode_signature = signature.decode('utf-8')
 
+                line_bot_info = LineBotColunm(**bot_info)
+
                 # ハッシュ値が一致した場合
                 if decode_signature == x_line_signature:
 
-                    guild_id:int = int(bot_info.get('guild_id'))
-                    line_notify_token:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_notify_token')))
-                    line_bot_token:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_bot_token')))
+                    guild_id:int = line_bot_info.guild_id
+                    line_notify_token:str = await decrypt_password(encrypted_password=line_bot_info.line_notify_token)
+                    line_bot_token:str = await decrypt_password(encrypted_password=line_bot_info.line_bot_token)
 
-                    line_group_id:str = await decrypt_password(encrypted_password=bytes(bot_info.get('line_group_id')))
-                    default_channel_id:int = bot_info.get('default_channel_id')
+                    line_group_id:str = await decrypt_password(encrypted_password=line_bot_info.line_group_id)
+                    default_channel_id:int = line_bot_info.default_channel_id
 
-                    debug_mode:bool = bot_info.get('debug_mode')
+                    debug_mode:bool = line_bot_info.debug_mode
                     # Discordサーバーのインスタンスを作成
                     discord_find_message = ReqestDiscord(
-                        guild_id = guild_id,
-                        limit = int(os.environ.get("USER_LIMIT",default=100)),
-                        token = TOKEN
+                        guild_id=guild_id,
+                        limit=int(os.environ.get("USER_LIMIT",default=100)),
+                        token=TOKEN
                     )
                     # LINEのインスタンスを作成
                     line_bot_api = LineBotAPI(
-                        notify_token = line_notify_token,
-                        line_bot_token = line_bot_token,
-                        line_group_id = line_group_id
+                        notify_token=line_notify_token,
+                        line_bot_token=line_bot_token,
+                        line_group_id=line_group_id
                     )
                     # メッセージを送信するDiscordのテキストチャンネルのID
                     channel_id = default_channel_id

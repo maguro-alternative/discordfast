@@ -23,22 +23,13 @@ from core.pickes_save.line_columns import LINE_COLUMNS
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # デバッグモード
 DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
@@ -110,7 +101,7 @@ class LinePostSuccess(commands.Cog):
             # "pins_add_"で始まるキーのみを抽出し、数字部分を取得する
             pins_add_numbers = [
                 int(key.replace(FORM_NAMES[4], ""))
-                for key in form.keys() 
+                for key in form.keys()
                 if key.startswith(FORM_NAMES[4])
             ]
 
@@ -186,8 +177,8 @@ class LinePostSuccess(commands.Cog):
                 })
 
 
-
-            await db.connect()
+            if db.conn == None:
+                await db.connect()
             await db.primary_batch_update_rows(
                 table_name=TABLE,
                 set_values_and_where_columns=row_list,
@@ -199,13 +190,10 @@ class LinePostSuccess(commands.Cog):
                 columns=[],
                 where_clause={}
             )
-            await db.disconnect()
+            #await db.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/linepostsuccess.html',

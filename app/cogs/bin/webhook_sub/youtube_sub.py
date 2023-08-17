@@ -14,19 +14,11 @@ from base.aio_req import (
     pickle_write
 )
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
+from model_types.table_type import WebhookSet
+from core.db_pickle import db
 
 async def youtube_subsc(
-    webhook:Dict,
+    webhook:WebhookSet,
     webhook_url:str,
     table_name:str
 ) -> None:
@@ -42,13 +34,13 @@ async def youtube_subsc(
         webhookの情報が登録されているテーブル名
     """
     youtube_api_key = os.environ.get('YOUTUBE_API_KEY')
-    channel_url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={webhook.get('subscription_id')}&key={youtube_api_key}"
-    new_videos_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={webhook.get('subscription_id')}&order=date&type=video&key={youtube_api_key}&maxResults=5"
+    channel_url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={webhook.subscription_id}&key={youtube_api_key}"
+    new_videos_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={webhook.subscription_id}&order=date&type=video&key={youtube_api_key}&maxResults=5"
 
     # 最終更新日を格納
-    created_at = webhook.get('created_at')
+    created_at = webhook.created_at
     last_upload_time = datetime.strptime(
-        created_at, 
+        created_at,
         '%a %b %d %H:%M:%S %z %Y'
     )
 
@@ -61,7 +53,6 @@ async def youtube_subsc(
             videos_item:list[Dict] = new_videos_info.get('items')
 
         for item in videos_item:
-            # 
             upload_time_str = item.get('snippet').get('publishTime')
             upload_time = datetime.strptime(
                 upload_time_str,
@@ -86,18 +77,18 @@ async def youtube_subsc(
                 # YouTube動画のURL
                 video_url = f"https://youtu.be/{item.get('id').get('videoId')}"
 
-                if len(webhook.get('mention_roles')) > 0:
+                if len(webhook.mention_roles) > 0:
                     # メンションするロールの取り出し
                     mentions = [
-                        f"<@&{int(role_id)}> " 
-                        for role_id in webhook.get('mention_roles')
+                        f"<@&{int(role_id)}> "
+                        for role_id in webhook.mention_roles
                     ]
                     text = " ".join(mentions) + " "
 
-                if len(webhook.get('mention_members')) > 0:
+                if len(webhook.mention_members) > 0:
                     members = [
-                        f"<@{int(member_id)}> " 
-                        for member_id in webhook.get('mention_members')
+                        f"<@{int(member_id)}> "
+                        for member_id in webhook.mention_members
                     ]
                     text = " ".join(members) + " "
 
@@ -121,7 +112,7 @@ async def youtube_subsc(
                                 'created_at':upload_time.strftime('%a %b %d %H:%M:%S %z %Y')
                             },
                             where_clause={
-                                'uuid':webhook.get('uuid')
+                                'uuid':webhook.uuid
                             }
                         )
 
@@ -131,7 +122,9 @@ async def youtube_subsc(
                             where_clause={}
                         )
 
-                        await db.disconnect()
+                        #await db.disconnect()
+
+                        return
 
                         # pickleファイルに書き込み
                         await pickle_write(

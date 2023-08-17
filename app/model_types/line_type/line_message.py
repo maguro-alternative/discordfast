@@ -18,10 +18,24 @@ try:
     from model_types.line_type.line_type import Profile,GyazoJson
     from model_types.youtube_upload import YouTubeUpload
     from model_types.file_type import Audio_Files
+    from model_types.line_type.line_user_session import (
+        LineBotConsumption,
+        LineGroupCount,
+        LineBotFriend,
+        LineBotQuota,
+        LineBotInfo
+    )
 except ModuleNotFoundError:
     from app.model_types.line_type.line_type import Profile,GyazoJson
     from app.model_types.youtube_upload import YouTubeUpload
     from app.model_types.file_type import Audio_Files
+    from app.model_types.line_type.line_user_session import (
+        LineBotConsumption,
+        LineGroupCount,
+        LineBotFriend,
+        LineBotQuota,
+        LineBotInfo
+    )
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
@@ -65,11 +79,17 @@ class NotifyStates:
             1時間当たりの画像送信上限
         self.image_remaining    :int
             残り画像送信上限
+        self.message            :str
+            エラーメッセージ
+        self.states             :int
+            ステータスコード
         """
         self.rate_limit = int(notify.headers.get('X-RateLimit-Limit'))
         self.rate_remaining = int(notify.headers.get('X-RateLimit-Remaining'))
         self.image_limit = int(notify.headers.get('X-RateLimit-ImageLimit'))
         self.image_remaining = int(notify.headers.get('X-RateLimit-ImageRemaining'))
+        self.message = notify.headers.get('message')
+        self.status = notify.headers.get('status',default=200)
 
 
 # LINEのgetリクエストを行う
@@ -338,8 +358,23 @@ class LineBotAPI:
             data = json.dumps(datas)
         )
 
+    async def get_bot_info(self) -> LineBotInfo:
+        """
+        LINE Botのプロフィール情報を取得
+
+        Returns:
+        LineBotInfo:
+            LINEBotのプロフィール情報
+        """
+        r = await line_get_request(
+            url=f"{LINE_BOT_URL}/info",
+            token=self.line_bot_token
+        )
+        i = LineBotInfo(**r)
+        return i
+
     # 送ったメッセージ数を取得
-    async def totalpush(self) -> int:
+    async def totalpush(self) -> LineBotConsumption:
         """
         送ったメッセージ数を取得
 
@@ -348,10 +383,10 @@ class LineBotAPI:
             送ったメッセージの総数
         """
         r = await line_get_request(
-            LINE_BOT_URL + "/message/quota/consumption",
-            self.line_bot_token
+            url=f"{LINE_BOT_URL}/message/quota/consumption",
+            token=self.line_bot_token
         )
-        return int(r["totalUsage"])
+        return LineBotConsumption(**r)
 
     # LINE Notifyのステータスを取得
     async def notify_status(self) -> NotifyStates:
@@ -364,13 +399,41 @@ class LineBotAPI:
         """
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = NOTIFY_STATUS_URL,
-                headers = {'Authorization': 'Bearer ' + self.notify_token}
+                url=NOTIFY_STATUS_URL,
+                headers={'Authorization': 'Bearer ' + self.notify_token}
             ) as resp:
                 return NotifyStates(notify=resp)
 
+    async def group_user_count(self) -> LineGroupCount:
+        """
+        グループ人数を数える
+
+        return
+        LineGroupCount
+            グループ人数
+        """
+        r = await line_get_request(
+            url=f"{LINE_BOT_URL}/group/{self.line_group_id}/members/count",
+            token=self.line_bot_token
+        )
+        return LineGroupCount(**r)
+
+    async def friend_count(self) -> LineBotFriend:
+        """
+        友達数を数える
+
+        return
+        LineBotFriend
+            友達数
+        """
+        r = await line_get_request(
+            url=f"{LINE_BOT_URL}/group/{self.line_group_id}/members/count",
+            token=self.line_bot_token
+        )
+        return LineBotFriend(**r)
+
     # 友達数、グループ人数をカウント
-    async def friend(self) -> str:
+    async def group_or_friend_count(self) -> int:
         """
         友達数、グループ人数を数える
 
@@ -379,41 +442,43 @@ class LineBotAPI:
             友達数、またはグループ人数
         """
         # グループIDが有効かどうか判断
-        try:
-            r = await line_get_request(
-                LINE_BOT_URL + "/group/" + self.line_group_id + "/members/count",
-                self.line_bot_token,
-            )
-            return r["count"]
+        r = await line_get_request(
+            url=f"{LINE_BOT_URL}/group/{self.line_group_id}/members/count",
+            token=self.line_bot_token
+        )
+        c = LineGroupCount(**r)
         # グループIDなしの場合、友達数をカウント
-        except KeyError:
+        if c.count == None:
             # 日付が変わった直後の場合、前日を参照
             if datetime.datetime.now().strftime('%H') == '00':
                 before_day = datetime.date.today() + datetime.timedelta(days=-1)
-                url = LINE_BOT_URL + "/insight/followers?date=" + before_day.strftime('%Y%m%d')
+                url = f"{LINE_BOT_URL}/insight/followers?date={before_day.strftime('%Y%m%d')}"
             else:
-                url = LINE_BOT_URL + "/insight/followers?date=" + datetime.date.today().strftime('%Y%m%d')
+                url = f"{LINE_BOT_URL}/insight/followers?date={datetime.date.today().strftime('%Y%m%d')}"
             r = await line_get_request(
-                url,
-                self.line_bot_token,
+                url=url,
+                token=self.line_bot_token,
             )
-            return r["followers"]
+            f = LineBotFriend(**r)
+            return f.followers
+        return c.count
 
     # 当月に送信できるメッセージ数の上限目安を取得(基本1000,23年6月以降は200)
-    async def pushlimit(self) -> str:
+    async def pushlimit(self) -> LineBotQuota:
         """
         当月に送信できるメッセージ数の上限目安を取得
         23年6月以降は200になる
 
         return
-        value:int
+        LineBotQuota
             メッセージの上限目安(基本1000,23年6月以降は200)
         """
         r = await line_get_request(
-            LINE_BOT_URL + "/message/quota",
-            self.line_bot_token
+            url="{LINE_BOT_URL}/message/quota",
+            token=self.line_bot_token
         )
-        return r["value"]
+        v = LineBotQuota(**r)
+        return v
 
 
     # LINEのユーザプロフィールから名前を取得
@@ -430,17 +495,16 @@ class LineBotAPI:
             LINEユーザーのプロフィールオブジェクト
         """
         # グループIDが有効かどうか判断
-
         r = await line_get_request(
-            LINE_BOT_URL + f"/group/{self.line_group_id}/member/{user_id}",
-            self.line_bot_token,
+            url=f"{LINE_BOT_URL}/group/{self.line_group_id}/member/{user_id}",
+            token=self.line_bot_token,
         )
 
         # グループIDが無効の場合、友達から判断
         if r.get('message') != None:
             r = await line_get_request(
-                LINE_BOT_URL + f"/profile/{user_id}",
-                self.line_bot_token,
+                url=f"{LINE_BOT_URL}/profile/{user_id}",
+                token=self.line_bot_token,
             )
         return await Profile.new_from_json_dict(data=r)
 
@@ -470,9 +534,9 @@ class LineBotAPI:
                 # Gyazoにアップロードする
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
-                        url = 'https://upload.gyazo.com/api/upload',
+                        url='https://upload.gyazo.com/api/upload',
                         headers={
-                            'Authorization': 'Bearer ' + os.environ['GYAZO_TOKEN'],
+                            'Authorization': f'Bearer {os.environ["GYAZO_TOKEN"]}'
                         },
                         data={
                             'imagedata': image_bytes
@@ -499,9 +563,9 @@ class LineBotAPI:
         # 動画のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    url = LINE_CONTENT_URL + f'/message/{message_id}/content',
+                    url=f'{LINE_CONTENT_URL}/message/{message_id}/content',
                     headers={
-                        'Authorization': 'Bearer ' + self.line_bot_token
+                        'Authorization': f'Bearer {self.line_bot_token}'
                     }
             ) as bytes:
 
@@ -536,9 +600,9 @@ class LineBotAPI:
         # 音声のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    url = LINE_CONTENT_URL + f'/message/{message_id}/content',
+                    url=f'{LINE_CONTENT_URL}/message/{message_id}/content',
                     headers={
-                        'Authorization': 'Bearer ' + self.line_bot_token
+                        'Authorization': f'Bearer {self.line_bot_token}'
                     }
             ) as bytes:
 

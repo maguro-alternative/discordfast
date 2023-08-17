@@ -44,8 +44,12 @@ from routers.api import (
 
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
+
+from base.database import PostgresDB
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
 
@@ -160,9 +164,11 @@ class ReadyLoad(commands.Cog):
             print("exit")
             await server.shutdown()
             await self.bot.close()
+            #await db.disconnect()
         else:
             loop = asyncio.new_event_loop()
             loop.run_until_complete(await server.serve())
+            #await db.disconnect()
 
 def setup(bot:DBot):
     return bot.add_cog(ReadyLoad(bot))

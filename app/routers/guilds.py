@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Header
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict
+from typing import List,Dict,Optional
 
 from base.aio_req import (
     aio_get_request,
@@ -83,9 +83,9 @@ class GuildsView(commands.Cog):
                 }
             )
 
-        @self.router.post('/guilds/view')
+        @self.router.get('/guilds/view')
         async def guilds(
-            request:DiscordGuildsRequest
+            token:Optional[str]=Header(None)
         ):
             """
             サーバー一覧を取得
@@ -98,7 +98,7 @@ class GuildsView(commands.Cog):
             """
             # デバッグモード
             if DEBUG_MODE == False:
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
                 # ログインユーザが所属しているサーバを取得
                 user_in_guild_get:List[Dict] = await aio_get_request(
                     url=f'{DISCORD_BASE_URL}/users/@me/guilds',

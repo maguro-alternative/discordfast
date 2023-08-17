@@ -20,23 +20,14 @@ from model_types.post_json_type import LineSetSuccessJson
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # デバッグモード
 DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
@@ -88,7 +79,8 @@ class LineSetSuccess(commands.Cog):
                 'debug_mode':debug_mode
             }
 
-            await db.connect()
+            if db.conn == None:
+                await db.connect()
             await db.update_row(
                 table_name=TABLE,
                 row_values=row_values,
@@ -102,13 +94,10 @@ class LineSetSuccess(commands.Cog):
                 columns=[],
                 where_clause={}
             )
-            await db.disconnect()
+            #await db.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/linesetsuccess.html',

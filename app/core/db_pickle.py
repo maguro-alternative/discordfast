@@ -40,13 +40,21 @@ async def db_pickle_save(guilds:List[Guild]) -> None:
     Botが所属しているDiscordサーバのクラス
     """
     # データベースへ接続
-    await db.connect()
+    if db.conn == None:
+        await db.connect()
     # サーバごとにテーブルのキャッシュデータを作成
     for guild in guilds:
-        await line_columns.line_pickle_save(db=db,guild=guild)
-        await vc_columns.vc_pickle_save(db=db,guild=guild)
-        await webhook_columns.webhook_pickle_save(db=db,guild=guild)
-        await guild_permissions_columns.guild_permissions_pickle_save(db=db,guild=guild)
-        await line_bot_columns.line_bot_pickle_save(db=db,guild=guild)
+        #await line_columns.line_pickle_save(db=db,guild=guild)
+        #await vc_columns.vc_pickle_save(db=db,guild=guild)
+        #await webhook_columns.webhook_pickle_save(db=db,guild=guild)
+        #await guild_permissions_columns.guild_permissions_pickle_save(db=db,guild=guild)
+        #await line_bot_columns.line_bot_pickle_save(db=db,guild=guild)
 
-    await db.disconnect()
+        await line_columns.line_pickle_table_create(db=db,guild=guild)
+        await vc_columns.vc_pickle_table_create(db=db,guild=guild)
+        await webhook_columns.webhook_pickle_table_create(db=db,guild=guild)
+        await guild_permissions_columns.guild_permissions_table_create(db=db,guild=guild)
+        await line_bot_columns.line_bot_table_create(db=db,guild=guild)
+
+
+    #await db.disconnect()

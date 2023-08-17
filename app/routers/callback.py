@@ -26,6 +26,7 @@ from base.aio_req import (
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
     from model_types.discord_type.discord_user_session import DiscordOAuthData
     from model_types.table_type import LineBotColunm
     from model_types.line_type.line_oauth import (
@@ -35,6 +36,7 @@ try:
     )
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import db
     from app.model_types.discord_type.discord_user_session import DiscordOAuthData
     from app.model_types.table_type import LineBotColunm
     from app.model_types.line_type.line_oauth import (
@@ -51,17 +53,6 @@ LINE_REDIRECT_URI_ENCODE = urllib.parse.quote(LINE_REDIRECT_URI)
 LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")

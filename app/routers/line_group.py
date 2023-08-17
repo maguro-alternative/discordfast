@@ -25,19 +25,10 @@ from model_types.table_type import LineBotColunm
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import db
 except ModuleNotFoundError:
     from app.core.start import DBot
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
+    from app.core.db_pickle import db
 
 LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
