@@ -8,24 +8,20 @@ load_dotenv()
 
 import os
 
-from base.database import PostgresDB
+from typing import List,Dict
+
 from base.aio_req import (
     aio_get_request,
-    pickle_write,
-    pickle_read,
-    return_permission,
-    get_profile,
     decrypt_password
 )
-from core.db_pickle import *
 
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 from model_types.line_type.line_message import LineBotAPI
 from model_types.discord_type.message_creater import ReqestDiscord
@@ -60,9 +56,9 @@ class LineGroupSuccess(commands.Cog):
             form = await request.form()
             default_channel_id:int = int(form.get('default_channel_id'))
 
-            if db.conn == None:
-                await db.connect()
-            await db.update_row(
+            if DB.conn == None:
+                await DB.connect()
+            await DB.update_row(
                 table_name=TABLE,
                 row_values={
                     'default_channel_id':default_channel_id
@@ -72,12 +68,12 @@ class LineGroupSuccess(commands.Cog):
                 }
             )
             # 更新後のテーブルを取得
-            table_fetch:List[dict] = await db.select_rows(
+            table_fetch:List[dict] = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
-            #await db.disconnect()
+            #await DB.disconnect()
 
             # pickleファイルに書き込み
             #await pickle_write(filename=TABLE,table_fetch=table_fetch)
@@ -145,8 +141,8 @@ class LineGroupSuccess(commands.Cog):
 
         @self.router.post('/api/line-group-success-json')
         async def line_group_success(request: LineGroupSuccessJson):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
@@ -173,7 +169,7 @@ class LineGroupSuccess(commands.Cog):
 
             for guild in self.bot.guilds:
                 if request.guild_id == guild.id:
-                    l = await db.select_rows(
+                    l = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={
@@ -214,7 +210,7 @@ class LineGroupSuccess(commands.Cog):
 
                     # デバッグモード
                     if DEBUG_MODE == False:
-                        await db.update_row(
+                        await DB.update_row(
                             table_name=TABLE,
                             row_values=row_value,
                             where_clause={

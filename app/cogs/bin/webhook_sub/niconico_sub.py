@@ -6,16 +6,12 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
-import io
-import pickle
 from datetime import datetime,timezone
 from typing import Dict,List
 
 from model_types.table_type import WebhookSet
-from core.db_pickle import db
+from core.db_pickle import DB
 
-from base.database import PostgresDB
 from base.aio_req import (
     pickle_read,
     pickle_write
@@ -111,9 +107,9 @@ async def niconico_subsc(
         # 投稿があった場合、投稿日時を更新
         if upload_flag:
             # データベースに接続し、最終更新日を更新
-            if db.conn == None:
-                await db.connect()
-            await db.update_row(
+            if DB.conn == None:
+                await DB.connect()
+            await DB.update_row(
                 table_name=table_name,
                 row_values={
                     'created_at':update_at
@@ -121,18 +117,4 @@ async def niconico_subsc(
                 where_clause={
                     'uuid':webhook.uuid
                 }
-            )
-            table_fetch = await db.select_rows(
-                table_name=table_name,
-                columns=[],
-                where_clause={}
-            )
-
-            #await db.disconnect()
-            return
-
-            # pickleファイルに書き込み
-            await pickle_write(
-                filename=table_name,
-                table_fetch=table_fetch
             )

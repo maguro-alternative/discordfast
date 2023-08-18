@@ -35,10 +35,10 @@ from discord import Guild
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -175,7 +175,7 @@ class LinePostView(commands.Cog):
                 #if int(g.get('guild_id')) == guild_id
             ]
 
-            guild_table:List[Dict[str,Any]] = await db.select_rows(
+            guild_table:List[Dict[str,Any]] = await DB.select_rows(
                 table_name='guild_set_permissions',
                 columns=[],
                 where_clause={
@@ -212,7 +212,7 @@ class LinePostView(commands.Cog):
             # キャッシュ読み取り
             #table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
-            table_fetch:List[Dict[str,Any]] = await db.select_rows(
+            table_fetch:List[Dict[str,Any]] = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={
@@ -264,7 +264,8 @@ class LinePostView(commands.Cog):
             # チャンネルの新規作成、削除があった場合
             if len(new_channel) > 0 or len(del_channel) > 0:
                 # データベースへ接続
-                await db.connect()
+                if DB.conn == None:
+                    await DB.connect()
                 new_values = []
                 # 新規作成された場合
                 if len(new_channel) > 0:
@@ -291,7 +292,7 @@ class LinePostView(commands.Cog):
                         )
 
                     # バッジで一気に作成
-                    await db.batch_insert_row(
+                    await DB.batch_insert_row(
                         table_name=TABLE,
                         row_values=new_values
                     )
@@ -299,7 +300,7 @@ class LinePostView(commands.Cog):
                 # 削除された場合
                 if len(del_channel) > 0:
                     for chan_id in list(del_channel):
-                        await db.delete_row(
+                        await DB.delete_row(
                             table_name=TABLE,
                             where_clause={
                                 'channel_id':chan_id
@@ -307,7 +308,7 @@ class LinePostView(commands.Cog):
                         )
 
                 # データベースの状況を取得
-                db_check_fetch = await db.select_rows(
+                db_check_fetch = await DB.select_rows(
                     table_name=TABLE,
                     columns=[],
                     where_clause={}
@@ -318,15 +319,12 @@ class LinePostView(commands.Cog):
                 del_check = set(check) - set(guild_ids)
 
                 for chan_id in list(del_check):
-                    await db.delete_row(
+                    await DB.delete_row(
                         table_name=TABLE,
                         where_clause={
                             'channel_id':chan_id
                         }
                     )
-
-                await db.disconnect()
-
 
             return templates.TemplateResponse(
                 "guild/line/linepost.html",
@@ -347,8 +345,8 @@ class LinePostView(commands.Cog):
             guild_id:int,
             token   :Optional[str]=Header(None)
         ) -> JSONResponse:
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
@@ -383,7 +381,7 @@ class LinePostView(commands.Cog):
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_line_channel_{guild.id}'
 
-                    db_channels:List[Dict] = await db.select_rows(
+                    db_channels:List[Dict] = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={}
@@ -413,7 +411,7 @@ class LinePostView(commands.Cog):
                         ]
                         # デフォルトで作成
                         for channel_id in missing_channels:
-                            await db.insert_row(
+                            await DB.insert_row(
                                 table_name=TABLE,
                                 row_values={
                                     'channel_id'        :channel_id,
@@ -433,14 +431,14 @@ class LinePostView(commands.Cog):
                             ]
                             # データベースから削除
                             for channel_id in missing_channels:
-                                await db.delete_row(
+                                await DB.delete_row(
                                     table_name=TABLE,
                                     where_clause={
                                         'channel_id':channel_id
                                     }
                                 )
 
-                        db_channels:List[Dict] = await db.select_rows(
+                        db_channels:List[Dict] = await DB.select_rows(
                             table_name=TABLE,
                             columns=[],
                             where_clause={}
@@ -584,7 +582,7 @@ async def chenge_permission_check(
     permission_code = await permission.get_permission_code()
 
     # アクセス権限の設定を取得
-    guild_p:List[Dict] = await db.select_rows(
+    guild_p:List[Dict] = await DB.select_rows(
         table_name='guild_set_permissions',
         columns=[],
         where_clause={

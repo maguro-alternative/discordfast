@@ -8,9 +8,8 @@ load_dotenv()
 
 import os
 
-from base.database import PostgresDB
 from base.aio_req import pickle_write,return_permission,get_profile,decrypt_password,encrypt_password
-from core.db_pickle import *
+
 from routers.api.chack.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
@@ -20,10 +19,10 @@ from model_types.post_json_type import LineSetSuccessJson
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -79,9 +78,9 @@ class LineSetSuccess(commands.Cog):
                 'debug_mode':debug_mode
             }
 
-            if db.conn == None:
-                await db.connect()
-            await db.update_row(
+            if DB.conn == None:
+                await DB.connect()
+            await DB.update_row(
                 table_name=TABLE,
                 row_values=row_values,
                 where_clause={
@@ -89,12 +88,12 @@ class LineSetSuccess(commands.Cog):
                 }
             )
             # 更新後のテーブルを取得
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
-            #await db.disconnect()
+            #await DB.disconnect()
 
             # pickleファイルに書き込み
             #await pickle_write(filename=TABLE,table_fetch=table_fetch)
@@ -110,8 +109,8 @@ class LineSetSuccess(commands.Cog):
 
         @self.router.post('/api/line-set-success-json')
         async def line_set_success(request: LineSetSuccessJson):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
@@ -136,7 +135,7 @@ class LineSetSuccess(commands.Cog):
                             user_id=discord_user.id,
                             access_token=access_token
                         )
-                        per = await db.select_rows(
+                        per = await DB.select_rows(
                             table_name=ADMIN_TABLE,
                             columns=[],
                             where_clause={
@@ -186,7 +185,7 @@ class LineSetSuccess(commands.Cog):
 
                     # デバッグモード
                     if DEBUG_MODE == False:
-                        await db.update_row(
+                        await DB.update_row(
                             table_name=TABLE,
                             row_values=row_value,
                             where_clause={

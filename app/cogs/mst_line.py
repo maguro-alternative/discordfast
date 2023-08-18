@@ -24,12 +24,12 @@ try:
     from model_types.line_type.line_message import LineBotAPI,Voice_File
     from model_types.table_type import GuildLineChannel,LineBotColunm,GuildSetPermission
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.model_types.line_type.line_message import LineBotAPI,Voice_File
     from app.model_types.table_type import GuildLineChannel,LineBotColunm,GuildSetPermission
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
 
@@ -45,18 +45,18 @@ class mst_line(commands.Cog):
         # 使用するデータベースのテーブル名
         TABLE = f'guilds_line_channel_{message.guild.id}'
 
-        if db.conn == None:
-            await db.connect()
+        if DB.conn == None:
+            await DB.connect()
 
         # 読み取り
-        line_bot_tabel_fetch:List[dict] = await db.select_rows(
+        line_bot_tabel_fetch:List[dict] = await DB.select_rows(
             table_name='line_bot',
             columns=[],
             where_clause={
                 'guild_id':message.guild.id
             }
         )
-        line_tabel_fetch:List[dict] = await db.select_rows(
+        line_tabel_fetch:List[dict] = await DB.select_rows(
             table_name=TABLE,
             columns=[],
             where_clause={
@@ -201,11 +201,11 @@ class mst_line(commands.Cog):
     @commands.slash_command(description="LINEの利用状況を確認します")
     async def test_signal(self,ctx:discord.ApplicationContext):
 
-        if db.conn == None:
-            await db.connect()
+        if DB.conn == None:
+            await DB.connect()
 
         # 読み取り
-        line_bot_tabel_fetch:List[dict] = await db.select_rows(
+        line_bot_tabel_fetch:List[dict] = await DB.select_rows(
             table_name='line_bot',
             columns=[],
             where_clause={

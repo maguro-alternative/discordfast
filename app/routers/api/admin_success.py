@@ -15,18 +15,16 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Disco
 from model_types.post_json_type import AdminSuccessJson
 
 from core.pickes_save.guild_permissions_columns import GUILD_SET_COLUMNS
-from core.db_pickle import db
 
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
-
-
-from core.db_pickle import *
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -128,10 +126,10 @@ class AdminSuccess(commands.Cog):
                 'webhook_role_id_permission'    :webhook_role_id_permission
             }
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
-            await db.update_row(
+            await DB.update_row(
                 table_name=TABLE,
                 row_values=row_value,
                 where_clause={
@@ -140,13 +138,13 @@ class AdminSuccess(commands.Cog):
             )
 
             # 更新後のテーブルを取得
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
 
-            #await db.disconnect()
+            #await DB.disconnect()
 
             # pickleファイルに書き込み
             #await pickle_write(filename=TABLE,table_fetch=table_fetch)
@@ -164,8 +162,8 @@ class AdminSuccess(commands.Cog):
         async def admin_post_json(
             request:AdminSuccessJson
         ):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
@@ -211,7 +209,7 @@ class AdminSuccess(commands.Cog):
 
                     # デバッグモード
                     if DEBUG_MODE == False:
-                        await db.update_row(
+                        await DB.update_row(
                             table_name=TABLE,
                             row_values=row_value,
                             where_clause={

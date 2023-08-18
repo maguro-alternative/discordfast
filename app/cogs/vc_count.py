@@ -5,12 +5,12 @@ try:
     # Botのみ起動の場合
     from app.cogs.bin import activity
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
     from app.model_types.table_type import GuildVcChannel
 except ModuleNotFoundError:
     from cogs.bin import activity
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
     from model_types.table_type import GuildVcChannel
 
 from dotenv import load_dotenv
@@ -44,11 +44,11 @@ class vc_count(commands.Cog):
         # 使用するデータベースのテーブル名
         TABLE = f'guilds_vc_signal_{member.guild.id}'
 
-        if db.conn == None:
-            await db.connect()
+        if DB.conn == None:
+            await DB.connect()
 
         # 読み取り
-        vc_table_fetch:List[dict] = await db.select_rows(
+        vc_table_fetch:List[dict] = await DB.select_rows(
             table_name=TABLE,
             columns=[],
             where_clause={

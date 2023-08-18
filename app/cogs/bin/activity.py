@@ -9,7 +9,7 @@ async def activity(
 ) -> Tuple[str,Embed]:
     try:
         embed = discord.Embed(
-            title='配信タイトル', 
+            title='配信タイトル',
             description=f'{member.activities[0].name}'
         )
 
@@ -21,7 +21,6 @@ async def activity(
         # チャンネル名フィールド
         embed.add_field(name="チャンネル", value=after.channel.name)
 
-        
         detail = None
         state = None
 
@@ -38,7 +37,7 @@ async def activity(
         if hasattr(member.activities[0],'large_image_url'):
             if member.activities[0].large_image_url != None:
                 embed.set_image(url=member.activities[0].large_image_url)
-        
+
         return f"{mention_str} <@{member.id}> が、{after.channel.name}で「{member.activities[0].name}」の配信を始めました。",embed
     # 存在しない場合
     except IndexError:
@@ -56,7 +55,7 @@ async def callemb(after:discord.VoiceState,member:discord.Member) -> Embed:
     # ない場合はユーザーのアイコンを設定
     elif hasattr(member.display_avatar,'url'):
         embed.set_image(url=member.display_avatar.url)
-        
+
     embed.set_author(
         name=member.name,  # ユーザー名
         icon_url=member.display_avatar.url  # アイコンを設定

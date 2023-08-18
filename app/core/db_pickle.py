@@ -24,7 +24,7 @@ USER = os.getenv('PGUSER')
 PASSWORD = os.getenv('PGPASSWORD')
 DATABASE = os.getenv('PGDATABASE')
 HOST = os.getenv('PGHOST')
-db = PostgresDB(
+DB = PostgresDB(
     user=USER,
     password=PASSWORD,
     database=DATABASE,
@@ -40,8 +40,8 @@ async def db_pickle_save(guilds:List[Guild]) -> None:
     Botが所属しているDiscordサーバのクラス
     """
     # データベースへ接続
-    if db.conn == None:
-        await db.connect()
+    if DB.conn == None:
+        await DB.connect()
     # サーバごとにテーブルのキャッシュデータを作成
     for guild in guilds:
         #await line_columns.line_pickle_save(db=db,guild=guild)
@@ -50,11 +50,11 @@ async def db_pickle_save(guilds:List[Guild]) -> None:
         #await guild_permissions_columns.guild_permissions_pickle_save(db=db,guild=guild)
         #await line_bot_columns.line_bot_pickle_save(db=db,guild=guild)
 
-        await line_columns.line_pickle_table_create(db=db,guild=guild)
-        await vc_columns.vc_pickle_table_create(db=db,guild=guild)
-        await webhook_columns.webhook_pickle_table_create(db=db,guild=guild)
-        await guild_permissions_columns.guild_permissions_table_create(db=db,guild=guild)
-        await line_bot_columns.line_bot_table_create(db=db,guild=guild)
+        await line_columns.line_pickle_table_create(db=DB,guild=guild)
+        await vc_columns.vc_pickle_table_create(db=DB,guild=guild)
+        await webhook_columns.webhook_pickle_table_create(db=DB,guild=guild)
+        await guild_permissions_columns.guild_permissions_table_create(db=DB,guild=guild)
+        await line_bot_columns.line_bot_table_create(db=DB,guild=guild)
 
 
-    #await db.disconnect()
+    #await DB.disconnect()

@@ -4,7 +4,7 @@ import aiohttp
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
     from app.cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from app.cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from app.cogs.bin.webhook_sub.youtube_sub import youtube_subsc
@@ -12,7 +12,7 @@ try:
     from app.model_types.table_type import WebhookSet
 except ModuleNotFoundError:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
     from cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from cogs.bin.webhook_sub.youtube_sub import youtube_subsc
@@ -61,8 +61,8 @@ class Task_Loop(commands.Cog):
             webhook_table_name = f"webhook_{guild.id}"
             task_table_name = f"task_{guild.id}"
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             discord_bor_api = ReqestDiscord(
                 guild_id=guild.id,
@@ -70,7 +70,7 @@ class Task_Loop(commands.Cog):
                 token=DISCORD_BOT_TOKEN
             )
             # 読み取り
-            webhook_table:List[Dict] = await db.select_rows(
+            webhook_table:List[Dict] = await DB.select_rows(
                 table_name=webhook_table_name,
                 columns=[],
                 where_clause={}
@@ -113,7 +113,7 @@ class Task_Loop(commands.Cog):
                         table_name=webhook_table_name
                     )
 
-            table_fetch:List[Dict] = await db.select_rows(
+            table_fetch:List[Dict] = await DB.select_rows(
                 table_name=task_table_name,
                 columns=[],
                 where_clause={}
@@ -232,11 +232,6 @@ class Task_Loop(commands.Cog):
                             message=text
                         )
                         print(limit.seconds)
-
-        # supabaseの制限対策
-        if now_time.strftime('%H:%M') == '04:00':
-            await db.connect()
-            await db.disconnect()
 
 def setup(bot:DBot):
     return bot.add_cog(Task_Loop(bot))

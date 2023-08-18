@@ -34,10 +34,10 @@ from discord import Guild
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -99,8 +99,8 @@ class WebhookView(commands.Cog):
             # パーミッションの番号を取得
             permission_code = await guild_user_permission.get_permission_code()
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             # キャッシュ読み取り
             #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
@@ -110,7 +110,7 @@ class WebhookView(commands.Cog):
                 #if int(g.get('guild_id')) == guild_id
             ]
 
-            guild_table:List[Dict[str,Any]] = await db.select_rows(
+            guild_table:List[Dict[str,Any]] = await DB.select_rows(
                 table_name='guild_set_permissions',
                 columns=[],
                 where_clause={
@@ -148,7 +148,7 @@ class WebhookView(commands.Cog):
             # キャッシュ読み取り
             #table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
-            table_fetch:List[Dict[str,Any]] = await db.select_rows(
+            table_fetch:List[Dict[str,Any]] = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={
@@ -211,8 +211,8 @@ class WebhookView(commands.Cog):
             guild_id:int,
             token   :Optional[str]=Header(None)
         ) -> JSONResponse:
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
@@ -248,7 +248,7 @@ class WebhookView(commands.Cog):
                     # Botが所属しているサーバを取得
                     TABLE = f'webhook_{guild.id}'
 
-                    db_webhooks:List[Dict] = await db.select_rows(
+                    db_webhooks:List[Dict] = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={}
@@ -329,7 +329,7 @@ async def chenge_permission_check(
     permission_code = await permission.get_permission_code()
 
     # アクセス権限の設定を取得
-    guild_p:List[Dict] = await db.select_rows(
+    guild_p:List[Dict] = await DB.select_rows(
         table_name='guild_set_permissions',
         columns=[],
         where_clause={

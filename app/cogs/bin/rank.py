@@ -93,7 +93,7 @@ class Wav_Karaoke:
             self.ratio_music_file_path,
             self.ratio_voice_file_path
         ]
-    
+
         # 各wavファイルの振幅データ列とサンプリング周波数を取得し、リストに格納
         x_and_fs_list = []
         for path in path_list:
@@ -105,14 +105,14 @@ class Wav_Karaoke:
                 )
             )
             x_and_fs_list.append((x, fs))
-            
+
         # 使用する特徴量を抽出し、リストに格納
         feature_list = []
         for x_and_fs in x_and_fs_list:
             feature = await self.loop.run_in_executor(
                 executor=None,
                 func=librosa.feature.spectral_centroid(
-                    x_and_fs[0], 
+                    x_and_fs[0],
                     x_and_fs[1]
                 )
             )
@@ -127,7 +127,7 @@ class Wav_Karaoke:
         ac, wp = await self.loop.run_in_executor(
             executor=None,
             func=librosa.sequence.dtw(
-                feature_list[0], 
+                feature_list[0],
                 feature_list[1]
             )
         )
@@ -155,9 +155,9 @@ class Wav_Karaoke:
         }
         ydl = youtube_dl.YoutubeDL(ydl_opts)
         await self.loop.run_in_executor(
-            None, 
+            None,
             lambda: ydl.extract_info(
-                video_url, 
+                video_url,
                 download=True
             )
         )

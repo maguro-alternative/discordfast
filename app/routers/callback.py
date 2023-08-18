@@ -26,7 +26,7 @@ from base.aio_req import (
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
     from model_types.discord_type.discord_user_session import DiscordOAuthData
     from model_types.table_type import LineBotColunm
     from model_types.line_type.line_oauth import (
@@ -36,7 +36,7 @@ try:
     )
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
     from app.model_types.discord_type.discord_user_session import DiscordOAuthData
     from app.model_types.table_type import LineBotColunm
     from app.model_types.line_type.line_oauth import (
@@ -246,10 +246,10 @@ class CallBack(commands.Cog):
             Returns:
                 JSONResponse: 暗号化されたアクセストークン、ユーザid、ユーザ名
             """
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
-            line_bot_info = await db.select_rows(
+            line_bot_info = await DB.select_rows(
                 table_name="line_bot",
                 columns=[],
                 where_clause={

@@ -3,12 +3,12 @@ import aiohttp
 try:
     from app.cogs.bin.tweetget import Twitter_Get_Tweet
     from app.cogs.bin.base_type.tweet_type import TwitterTweet
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
     from app.model_types.table_type import WebhookSet
 except ModuleNotFoundError:
     from cogs.bin.tweetget import Twitter_Get_Tweet
     from cogs.bin.base_type.tweet_type import TwitterTweet
-    from core.db_pickle import db
+    from core.db_pickle import DB
     from model_types.table_type import WebhookSet
 
 from dotenv import load_dotenv
@@ -17,7 +17,6 @@ load_dotenv()
 import os
 from typing import Dict,List
 
-from base.database import PostgresDB
 from base.aio_req import (
     pickle_read,
     pickle_write
@@ -76,9 +75,10 @@ async def twitter_subsc(
                 # 最後の要素の場合
                 if tweet == tweetlist[-1]:
                     # データベースに接続し、最終更新日を更新
-                    await db.connect()
+                    if DB.conn == None:
+                        await DB.connect()
 
-                    await db.update_row(
+                    await DB.update_row(
                         table_name=table_name,
                         row_values={
                             'created_at':create_at
@@ -87,16 +87,3 @@ async def twitter_subsc(
                             'uuid':webhook.uuid
                         }
                     )
-                    table_fetch = await db.select_rows(
-                        table_name=table_name,
-                        columns=[],
-                        where_clause={}
-                    )
-
-                    #await db.disconnect()
-
-                    # pickleファイルに書き込み
-                    #await pickle_write(
-                        #filename=table_name,
-                        #table_fetch=table_fetch
-                    #)

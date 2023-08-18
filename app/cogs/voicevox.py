@@ -8,8 +8,6 @@ from pydub import AudioSegment
 import aiohttp
 import os
 
-import requests
-
 import asyncio
 try:
     from app.core.start import DBot

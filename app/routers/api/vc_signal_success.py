@@ -8,8 +8,7 @@ load_dotenv()
 
 import os
 
-from base.database import PostgresDB
-from base.aio_req import pickle_write,return_permission,get_profile,decrypt_password
+from base.aio_req import return_permission,get_profile,decrypt_password
 from routers.api.chack.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 
@@ -23,10 +22,10 @@ DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -111,23 +110,23 @@ class VcSignalSuccess(commands.Cog):
 
             #print(row_list)
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
-            await db.primary_batch_update_rows(
+            await DB.primary_batch_update_rows(
                 table_name=TABLE,
                 set_values_and_where_columns=row_list,
                 table_colum=VC_COLUMNS
             )
 
             # 更新後のテーブルを取得
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
 
-            #await db.disconnect()
+            #await DB.disconnect()
 
             #print(table_fetch)
 
@@ -147,8 +146,8 @@ class VcSignalSuccess(commands.Cog):
         async def vc_post(
             request:VcSignalSuccessJson
         ):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
@@ -173,7 +172,7 @@ class VcSignalSuccess(commands.Cog):
                             user_id=discord_user.id,
                             access_token=access_token
                         )
-                        per = await db.select_rows(
+                        per = await DB.select_rows(
                             table_name=ADMIN_TABLE,
                             columns=[],
                             where_clause={
@@ -212,7 +211,7 @@ class VcSignalSuccess(commands.Cog):
                         }
                         # デバッグモード
                         if DEBUG_MODE == False:
-                            await db.update_row(
+                            await DB.update_row(
                                 table_name=TABLE,
                                 row_values=row_value,
                                 where_clause={

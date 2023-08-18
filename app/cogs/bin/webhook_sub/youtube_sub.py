@@ -8,14 +8,13 @@ import os
 from datetime import datetime
 from typing import Dict
 
-from base.database import PostgresDB
 from base.aio_req import (
     pickle_read,
     pickle_write
 )
 
 from model_types.table_type import WebhookSet
-from core.db_pickle import db
+from core.db_pickle import DB
 
 async def youtube_subsc(
     webhook:WebhookSet,
@@ -105,8 +104,9 @@ async def youtube_subsc(
                 ) as re:
                     if item == videos_item[-1]:
                         # データベースに接続し、最終更新日を更新
-                        await db.connect()
-                        await db.update_row(
+                        if DB.conn == None:
+                            await DB.connect()
+                        await DB.update_row(
                             table_name=table_name,
                             row_values={
                                 'created_at':upload_time.strftime('%a %b %d %H:%M:%S %z %Y')
@@ -114,20 +114,4 @@ async def youtube_subsc(
                             where_clause={
                                 'uuid':webhook.uuid
                             }
-                        )
-
-                        table_fetch = await db.select_rows(
-                            table_name=table_name,
-                            columns=[],
-                            where_clause={}
-                        )
-
-                        #await db.disconnect()
-
-                        return
-
-                        # pickleファイルに書き込み
-                        await pickle_write(
-                            filename=table_name,
-                            table_fetch=table_fetch
                         )

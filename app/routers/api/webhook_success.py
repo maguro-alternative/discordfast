@@ -11,9 +11,8 @@ import re
 import uuid
 from datetime import datetime,timezone
 
-from base.database import PostgresDB
-from base.aio_req import pickle_write,return_permission,get_profile,decrypt_password
-from core.db_pickle import *
+from base.aio_req import return_permission,get_profile,decrypt_password
+
 from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
 
 from routers.api.chack.post_user_check import user_checker
@@ -25,10 +24,10 @@ from model_types.post_json_type import WebhookSuccessJson
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
@@ -66,8 +65,8 @@ class WebhookSuccess(commands.Cog):
 
             TABLE = f'webhook_{form.get("guild_id")}'
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             FORM_NAMES = (
                 "webhookSelect_",
@@ -185,7 +184,7 @@ class WebhookSuccess(commands.Cog):
 
             # まとめて追加
             if len(create_webhook_list) > 0:
-                await db.batch_insert_row(
+                await DB.batch_insert_row(
                     table_name=TABLE,
                     row_values=create_webhook_list
                 )
@@ -238,7 +237,7 @@ class WebhookSuccess(commands.Cog):
 
             # まとめて更新
             if len(change_webhook_list) > 0:
-                await db.primary_batch_update_rows(
+                await DB.primary_batch_update_rows(
                     table_name=TABLE,
                     set_values_and_where_columns=change_webhook_list,
                     table_colum=WEBHOOK_COLUMNS
@@ -246,20 +245,20 @@ class WebhookSuccess(commands.Cog):
 
             # 削除
             for del_num in del_webhook_numbers:
-                await db.delete_row(
+                await DB.delete_row(
                     table_name=TABLE,
                     where_clause={
                         'uuid':form.get(f'uuid_{del_num}')
                     }
                 )
 
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
 
-            #await db.disconnect()
+            #await DB.disconnect()
 
             # pickleファイルに書き込み
             #await pickle_write(filename=TABLE,table_fetch=table_fetch)
@@ -277,8 +276,8 @@ class WebhookSuccess(commands.Cog):
         async def webhook_post(
             request:WebhookSuccessJson
         ):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
@@ -303,7 +302,7 @@ class WebhookSuccess(commands.Cog):
                             user_id=discord_user.id,
                             access_token=access_token
                         )
-                        per = await db.select_rows(
+                        per = await DB.select_rows(
                             table_name=ADMIN_TABLE,
                             columns=[],
                             where_clause={
@@ -331,7 +330,7 @@ class WebhookSuccess(commands.Cog):
 
                     TABLE = f'webhook_{guild.id}'
 
-                    db_webhook = await db.select_rows(
+                    db_webhook = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={}
@@ -365,7 +364,7 @@ class WebhookSuccess(commands.Cog):
                         if webhook.webhook_uuid in db_webhook_id_list:
                             # デバッグモード
                             if DEBUG_MODE == False:
-                                await db.update_row(
+                                await DB.update_row(
                                     table_name=TABLE,
                                     row_values=row_value,
                                     where_clause={
@@ -384,7 +383,7 @@ class WebhookSuccess(commands.Cog):
                             })
                             # デバッグモード
                             if DEBUG_MODE == False:
-                                await db.insert_row(
+                                await DB.insert_row(
                                     table_name=TABLE,
                                     row_values={}
                                 )

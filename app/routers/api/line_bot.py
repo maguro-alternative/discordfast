@@ -25,16 +25,15 @@ except ModuleNotFoundError:
 import os
 from typing import List,Tuple,Union
 
-from base.database import PostgresDB
-from base.aio_req import pickle_read,decrypt_password
+from base.aio_req import decrypt_password
 
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 
 TOKEN = os.environ['DISCORD_BOT_TOKEN']
@@ -71,13 +70,13 @@ class LineBotWebhook(commands.Cog):
             boo = await byte_body.body()
             body = boo.decode('utf-8')
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             # LINE Botのトークンなどを取り出す
             #line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
 
-            line_bot_fetch:List[dict] = await db.select_rows(
+            line_bot_fetch:List[dict] = await DB.select_rows(
                 table_name='line_bot',
                 columns=[],
                 where_clause={}

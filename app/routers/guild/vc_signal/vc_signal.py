@@ -33,10 +33,10 @@ from discord.ext import commands
 from discord import ChannelType
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -124,8 +124,8 @@ class VcSignalView(commands.Cog):
             # パーミッションの番号を取得
             permission_code = await guild_user_permission.get_permission_code()
 
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             # キャッシュ読み取り
             #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
@@ -135,7 +135,7 @@ class VcSignalView(commands.Cog):
                 #if int(g.get('guild_id')) == guild_id
             ]
 
-            guild_table:List[Dict[str,Any]] = await db.select_rows(
+            guild_table:List[Dict[str,Any]] = await DB.select_rows(
                 table_name='guild_set_permissions',
                 columns=[],
                 where_clause={
@@ -173,7 +173,7 @@ class VcSignalView(commands.Cog):
             # キャッシュ読み取り
             #table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
-            table_fetch:List[Dict[str,Any]] = await db.select_rows(
+            table_fetch:List[Dict[str,Any]] = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={
@@ -214,7 +214,7 @@ class VcSignalView(commands.Cog):
                             }
 
                             # サーバー用に新たにカラムを作成
-                            await db.insert_row(
+                            await DB.insert_row(
                                 table_name=TABLE,
                                 row_values=row_values
                             )
@@ -230,7 +230,7 @@ class VcSignalView(commands.Cog):
 
                     # 削除されたチャンネルをテーブルから削除
                     for vc in missing_items:
-                        await db.delete_row(
+                        await DB.delete_row(
                             table_name=TABLE,
                             where_clause={
                                 'vc_id':vc['vc_id']
@@ -249,7 +249,7 @@ class VcSignalView(commands.Cog):
                 vc_set = table_fetch
 
                 # データベースの状況を取得
-                db_check_fetch = await db.select_rows(
+                db_check_fetch = await DB.select_rows(
                     table_name=TABLE,
                     columns=[],
                     where_clause={}
@@ -259,7 +259,7 @@ class VcSignalView(commands.Cog):
                 del_check = set(check) - set(app_vc)
 
                 for chan_id in list(del_check):
-                    await db.delete_row(
+                    await DB.delete_row(
                         table_name=TABLE,
                         where_clause={
                             'channel_id':chan_id
@@ -287,8 +287,8 @@ class VcSignalView(commands.Cog):
             guild_id:int,
             token   :Optional[str]=Header(None)
         ):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
@@ -322,7 +322,7 @@ class VcSignalView(commands.Cog):
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_vc_signal_{guild.id}'
 
-                    db_vc_channels:List[Dict] = await db.select_rows(
+                    db_vc_channels:List[Dict] = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={}
@@ -358,7 +358,7 @@ class VcSignalView(commands.Cog):
 
                         # デフォルトで作成
                         for channel_id in missing_channels:
-                            await db.insert_row(
+                            await DB.insert_row(
                                 table_name=TABLE,
                                 row_values={
                                     'vc_id'             :channel_id,
@@ -380,14 +380,14 @@ class VcSignalView(commands.Cog):
                             ]
                             # データベースから削除
                             for channel_id in missing_channels:
-                                await db.delete_row(
+                                await DB.delete_row(
                                     table_name=TABLE,
                                     where_clause={
                                         'channel_id':channel_id
                                     }
                                 )
 
-                        db_vc_channels:List[Dict] = await db.select_rows(
+                        db_vc_channels:List[Dict] = await DB.select_rows(
                             table_name=TABLE,
                             columns=[],
                             where_clause={}
@@ -568,7 +568,7 @@ async def chenge_permission_check(
     permission_code = await permission.get_permission_code()
 
     # アクセス権限の設定を取得
-    guild_p:List[Dict] = await db.select_rows(
+    guild_p:List[Dict] = await DB.select_rows(
         table_name='guild_set_permissions',
         columns=[],
         where_clause={

@@ -25,10 +25,10 @@ from model_types.table_type import LineBotColunm
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import db
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import db
+    from app.core.db_pickle import DB
 
 LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
@@ -160,8 +160,8 @@ class LineGroup(commands.Cog):
             token   :Optional[str]=Header(None),
             sub     :Optional[str]=Header(None)
         ):
-            if db.conn == None:
-                await db.connect()
+            if DB.conn == None:
+                await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
@@ -189,7 +189,7 @@ class LineGroup(commands.Cog):
 
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
-                    l = await db.select_rows(
+                    l = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={
