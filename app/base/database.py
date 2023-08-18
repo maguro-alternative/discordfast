@@ -59,6 +59,7 @@ class PostgresDB:
         if self.conn == None:
             raise DataBaseNotConnect
         await self.conn.close()
+        self.conn = None
         print('disconnect')
 
     async def create_table(self, table_name:str, columns:dict) -> str:
