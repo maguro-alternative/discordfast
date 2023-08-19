@@ -49,20 +49,21 @@ class mst_line(commands.Cog):
             await DB.connect()
 
         # 読み取り
-        line_bot_tabel_fetch:List[dict] = await DB.select_rows(
-            table_name='line_bot',
-            columns=[],
-            where_clause={
-                'guild_id':message.guild.id
-            }
-        )
-        line_tabel_fetch:List[dict] = await DB.select_rows(
-            table_name=TABLE,
-            columns=[],
-            where_clause={
-                'channel_id':message.channel.id
-            }
-        )
+        async with DB.conn.transaction():
+            line_bot_tabel_fetch:List[dict] = await DB.select_rows(
+                table_name='line_bot',
+                columns=[],
+                where_clause={
+                    'guild_id':message.guild.id
+                }
+            )
+            line_tabel_fetch:List[dict] = await DB.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={
+                    'channel_id':message.channel.id
+                }
+            )
 
         line_bot_fetch = LineBotColunm(**line_bot_tabel_fetch[0])
         line_fetch = GuildLineChannel(**line_tabel_fetch[0])
