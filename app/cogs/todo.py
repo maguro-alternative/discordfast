@@ -2,6 +2,7 @@ from discord.ext import commands,tasks
 from discord import Option
 import discord
 
+import asyncio
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
@@ -88,6 +89,7 @@ class Todo(commands.Cog):
         await ctx.respond(respond_text)
 
         try:
+            await asyncio.sleep(5)
             if DB.conn == None:
                 await DB.connect()
 
@@ -146,6 +148,8 @@ class Todo(commands.Cog):
         table_name = f"task_{ctx.guild_id}"
 
         await ctx.respond("処理中...")
+
+        await asyncio.sleep(5)
 
         # データベースに接続
         if DB.conn == None:

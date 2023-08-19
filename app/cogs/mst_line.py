@@ -2,9 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from typing import List,Tuple,Union
-from decimal import Decimal
 import re
-import pickle
 
 import subprocess
 from functools import partial
@@ -12,7 +10,8 @@ from functools import partial
 import io
 import asyncio
 import aiofiles
-from cryptography.fernet import Fernet
+
+import asyncpg
 
 from pydub import AudioSegment
 
@@ -49,21 +48,21 @@ class mst_line(commands.Cog):
             await DB.connect()
 
         # 読み取り
-        async with DB.conn.transaction():
-            line_bot_tabel_fetch:List[dict] = await DB.select_rows(
-                table_name='line_bot',
-                columns=[],
-                where_clause={
-                    'guild_id':message.guild.id
-                }
-            )
-            line_tabel_fetch:List[dict] = await DB.select_rows(
-                table_name=TABLE,
-                columns=[],
-                where_clause={
-                    'channel_id':message.channel.id
-                }
-            )
+        #async with asyncpg.create_pool(DB.dburl):
+        line_bot_tabel_fetch:List[dict] = await DB.select_rows(
+            table_name='line_bot',
+            columns=[],
+            where_clause={
+                'guild_id':message.guild.id
+            }
+        )
+        line_tabel_fetch:List[dict] = await DB.select_rows(
+            table_name=TABLE,
+            columns=[],
+            where_clause={
+                'channel_id':message.channel.id
+            }
+        )
 
         line_bot_fetch = LineBotColunm(**line_bot_tabel_fetch[0])
         line_fetch = GuildLineChannel(**line_tabel_fetch[0])

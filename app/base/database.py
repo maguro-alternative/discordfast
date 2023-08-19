@@ -41,6 +41,7 @@ class PostgresDB:
         self.host = host
         self.conn:Connection = None
         self.semaphore = asyncio.Semaphore(max_connections)  # 同時に実行できる操作数の制限
+        self.dburl = f'{database}://{host}:5432/postgres?user={user}&password={password}'
 
     async def connect(self):
         """
