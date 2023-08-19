@@ -127,14 +127,14 @@ class Todo(commands.Cog):
                 where_clause={}
             )
 
+            task_number = table_fetch[-1]['task_number']
+            # 変更URL
+            url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/guild/{ctx.guild_id}'
+
+            await ctx.respond(f"番号は**{task_number}**です。\n一覧はこちら:{url}")
+
         except:
             await ctx.respond("登録がうまくいきませんでした。もう一度やり直してください。")
-
-        task_number = table_fetch[-1]['task_number']
-        # 変更URL
-        url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/guild/{ctx.guild_id}'
-
-        await ctx.respond(f"番号は**{task_number}**です。\n一覧はこちら:{url}")
 
     @commands.slash_command(description="タスク完了")
     async def todo_completion(
