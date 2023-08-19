@@ -23,8 +23,10 @@ from model_types.discord_type.discord_request_type import DiscordBaseRequest
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 # デバッグモード
 DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
@@ -72,12 +74,14 @@ class GuildSetView(commands.Cog):
                 access_token=oauth_session.access_token
             )
 
-            try:
-                tasks = await pickle_read(
-                    filename=f"task_{guild_id}"
-                )
-            except FileNotFoundError:
-                tasks = list()
+            if DB.conn == None:
+                await DB.connect()
+
+            tasks = await DB.select_rows(
+                table_name=f"task_{guild_id}",
+                columns=[],
+                where_clause={}
+            )
 
             return templates.TemplateResponse(
                 "guild/guild.html",
@@ -135,15 +139,15 @@ class GuildSetView(commands.Cog):
                     else:
                         guild_icon_url = guild.icon.url
                     """
-                    if db.conn == None:
-                        await db.connect()
+                    if DB.conn == None:
+                        await DB.connect()
 
-                    task_info = await db.select_rows(
+                    task_info = await DB.select_rows(
                         table_name=f"task_{guild.id}",
                         columns=[],
                         where_clause={}
                     )
-                    task_list# = LineBotColunm(**line_bot_info[0])
+                    task_list = LineBotColunm(**task_info[0])
                     """
 
                     json_content = {

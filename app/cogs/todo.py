@@ -2,13 +2,13 @@ from discord.ext import commands,tasks
 from discord import Option
 import discord
 
-import aiohttp
-
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 except ModuleNotFoundError:
     from core.start import DBot
+    from core.db_pickle import DB
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -18,24 +18,7 @@ import os
 from datetime import datetime,timezone
 from typing import Dict,List
 
-from base.database import PostgresDB
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
-
 from model_types.discord_type.message_creater import ReqestDiscord
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -105,11 +88,12 @@ class Todo(commands.Cog):
         await ctx.respond(respond_text)
 
         try:
-            await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             table_name = f"task_{ctx.guild_id}"
 
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=table_name,
                 columns=[],
                 where_clause={}
@@ -118,7 +102,7 @@ class Todo(commands.Cog):
             # テーブルがない場合、作成
             if len(table_fetch) == 1:
                 if "does not exist" in table_fetch[0]:
-                    await db.create_table(
+                    await DB.create_table(
                         table_name=table_name,
                         columns=TASK_COLUMN
                     )
@@ -132,23 +116,17 @@ class Todo(commands.Cog):
                 'alert_user':alert_user_id
             }
 
-            await db.insert_row(
+            await DB.insert_row(
                 table_name=table_name,
                 row_values=row_value
             )
 
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=table_name,
                 columns=[],
                 where_clause={}
             )
 
-            await pickle_write(
-                filename=table_name,
-                table_fetch=table_fetch
-            )
-
-            await db.disconnect()
         except:
             await ctx.respond("登録がうまくいきませんでした。もう一度やり直してください。")
 
@@ -169,39 +147,11 @@ class Todo(commands.Cog):
 
         await ctx.respond("処理中...")
 
-        try:
-            table_fetch:List[Dict] = await pickle_read(
-                filename=table_name
-            )
-        except FileNotFoundError:
-            # pickleファイルがない場合、データベースに接続
-            await db.connect()
+        # データベースに接続
+        if DB.conn == None:
+            await DB.connect()
 
-            table_fetch:List[Dict] = await db.select_rows(
-                table_name=table_name,
-                columns=[],
-                where_clause={}
-            )
-
-            await db.disconnect()
-
-            if len(table_fetch) == 1:
-                if "does not exist" in table_fetch[0]:
-                    table_fetch = list()
-                else:
-                    await pickle_write(
-                        filename=table_name,
-                        table_fetch=table_fetch
-                    )
-            else:
-                await pickle_write(
-                    filename=table_name,
-                    table_fetch=table_fetch
-                )
-
-        await db.connect()
-
-        task_fetch:List[Dict] = await db.select_rows(
+        table_fetch:List[Dict] = await DB.select_rows(
             table_name=table_name,
             columns=[],
             where_clause={
@@ -209,44 +159,36 @@ class Todo(commands.Cog):
             }
         )
 
-        # タスク削除
-        await db.delete_row(
-            table_name=table_name,
-            where_clause={
-                'task_number':task_number
-            }
-        )
-
-        table_fatch:List[Dict] = await db.select_rows(
-            table_name=table_name,
-            columns=[],
-            where_clause={}
-        )
-
-        await db.disconnect()
-
-        if len(task_fetch) == 0:
+        if len(table_fetch) == 1:
+            if "does not exist" in table_fetch[0]:
+                await ctx.respond("該当するタスクが見当たりません。")
+                return
+        if len(table_fetch) == 0:
             await ctx.respond("該当するタスクが見当たりません。")
             return
 
-        respond_text = f"タスク終了:{task_fetch[0].get('task_title')}\n"
+        # タスク削除
+        await DB.delete_row(
+            table_name=table_name,
+            where_clause={
+                'task_number':task_number
+            }
+        )
 
-        if task_fetch[0].get('alert_role') != 0:
-            respond_text += f"<@&{int(task_fetch[0].get('alert_role'))}> "
-        if task_fetch[0].get('alert_user') != 0:
-            respond_text += f"<@{int(task_fetch[0].get('alert_user'))}>"
+        if len(table_fetch) == 0:
+            await ctx.respond("該当するタスクが見当たりません。")
+            return
+
+        respond_text = f"タスク終了:{table_fetch[0].get('task_title')}\n"
+
+        if table_fetch[0].get('alert_role') != 0:
+            respond_text += f"<@&{int(table_fetch[0].get('alert_role'))}> "
+        if table_fetch[0].get('alert_user') != 0:
+            respond_text += f"<@{int(table_fetch[0].get('alert_user'))}>"
 
         respond_text += f"\n備考:{description}"
 
         await ctx.respond(respond_text)
-
-        await pickle_write(
-            filename=table_name,
-            table_fetch=table_fatch
-        )
-
-
-
 
 
 def setup(bot:DBot):

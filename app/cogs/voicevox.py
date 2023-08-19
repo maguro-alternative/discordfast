@@ -3,7 +3,6 @@ import discord
 from discord.ext import commands
 from discord import Option
 import aiofiles
-from pydub import AudioSegment
 
 import aiohttp
 import os
@@ -46,10 +45,6 @@ Speaker_id = [  2,0,6,4,
 async def get_speaker(ctx:discord.ApplicationContext):
     return [speaker for speaker in Speaker if speaker.startswith(ctx.value)]
 
-# wavファイルの長さを測る
-async def get_wav_second(wav_file_path) -> float:
-    base_sound = AudioSegment.from_file(wav_file_path, format="wav")
-    return base_sound.duration_seconds
 # Voicevoxの読み上げ
 class voicevox(commands.Cog):
     def __init__(self, bot : DBot):
