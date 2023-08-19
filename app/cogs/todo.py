@@ -192,7 +192,7 @@ class Todo(commands.Cog):
 
         respond_text += f"\n備考:{description}"
 
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
 
         await ctx.respond(respond_text)
 
