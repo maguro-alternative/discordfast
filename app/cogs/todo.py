@@ -149,7 +149,7 @@ class Todo(commands.Cog):
 
         await ctx.respond("処理中...")
 
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
 
         # データベースに接続
         if DB.conn == None:
@@ -191,6 +191,8 @@ class Todo(commands.Cog):
             respond_text += f"<@{int(table_fetch[0].get('alert_user'))}>"
 
         respond_text += f"\n備考:{description}"
+
+        await asyncio.sleep(3)
 
         await ctx.respond(respond_text)
 
