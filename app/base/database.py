@@ -18,7 +18,8 @@ class PostgresDB:
             user:str,
             password:str,
             database:str,
-            host:str
+            host:str,
+            max_connections: int = 5
     ):
         """
         PostgreSQLのクラス
@@ -39,6 +40,7 @@ class PostgresDB:
         self.database = database
         self.host = host
         self.conn:Connection = None
+        self.semaphore = asyncio.Semaphore(max_connections)  # 同時に実行できる操作数の制限
 
     async def connect(self):
         """
@@ -122,27 +124,28 @@ class PostgresDB:
         else:
             columns_str = ', '.join(columns)
 
-        if where_clause is None:
-            sql = f"SELECT {columns_str} FROM {table_name};"
-        else:
-            where_clause_str = ' AND '.join(
-                [
-                    f"{column}=${i+1}" for i, column in enumerate(
-                        where_clause.keys()
-                    )
-                ]
-            )
-            where_clause_values = list(where_clause.values())
-            sql = f"SELECT {columns_str} FROM {table_name} "
-            if where_clause_str:
-                sql += f"WHERE {where_clause_str};"
+        async with self.semaphore:  # セマフォで同時実行数を制御
+            if where_clause is None:
+                sql = f"SELECT {columns_str} FROM {table_name};"
             else:
-                sql += ";"
+                where_clause_str = ' AND '.join(
+                    [
+                        f"{column}=${i+1}" for i, column in enumerate(
+                            where_clause.keys()
+                        )
+                    ]
+                )
+                where_clause_values = list(where_clause.values())
+                sql = f"SELECT {columns_str} FROM {table_name} "
+                if where_clause_str:
+                    sql += f"WHERE {where_clause_str};"
+                else:
+                    sql += ";"
 
-        try:
-            return await self.conn.fetch(sql, *where_clause_values)
-        except asyncpg.exceptions.UndefinedTableError:
-            return [f"{table_name} does not exist"]
+            try:
+                return await self.conn.fetch(sql, *where_clause_values)
+            except asyncpg.exceptions.UndefinedTableError:
+                return [f"{table_name} does not exist"]
 
     async def insert_row(
         self,
