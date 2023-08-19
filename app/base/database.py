@@ -19,7 +19,7 @@ class PostgresDB:
             password:str,
             database:str,
             host:str,
-            max_connections: int = 5
+            max_connections: int = 1
     ):
         """
         PostgreSQLのクラス
