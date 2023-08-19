@@ -165,7 +165,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                            print(limit.seconds)
+                            print(f"level 1:{limit.seconds}")
 
                     if task.get('alert_level') == 2:
                         # 残り2日の場合
@@ -177,7 +177,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                            print(limit.seconds)
+                            print(f"level 2:{limit.seconds}")
 
                     if task.get('alert_level') == 3:
                         # 残り3日の場合
@@ -192,7 +192,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                            print(limit.seconds)
+                            print(f"level 3:{limit.seconds}")
 
                     if task.get('alert_level') == 4:
                         # 残り4日の場合
@@ -207,7 +207,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                            print(limit.seconds)
+                            print(f"level 4:{limit.seconds}")
 
                     if task.get('alert_level') == 5:
                         # 残り5日の場合
@@ -223,7 +223,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                            print(limit.seconds)
+                            print(f"level 5:{limit.seconds}")
 
                     # 10分前ならレベル関係なくアラートを出す
                     if limit.seconds < 600:
