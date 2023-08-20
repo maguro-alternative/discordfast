@@ -229,7 +229,7 @@ class Task_Loop(commands.Cog):
                             print(f"level 5:{limit_day_seconds}")
 
                     # 10分前ならレベル関係なくアラートを出す
-                    if limit.seconds < 600:
+                    if limit_day_seconds < 600:
                         await discord_bor_api.send_discord(
                             channel_id=int(task.get('task_channel')),
                             message=text
