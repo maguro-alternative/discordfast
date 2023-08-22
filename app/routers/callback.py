@@ -113,6 +113,14 @@ class CallBack(commands.Cog):
             # ホームページにリダイレクトする
             return RedirectResponse(url="/guilds")
 
+        @self.router.get('/discord_save_state/{state}')
+        async def discord_save_state(
+            request:Request,
+            state:str
+        ):
+            request.session['state'] = state
+            return {'message':'ok'}
+
         @self.router.get("/line-callback/")
         async def line_callback(
             code:str,

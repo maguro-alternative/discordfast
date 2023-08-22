@@ -16,7 +16,7 @@ from base.aio_req import (
     decrypt_password
 )
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser,MatchGuild
-from model_types.discord_type.discord_request_type import DiscordGuildsRequest
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
@@ -85,7 +85,8 @@ class GuildsView(commands.Cog):
 
         @self.router.get('/guilds/view')
         async def guilds(
-            token:Optional[str]=Header(None)
+            request:Request
+            #token:Optional[str]=Header(None)
         ):
             """
             サーバー一覧を取得
@@ -96,9 +97,11 @@ class GuildsView(commands.Cog):
             Returns:
                 _type_: サーバー一覧
             """
+            session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
-                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
+                #access_token:str = await decrypt_password(decrypt_password=session.discord_oauth_data.access_token.encode('utf-8'))
+                access_token = session.discord_oauth_data.access_token
                 # ログインユーザが所属しているサーバを取得
                 user_in_guild_get:List[Dict] = await aio_get_request(
                     url=f'{DISCORD_BASE_URL}/users/@me/guilds',
@@ -111,8 +114,7 @@ class GuildsView(commands.Cog):
                     {
                         'id'                :bot_guild.id,
                         'name'              :bot_guild.name,
-                        'icon'              :bot_guild.icon,
-                        'owner'             :bot_guild.owner,
+                        'icon'              :bot_guild._icon,
                         'permissions'       :bot_guild.premium_tier,
                         'features'          :bot_guild.features,
                         'permissions_new'   :bot_guild.premium_tier
@@ -130,5 +132,8 @@ class GuildsView(commands.Cog):
                 if int(user_guild.get('id')) in user_guild_id
             ]
             #MatchGuild(**join_guilds[0])
+
+            from pprint import pprint
+            pprint(join_guilds)
 
             return JSONResponse(content=join_guilds)

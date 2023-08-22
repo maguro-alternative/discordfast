@@ -78,7 +78,7 @@ class ReadyLoad(commands.Cog):
             "http://localhost:5000",
             "http://localhost",
             self.callback_url,
-            "http://localhost:8000",
+            "http://localhost:3000",
         ]
         # new テンプレート関連の設定 (jinja2)
         self.templates = Jinja2Templates(directory="templates")
