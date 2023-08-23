@@ -43,6 +43,9 @@ class PostgresDB:
         self.semaphore = asyncio.Semaphore(max_connections)  # 同時に実行できる操作数の制限
         self.dburl = f'{database}://{host}:5432/postgres?user={user}&password={password}'
 
+        # 排他制御用のロック
+        self.lock = asyncio.Lock()
+
     async def connect(self):
         """
         PostgreSQLへ接続
@@ -125,7 +128,8 @@ class PostgresDB:
         else:
             columns_str = ', '.join(columns)
 
-        async with self.semaphore:  # セマフォで同時実行数を制御
+        async with self.lock:   # 排他制御のためにロックを獲得
+        #async with self.semaphore:  # セマフォで同時実行数を制御
             if where_clause is None:
                 sql = f"SELECT {columns_str} FROM {table_name};"
             else:
