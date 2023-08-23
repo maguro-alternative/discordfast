@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import Optional
+from typing import List,Dict
 
 from base.aio_req import (
     aio_get_request,
@@ -18,7 +18,7 @@ from base.aio_req import (
     decrypt_password
 )
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
-from model_types.discord_type.discord_request_type import DiscordBaseRequest
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
@@ -98,7 +98,8 @@ class GuildSetView(commands.Cog):
         @self.router.get('/guild/{guild_id}/view')
         async def guild(
             guild_id:int,
-            token   :Optional[str]=Header(None)
+            request:Request
+            #token   :Optional[str]=Header(None)
         ) -> JSONResponse:
             """
             指定されたサーバidのページデータを取得
@@ -109,10 +110,12 @@ class GuildSetView(commands.Cog):
             Returns:
                 JSONResponse: _description_
             """
+            session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
+                #access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
+                access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -138,24 +141,36 @@ class GuildSetView(commands.Cog):
                         guild_icon_url = ''
                     else:
                         guild_icon_url = guild.icon.url
-                    """
+
                     if DB.conn == None:
                         await DB.connect()
 
-                    task_info = await DB.select_rows(
+                    task_info:List[Dict] = await DB.select_rows(
                         table_name=f"task_{guild.id}",
                         columns=[],
                         where_clause={}
                     )
-                    task_list = LineBotColunm(**task_info[0])
-                    """
+
+                    task_list = [
+                        {
+                            'taskNumber'    :task.get('task_number'),
+                            'taskTitle'     :task.get('task_title'),
+                            'timeLimit'     :str(task.get('time_limit')),
+                            'taskChannel'   :int(task.get('task_channel')),
+                            'alertLevel'    :task.get('alert_level'),
+                            'alertRole'     :int(task.get('alert_role')),
+                            'alertUser'     :int(task.get('alert_user'))
+                        }
+                        for task in task_info
+                    ]
 
                     json_content = {
                         'guildIconUrl'  :guild_icon_url,
                         'guildName'     :guild.name,
                         'permissionCode':permission_code,
-                        # 'taskList':task_list
+                        'taskList'      :task_list
                     }
+
                     return JSONResponse(content=json_content)
 
             return JSONResponse(content={'message':'not guild'})

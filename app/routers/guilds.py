@@ -133,7 +133,4 @@ class GuildsView(commands.Cog):
             ]
             #MatchGuild(**join_guilds[0])
 
-            from pprint import pprint
-            pprint(join_guilds)
-
             return JSONResponse(content=join_guilds)
