@@ -137,6 +137,8 @@ class Login(commands.Cog):
             request: Request,
             guild_id: int
         ):
+            if DB.conn == None:
+                await DB.connect()
             # セッションの初期化
             if request.session.get('line_user') != None:
                 request.session.pop("line_user")
@@ -151,8 +153,13 @@ class Login(commands.Cog):
             request.session['state'] = state
             request.session['nonce'] = nonce
             request.session['guild_id'] = guild_id
+
             # line_botテーブルをロード
-            line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
+            line_bot_table:List[Dict] = await DB.select_rows(
+                table_name="line_bot",
+                columns=[],
+                where_clause={}
+            )
 
             # 主キーがサーバーのidと一致するものを取り出す
             guild_set_line_bot:List[Dict] = [
