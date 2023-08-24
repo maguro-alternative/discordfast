@@ -99,7 +99,6 @@ class GuildSetView(commands.Cog):
         async def guild(
             guild_id:int,
             request:Request
-            #token   :Optional[str]=Header(None)
         ) -> JSONResponse:
             """
             指定されたサーバidのページデータを取得
@@ -114,7 +113,6 @@ class GuildSetView(commands.Cog):
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                #access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
                 access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
