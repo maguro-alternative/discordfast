@@ -18,7 +18,7 @@ from base.aio_req import (
     decrypt_password
 )
 
-from model_types.line_type.line_request_type import LineBaseRequest
+from model_types.session_type import FastAPISession
 from model_types.line_type.line_oauth import LineTokenVerify,LineProfile
 from model_types.table_type import LineBotColunm
 
@@ -55,11 +55,14 @@ class LineGroup(commands.Cog):
             request:Request,
             guild_id:int
         ):
+            session = FastAPISession(**request.session)
+            if DB.conn == None:
+                await DB.connect()
             # OAuth2トークンが有効かどうか判断
-            if request.session.get('line_oauth_data'):
+            if session.line_oauth_data:
                 try:
                     oauth_session = await aio_get_request(
-                        url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={request.session['line_oauth_data']['access_token']}",
+                        url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={session.line_oauth_data.access_token}",
                         headers={}
                     )
                     # トークンの有効期限が切れていた場合、再ログインする
@@ -70,27 +73,27 @@ class LineGroup(commands.Cog):
             else:
                 return RedirectResponse(url='/line-login')
 
-            # line_botテーブルを取得
-            line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
+            # line_botテーブルの読み込み
+            line_bot_table:List[Dict] = await DB.select_rows(
+                table_name='line_bot',
+                columns=[],
+                where_clause={
+                    'guild_id':int(guild_id)
+                }
+            )
 
-            guild_id = request.session.get('guild_id')
-
-            guild_set_line_bot:List[Dict] = [
-                line
-                for line in line_bot_table
-                if int(line.get('guild_id')) == int(guild_id)
-            ]
+            guild_set_line_bot = LineBotColunm(**line_bot_table[0])
 
             # 復号化
-            line_group_id:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_group_id')))
-            line_bot_token:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_bot_token')))
+            line_group_id:str = await decrypt_password(encrypted_password=guild_set_line_bot.line_group_id)
+            line_bot_token:str = await decrypt_password(encrypted_password=guild_set_line_bot.line_bot_token)
 
             # LINE→Discordへの送信先チャンネルid
-            default_channel_id:int = int(guild_set_line_bot[0].get('default_channel_id'))
+            default_channel_id:int = guild_set_line_bot.default_channel_id
 
             # グループIDが有効かどうか判断
             r = await aio_get_request(
-                url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{request.session['line_user']['sub']}",
+                url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{session.line_user.sub}",
                 headers={
                     'Authorization': f'Bearer {line_bot_token}'
                 }
@@ -101,8 +104,8 @@ class LineGroup(commands.Cog):
 
             # サーバのチャンネル一覧を取得
             all_channel = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/channels',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/channels',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -112,8 +115,8 @@ class LineGroup(commands.Cog):
 
             # アクティブスレッドを取得
             active_threads = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/threads/active',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/threads/active',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -134,8 +137,8 @@ class LineGroup(commands.Cog):
                 thread_id = thread.get('id')
                 # アーカイブスレッドを取得
                 archived_threads = await aio_get_request(
-                    url = DISCORD_BASE_URL + f'/channels/{thread_id}/threads/archived/public',
-                    headers = {
+                    url=f'{DISCORD_BASE_URL}/channels/{thread_id}/threads/archived/public',
+                    headers={
                         'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                     }
                 )
@@ -146,7 +149,7 @@ class LineGroup(commands.Cog):
             return templates.TemplateResponse(
                 "linegroup.html",
                 {
-                    "request": request, 
+                    "request": request,
                     "guild_id": guild_id,
                     "all_channel": all_channel_sort,
                     "default_channel_id":default_channel_id,
@@ -156,17 +159,17 @@ class LineGroup(commands.Cog):
 
         @self.router.get('/group/{guild_id}/view')
         async def group(
-            guild_id:int,
-            token   :Optional[str]=Header(None),
-            sub     :Optional[str]=Header(None)
+            request:Request,
+            guild_id:int
         ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
-                user_sub:str = await decrypt_password(decrypt_password=sub.encode('utf-8'))
+                access_token:str = session.line_oauth_data.access_token
+                user_sub:str = session.line_user.sub
                 # LINEのユーザ情報を取得
                 line_user = await aio_get_request(
                     url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
