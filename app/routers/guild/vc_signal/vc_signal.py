@@ -11,7 +11,6 @@ from typing import List
 
 from typing import List,Dict,Any,Optional
 
-from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
     pickle_read,
@@ -24,7 +23,7 @@ from base.aio_req import (
 )
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
-from model_types.discord_type.discord_request_type import DiscordBaseRequest
+from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildVcChannel,GuildSetPermission
 
@@ -285,14 +284,15 @@ class VcSignalView(commands.Cog):
         @self.router.get('/guild/{guild_id}/vc-signal/view')
         async def vc_signal(
             guild_id:int,
-            token   :Optional[str]=Header(None)
+            request:Request
         ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=token.encode('utf-8'))
+                access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
