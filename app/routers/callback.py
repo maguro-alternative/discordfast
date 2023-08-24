@@ -59,9 +59,9 @@ class CallBack(commands.Cog):
 
         @self.router.get('/discord-callback/')
         async def discord_callback(
-            code:str,
-            state: str,
-            request:Request
+            code    : str,
+            state   : str,
+            request : Request
         ):
             # セッションの初期化
             if request.session.get('discord_user') != None:
@@ -113,9 +113,9 @@ class CallBack(commands.Cog):
 
         @self.router.get("/line-callback/")
         async def line_callback(
-            code:str,
-            state: str,
-            request:Request
+            code    : str,
+            state   : str,
+            request : Request
         ):
             if DB.conn == None:
                 await DB.connect()
@@ -191,8 +191,11 @@ class CallBack(commands.Cog):
             request.session['line_oauth_data'] = line_access_token
             request.session['line_user'] = line_id_token
 
-            # ホームページにリダイレクトする
-            return RedirectResponse(url=f"/group/{guild_id}")
+            if request.session.get('react'):
+                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
+            else:
+                # ホームページにリダイレクトする
+                return RedirectResponse(url=f"/group/{guild_id}")
 
         @self.router.get('/oauth_save_state/{state}')
         async def oauth_save_state(
