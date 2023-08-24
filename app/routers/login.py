@@ -22,8 +22,10 @@ from typing import Dict,List
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -49,8 +51,8 @@ class Login(commands.Cog):
             request.session['state'] = state
             try:
                 oauth_data:dict = await aio_get_request(
-                    url = DISCORD_BASE_URL + '/users/@me',
-                    headers = {
+                    url=f'{DISCORD_BASE_URL}/users/@me',
+                    headers={
                         'Authorization': f'Bearer {request.session["discord_oauth_data"]["access_token"]}' 
                     }
                 )
@@ -67,16 +69,22 @@ class Login(commands.Cog):
 
         @self.router.get("/line-login")
         async def line_login_select(request: Request):
+            if DB.conn == None:
+                await DB.connect()
             # Botが所属しているサーバを取得
             bot_in_guild_get:List[Dict] = await aio_get_request(
-                url = DISCORD_BASE_URL + '/users/@me/guilds',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/users/@me/guilds',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
 
             # line_botテーブルをロード
-            line_bot_table:List[Dict] = await pickle_read(filename="line_bot")
+            line_bot_table:List[Dict] = await DB.select_rows(
+                table_name="line_bot",
+                columns=[],
+                where_clause={}
+            )
 
             # Botが所属しているサーバidを取得
             bot_guild_ids:List[int] = [
