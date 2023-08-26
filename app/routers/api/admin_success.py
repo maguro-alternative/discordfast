@@ -13,6 +13,7 @@ from base.aio_req import pickle_write,return_permission,get_profile,decrypt_pass
 from routers.api.chack.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
 from model_types.post_json_type import AdminSuccessJson
+from model_types.session_type import FastAPISession
 
 from core.pickes_save.guild_permissions_columns import GUILD_SET_COLUMNS
 
@@ -160,14 +161,16 @@ class AdminSuccess(commands.Cog):
 
         @self.router.post('/api/admin-success-json')
         async def admin_post_json(
-            request:AdminSuccessJson
+            admin_json  :AdminSuccessJson,
+            request     :Request
         ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -177,47 +180,49 @@ class AdminSuccess(commands.Cog):
 
             TABLE = 'guild_set_permissions'
 
-            for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            guild_id=guild.id,
-                            user_id=discord_user.id,
-                            access_token=access_token
-                        )
-                    else:
-                        from model_types.discord_type.guild_permission import Permission
-                        permission = Permission()
-                        permission.administrator = True
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # サーバの権限を取得
+                permission = await return_permission(
+                    guild_id=admin_json.guild_id,
+                    user_id=discord_user.id,
+                    access_token=access_token
+                )
+            else:
+                from model_types.discord_type.guild_permission import Permission
+                permission = Permission()
+                permission.administrator = True
 
-                    row_value = {
-                        'line_permission'               :request.line_permission,
-                        'line_user_id_permission'       :request.line_user_id_permission,
-                        'line_role_id_permission'       :request.line_role_id_permission,
-                        'line_bot_permission_code'      :request.line_bot_permission,
-                        'line_bot_user_id_permission'   :request.line_bot_user_id_permission,
-                        'line_bot_role_id_permission'   :request.line_bot_role_id_permission,
-                        'vc_permission'                 :request.vc_permission,
-                        'vc_user_id_permission'         :request.vc_user_id_permission,
-                        'vc_role_id_permission'         :request.vc_role_id_permission,
-                        'webhook_permission'            :request.webhook_permission,
-                        'webhook_user_id_permission'    :request.webhook_user_id_permission,
-                        'webhook_role_id_permission'    :request.webhook_role_id_permission
+            # 管理者ではない場合
+            if permission.administrator == False:
+                return JSONResponse(content={'message':'access token Unauthorized'})
+
+            row_value = {
+                'line_permission'               :admin_json.line_permission,
+                'line_user_id_permission'       :admin_json.line_user_id_permission,
+                'line_role_id_permission'       :admin_json.line_role_id_permission,
+                'line_bot_permission_code'      :admin_json.line_bot_permission,
+                'line_bot_user_id_permission'   :admin_json.line_bot_user_id_permission,
+                'line_bot_role_id_permission'   :admin_json.line_bot_role_id_permission,
+                'vc_permission'                 :admin_json.vc_permission,
+                'vc_user_id_permission'         :admin_json.vc_user_id_permission,
+                'vc_role_id_permission'         :admin_json.vc_role_id_permission,
+                'webhook_permission'            :admin_json.webhook_permission,
+                'webhook_user_id_permission'    :admin_json.webhook_user_id_permission,
+                'webhook_role_id_permission'    :admin_json.webhook_role_id_permission
+            }
+
+            # デバッグモード
+            if DEBUG_MODE == False:
+                await DB.update_row(
+                    table_name=TABLE,
+                    row_values=row_value,
+                    where_clause={
+                        'guild_id':admin_json.guild_id
                     }
+                )
+            else:
+                import pprint
+                pprint.pprint(row_value)
 
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        await DB.update_row(
-                            table_name=TABLE,
-                            row_values=row_value,
-                            where_clause={
-                                'guild_id':guild.id
-                            }
-                        )
-                    else:
-                        import pprint
-                        pprint.pprint(row_value)
-
-                    return JSONResponse(content={'message':'success!!'})
+            return JSONResponse(content={'message':'success!!'})

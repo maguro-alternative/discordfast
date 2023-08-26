@@ -39,9 +39,6 @@ class AdminSuccessJson(BaseModel):
     param:
     guild_id                    :int
         Discordサーバのid
-    access_token                :str
-        DiscordOAuthのトークン
-        暗号化された状態で送られてくる
     line_permission             :int
         DiscordからLINEへの送信設定を編集できる権限コード
     line_user_id_permission     :List[int]
@@ -68,7 +65,6 @@ class AdminSuccessJson(BaseModel):
         Webhookを追加、編集できるロールid
     """
     guild_id                    :int
-    access_token                :str
     line_permission             :int
     line_user_id_permission     :List[int]
     line_role_id_permission     :List[int]
