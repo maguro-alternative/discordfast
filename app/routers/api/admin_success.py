@@ -201,7 +201,7 @@ class AdminSuccess(commands.Cog):
                 'line_permission'               :admin_json.line_permission,
                 'line_user_id_permission'       :admin_json.line_user_id_permission,
                 'line_role_id_permission'       :admin_json.line_role_id_permission,
-                'line_bot_permission_code'      :admin_json.line_bot_permission,
+                'line_bot_permission'           :admin_json.line_bot_permission,
                 'line_bot_user_id_permission'   :admin_json.line_bot_user_id_permission,
                 'line_bot_role_id_permission'   :admin_json.line_bot_role_id_permission,
                 'vc_permission'                 :admin_json.vc_permission,
@@ -214,6 +214,8 @@ class AdminSuccess(commands.Cog):
 
             # デバッグモード
             if DEBUG_MODE == False:
+                import pprint
+                pprint.pprint(row_value)
                 await DB.update_row(
                     table_name=TABLE,
                     row_values=row_value,
@@ -221,8 +223,18 @@ class AdminSuccess(commands.Cog):
                         'guild_id':admin_json.guild_id
                     }
                 )
+                pprint.pprint(
+                    await DB.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={
+                            'guild_id':admin_json.guild_id
+                        }
+                    )
+                )
             else:
                 import pprint
                 pprint.pprint(row_value)
+                print(DEBUG_MODE)
 
             return JSONResponse(content={'message':'success!!'})
