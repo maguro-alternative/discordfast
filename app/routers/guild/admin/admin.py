@@ -167,7 +167,7 @@ class AdminView(commands.Cog):
                         permission.administrator = True
                     guild_members = [
                         {
-                            'userId'            :member.id,
+                            'userId'            :str(member.id),
                             'userName'          :member.name,
                             'userDisplayName'   :member.display_name
                         }
@@ -175,7 +175,7 @@ class AdminView(commands.Cog):
                     ]
                     guild_roles = [
                         {
-                            'roleId'    :role.id,
+                            'roleId'    :str(role.id),
                             'roleName'  :role.name
                         }
                         for role in guild.roles
