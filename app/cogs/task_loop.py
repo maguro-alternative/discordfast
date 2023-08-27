@@ -89,6 +89,9 @@ class Task_Loop(commands.Cog):
                         webhook_url = guild_webhook.url
                         break
 
+                if not bool('webhook_url' in locals()):
+                    break
+
                 # twitterの場合
                 if webhook.subscription_type == 'twitter':
                     await twitter_subsc(
