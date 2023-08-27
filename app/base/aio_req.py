@@ -224,8 +224,8 @@ async def return_permission(
 
     # ログインユーザのロールの詳細を取得
     match_role = await search_role(
-        guild_role_get = guild_role,
-        user_role_get = guild_user
+        guild_role_get=guild_role,
+        user_role_get=guild_user
     )
 
     # ログインユーザの所属しているサーバを取得
