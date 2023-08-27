@@ -470,13 +470,13 @@ class LinePostView(commands.Cog):
                         ]
                         # カテゴリーチャンネル一覧
                         category_list.append({
-                            'id'    :category_value.id,
+                            'id'    :str(category_value.id),
                             'name'  :category_value.name
                         })
                         # カテゴリー内のチャンネル一覧
                         channels_list = [
                             {
-                                'id'            :chan.id,
+                                'id'            :str(chan.id),
                                 'name'          :chan.name,
                                 'type'          :type(chan).__name__,
                                 'lineNgChannel' :db_channels[i].line_ng_channel,
@@ -504,7 +504,7 @@ class LinePostView(commands.Cog):
                     channels_dict.update({
                         'None':[
                             {
-                                'id'            :none_channel.id,
+                                'id'            :str(none_channel.id),
                                 'name'          :none_channel.name,
                                 'type'          :type(none_channel).__name__,
                                 'lineNgChannel' :db_channels[i].line_ng_channel,
@@ -528,7 +528,7 @@ class LinePostView(commands.Cog):
                     # スレッド一覧
                     threads = [
                         {
-                            'id'            :thread.id,
+                            'id'            :str(thread.id),
                             'name'          :thread.name,
                             'lineNgChannel' :db_channels[i].line_ng_channel,
                             'ngMessageType' :db_channels[i].ng_message_type,
@@ -541,7 +541,7 @@ class LinePostView(commands.Cog):
                     # サーバー内のメンバー一覧
                     guild_users = [
                         {
-                            'id'                :user.id,
+                            'id'                :str(user.id),
                             'name'              :user.name,
                             'userDisplayName'   :user.display_name
                         }
