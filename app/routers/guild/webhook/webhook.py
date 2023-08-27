@@ -269,9 +269,9 @@ class WebhookView(commands.Cog):
                     all_webhook = await guild.webhooks()
                     webhooks = [
                         {
-                            'id'            :w.id,
+                            'id'            :str(w.id),
                             'name'          :w.name,
-                            'channelId'     :w.channel_id,
+                            'channelId'     :str(w.channel_id),
                             'channelName'   :guild.get_channel(w.channel_id).name
                         }
                         for w in all_webhook
@@ -280,7 +280,7 @@ class WebhookView(commands.Cog):
                     # サーバー内のメンバー一覧
                     guild_users = [
                         {
-                            'id'                :user.id,
+                            'id'                :str(user.id),
                             'name'              :user.name,
                             'userDisplayName'   :user.display_name
                         }
@@ -290,7 +290,7 @@ class WebhookView(commands.Cog):
                     # サーバー内でのロール一覧
                     guild_roles = [
                         {
-                            'id'    :user.id,
+                            'id'    :str(user.id),
                             'name'  :user.name
                         }
                         for user in guild.roles
