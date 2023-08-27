@@ -313,13 +313,13 @@ class LineSetView(commands.Cog):
                     for category_id,category_value in category_index.items():
                         # カテゴリーチャンネル一覧
                         category_list.append({
-                            'id'    :category_value.id,
+                            'id'    :str(category_value.id),
                             'name'  :category_value.name
                         })
                         # カテゴリー内のチャンネル一覧
                         channels_list = [
                             {
-                                'id'    :chan.id,
+                                'id'    :str(chan.id),
                                 'name'  :chan.name,
                                 'type'  :type(chan).__name__
                             }
@@ -332,7 +332,7 @@ class LineSetView(commands.Cog):
                     channels_dict.update({
                         'None':[
                             {
-                                'id'    :chan.id,
+                                'id'    :str(chan.id),
                                 'name'  :chan.name,
                                 'type'  :type(chan).__name__
                             }
@@ -343,7 +343,7 @@ class LineSetView(commands.Cog):
                     # スレッド一覧
                     threads = [
                         {
-                            'id'    :thread.id,
+                            'id'    :str(thread.id),
                             'name'  :thread.name
                         }
                         for thread in guild.threads
