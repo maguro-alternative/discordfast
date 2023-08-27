@@ -44,12 +44,12 @@ class WebhookSet(BaseModel):
         Wed Jun 14 00:01:27 +0000 2023
     """
     uuid                :Union[UUID,str]
-    guild_id            :int
-    webhook_id          :int
+    guild_id            :str
+    webhook_id          :str
     subscription_type   :str
     subscription_id     :str
-    mention_roles       :List[int]
-    mention_members     :List[int]
+    mention_roles       :List[str]
+    mention_members     :List[str]
     ng_or_word          :List[str]
     ng_and_word         :List[str]
     search_or_word      :List[str]
@@ -88,13 +88,13 @@ class GuildVcChannel(BaseModel):
     mention_role_id :List[int]
         入退室があった場合に通知するロールのid
     """
-    vc_id           :int
-    guild_id        :int
+    vc_id           :str
+    guild_id        :str
     send_signal     :bool
-    send_channel_id :int
+    send_channel_id :str
     join_bot        :bool
     everyone_mention:bool
-    mention_role_id :List[int]
+    mention_role_id :List[str]
 
 class GuildLineChannel(BaseModel):
     """
@@ -115,12 +115,12 @@ class GuildLineChannel(BaseModel):
     ng_users        :List[int]
         LINE側に送信しないDiscordユーザのid
     """
-    channel_id      :int
-    guild_id        :int
+    channel_id      :str
+    guild_id        :str
     line_ng_channel :bool
     ng_message_type :List[str]
     message_bot     :bool
-    ng_users        :List[int]
+    ng_users        :List[str]
 
 class GuildSetPermission(BaseModel):
     """
@@ -208,5 +208,5 @@ class LineBotColunm(BaseModel):
     line_group_id       :bytes
     line_client_id      :bytes
     line_client_secret  :bytes
-    default_channel_id  :int
+    default_channel_id  :str
     debug_mode          :bool
