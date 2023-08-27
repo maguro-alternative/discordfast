@@ -426,7 +426,7 @@ class VcSignalView(commands.Cog):
                         ]
                         vc_channel_list = [
                             {
-                                'id'                :chan.id,
+                                'id'                :str(chan.id),
                                 'name'              :chan.name,
                                 'sendSignal'        :db_vc_channels[i].send_signal,
                                 'sendChannelId'     :db_vc_channels[i].send_channel_id,
@@ -443,13 +443,13 @@ class VcSignalView(commands.Cog):
 
                         # カテゴリーチャンネル一覧
                         category_list.append({
-                            'id'    :category_value.id,
+                            'id'    :str(category_value.id),
                             'name'  :category_value.name
                         })
                         # カテゴリー内のチャンネル一覧
                         channels_list = [
                             {
-                                'id'    :chan.id,
+                                'id'    :str(chan.id),
                                 'name'  :chan.name,
                                 'type'  :type(chan).__name__,
                             }
@@ -479,7 +479,7 @@ class VcSignalView(commands.Cog):
                     vc_channel_dict.update({
                         'None':[
                             {
-                                'id'                :none_channel.id,
+                                'id'                :str(none_channel.id),
                                 'name'              :none_channel.name,
                                 'sendSignal'        :db_vc_channels[i].send_signal,
                                 'sendChannelId'     :db_vc_channels[i].send_channel_id,
@@ -495,7 +495,7 @@ class VcSignalView(commands.Cog):
                     channels_dict.update({
                         'None':[
                             {
-                                'id'    :none_channel.id,
+                                'id'    :str(none_channel.id),
                                 'name'  :none_channel.name,
                                 'type'  :type(none_channel).__name__,
                             }
@@ -506,7 +506,7 @@ class VcSignalView(commands.Cog):
                     # スレッド一覧
                     threads = [
                         {
-                            'id'    :thread.id,
+                            'id'    :str(thread.id),
                             'name'  :thread.name,
                         }
                         for thread in guild.threads
@@ -515,7 +515,7 @@ class VcSignalView(commands.Cog):
                     # サーバー内のメンバー一覧
                     guild_users = [
                         {
-                            'id'                :user.id,
+                            'id'                :str(user.id),
                             'name'              :user.name,
                             'userDisplayName'   :user.display_name
                         }
@@ -525,7 +525,7 @@ class VcSignalView(commands.Cog):
                     # サーバー内でのロール一覧
                     guild_roles = [
                         {
-                            'id'    :user.id,
+                            'id'    :str(user.id),
                             'name'  :user.name
                         }
                         for user in guild.roles
