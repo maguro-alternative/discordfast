@@ -20,6 +20,7 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Disco
 
 from model_types.table_type import GuildSetPermission,WebhookSet
 from model_types.post_json_type import WebhookSuccessJson
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
@@ -274,15 +275,17 @@ class WebhookSuccess(commands.Cog):
 
         @self.router.post('/api/webhook-success-json')
         async def webhook_post(
-            request:WebhookSuccessJson
+            webhook_json:WebhookSuccessJson,
+            request:Request
         ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -293,7 +296,7 @@ class WebhookSuccess(commands.Cog):
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if webhook_json.guild_id == guild.id:
                     # デバッグモード
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
@@ -346,7 +349,7 @@ class WebhookSuccess(commands.Cog):
                         for webhook_id in db_webhook
                     ]
 
-                    for webhook in request.webhook_list:
+                    for webhook in webhook_json.webhook_list:
                         row_value = {
                             'webhook_id'        :webhook.webhook_id,
                             'subscription_type' :webhook.subscription_type,

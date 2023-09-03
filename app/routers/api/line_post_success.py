@@ -16,6 +16,7 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Disco
 
 from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import LinePostSuccessJson
+from model_types.session_type import FastAPISession
 
 from core.pickes_save.line_columns import LINE_COLUMNS
 
@@ -204,14 +205,18 @@ class LinePostSuccess(commands.Cog):
             )
 
         @self.router.post('/api/line-post-success-json')
-        async def line_post_success(request: LinePostSuccessJson):
+        async def line_post_success(
+            line_post_json:LinePostSuccessJson,
+            request: Request
+        ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -222,7 +227,7 @@ class LinePostSuccess(commands.Cog):
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if line_post_json.guild_id == guild.id:
                     # デバッグモード
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
@@ -259,7 +264,7 @@ class LinePostSuccess(commands.Cog):
 
                     TABLE = f'guilds_line_channel_{guild.id}'
 
-                    for post_channel in request.channel_list:
+                    for post_channel in line_post_json.channel_list:
                         row_value = {
                             'line_ng_channel'   :post_channel.line_ng_channel,
                             'ng_message_type'   :post_channel.ng_message_type,

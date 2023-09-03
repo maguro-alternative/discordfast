@@ -15,6 +15,7 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Disco
 
 from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import LineSetSuccessJson
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
@@ -108,14 +109,18 @@ class LineSetSuccess(commands.Cog):
             )
 
         @self.router.post('/api/line-set-success-json')
-        async def line_set_success(request: LineSetSuccessJson):
+        async def line_set_success(
+            line_set_json: LineSetSuccessJson,
+            request: Request
+        ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -126,7 +131,7 @@ class LineSetSuccess(commands.Cog):
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if line_set_json.guild_id == guild.id:
                     # デバッグモード
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
@@ -164,24 +169,24 @@ class LineSetSuccess(commands.Cog):
                     TABLE = 'line_bot'
 
                     row_value = {
-                        'default_channel_id':request.default_channel_id,
-                        'debug_mode'        :request.debug_mode
+                        'default_channel_id':line_set_json.default_channel_id,
+                        'debug_mode'        :line_set_json.debug_mode
                     }
 
                     # 変更があった場合に追加
                     # 同時に暗号化も行う
-                    if request.line_notify_token:
-                        row_value.update({'line_notify_token':await encrypt_password(request.line_notify_token)})
-                    if request.line_bot_token:
-                        row_value.update({'line_bot_token':await encrypt_password(request.line_bot_token)})
-                    if request.line_bot_secret:
-                        row_value.update({'line_bot_secret':await encrypt_password(request.line_bot_secret)})
-                    if request.line_group_id:
-                        row_value.update({'line_group_id':await encrypt_password(request.line_group_id)})
-                    if request.line_client_id:
-                        row_value.update({'line_client_id':await encrypt_password(request.line_client_id)})
-                    if request.line_client_secret:
-                        row_value.update({'line_client_secret':await encrypt_password(request.line_client_secret)})
+                    if line_set_json.line_notify_token:
+                        row_value.update({'line_notify_token':await encrypt_password(line_set_json.line_notify_token)})
+                    if line_set_json.line_bot_token:
+                        row_value.update({'line_bot_token':await encrypt_password(line_set_json.line_bot_token)})
+                    if line_set_json.line_bot_secret:
+                        row_value.update({'line_bot_secret':await encrypt_password(line_set_json.line_bot_secret)})
+                    if line_set_json.line_group_id:
+                        row_value.update({'line_group_id':await encrypt_password(line_set_json.line_group_id)})
+                    if line_set_json.line_client_id:
+                        row_value.update({'line_client_id':await encrypt_password(line_set_json.line_client_id)})
+                    if line_set_json.line_client_secret:
+                        row_value.update({'line_client_secret':await encrypt_password(line_set_json.line_client_secret)})
 
                     # デバッグモード
                     if DEBUG_MODE == False:

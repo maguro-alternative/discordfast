@@ -101,12 +101,10 @@ class LineGroupSuccessJson(BaseModel):
 
 class LinePostSuccessJson(BaseModel):
     guild_id    :int
-    access_token:str
     channel_list:List[LinePostChannelList]
 
 class LineSetSuccessJson(BaseModel):
     guild_id            :int
-    access_token        :str
     line_notify_token   :Optional[str]
     line_bot_token      :Optional[str]
     line_bot_secret     :Optional[str]
@@ -118,10 +116,8 @@ class LineSetSuccessJson(BaseModel):
 
 class VcSignalSuccessJson(BaseModel):
     guild_id            :int
-    access_token        :str
     vc_channel_list     :List[VcSignalChannelList]
 
 class WebhookSuccessJson(BaseModel):
     guild_id    :int
-    access_token:str
     webhook_list:List[WebhookList]

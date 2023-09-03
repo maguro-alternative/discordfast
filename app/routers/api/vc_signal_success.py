@@ -14,6 +14,7 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Disco
 
 from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import VcSignalSuccessJson
+from model_types.session_type import FastAPISession
 
 from core.pickes_save.vc_columns import VC_COLUMNS
 
@@ -144,15 +145,17 @@ class VcSignalSuccess(commands.Cog):
 
         @self.router.post('/api/vc-signal-success')
         async def vc_post(
-            request:VcSignalSuccessJson
+            vc_signal_json:VcSignalSuccessJson,
+            request: Request
         ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
 
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
                 discord_user = await get_profile(access_token=access_token)
 
@@ -163,7 +166,7 @@ class VcSignalSuccess(commands.Cog):
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if vc_signal_json.guild_id == guild.id:
                     # デバッグモード
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
@@ -201,7 +204,7 @@ class VcSignalSuccess(commands.Cog):
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_vc_signal_{guild.id}'
 
-                    for vc in request.vc_channel_list:
+                    for vc in vc_signal_json.vc_channel_list:
                         row_value = {
                             'send_signal'       :vc.send_signal,
                             'send_channel_id'   :vc.send_channel_id,
