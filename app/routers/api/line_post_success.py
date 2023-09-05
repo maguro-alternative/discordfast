@@ -251,7 +251,7 @@ class LinePostSuccess(commands.Cog):
                         permission_code = await permission.get_permission_code()
 
                         # 編集可能かどうか
-                        if((line_post_per & permission_code) and
+                        if((line_post_per.line_permission & permission_code) and
                         discord_user.id in line_post_per.line_user_id_permission and
                         len(set(member_roles) & set(line_post_per.line_role_id_permission))):
                             pass
