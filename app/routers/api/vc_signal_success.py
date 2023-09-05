@@ -143,7 +143,7 @@ class VcSignalSuccess(commands.Cog):
                 }
             )
 
-        @self.router.post('/api/vc-signal-success')
+        @self.router.post('/api/vc-signal-success-json')
         async def vc_post(
             vc_signal_json:VcSignalSuccessJson,
             request: Request
