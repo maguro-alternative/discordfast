@@ -176,17 +176,23 @@ class LineSetSuccess(commands.Cog):
                     # 変更があった場合に追加
                     # 同時に暗号化も行う
                     if line_set_json.line_notify_token:
-                        row_value.update({'line_notify_token':await encrypt_password(line_set_json.line_notify_token)})
+                        if len(line_set_json.line_notify_token) > 30:
+                            row_value.update({'line_notify_token':await encrypt_password(line_set_json.line_notify_token)})
                     if line_set_json.line_bot_token:
-                        row_value.update({'line_bot_token':await encrypt_password(line_set_json.line_bot_token)})
+                        if len(line_set_json.line_bot_token) > 30:
+                            row_value.update({'line_bot_token':await encrypt_password(line_set_json.line_bot_token)})
                     if line_set_json.line_bot_secret:
-                        row_value.update({'line_bot_secret':await encrypt_password(line_set_json.line_bot_secret)})
+                        if len(line_set_json.line_bot_secret) > 30:
+                            row_value.update({'line_bot_secret':await encrypt_password(line_set_json.line_bot_secret)})
                     if line_set_json.line_group_id:
-                        row_value.update({'line_group_id':await encrypt_password(line_set_json.line_group_id)})
+                        if len(line_set_json.line_group_id) > 30:
+                            row_value.update({'line_group_id':await encrypt_password(line_set_json.line_group_id)})
                     if line_set_json.line_client_id:
-                        row_value.update({'line_client_id':await encrypt_password(line_set_json.line_client_id)})
+                        if len(line_set_json.line_client_id) > 9:
+                            row_value.update({'line_client_id':await encrypt_password(line_set_json.line_client_id)})
                     if line_set_json.line_client_secret:
-                        row_value.update({'line_client_secret':await encrypt_password(line_set_json.line_client_secret)})
+                        if len(line_set_json.line_client_secret) > 30:
+                            row_value.update({'line_client_secret':await encrypt_password(line_set_json.line_client_secret)})
 
                     # デバッグモード
                     if DEBUG_MODE == False:
