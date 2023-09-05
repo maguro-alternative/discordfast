@@ -349,6 +349,10 @@ class WebhookSuccess(commands.Cog):
                         for webhook_id in db_webhook
                     ]
 
+                    # 登録した時刻を登録
+                    now_time = datetime.now(timezone.utc)
+                    now_str = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
+
                     for webhook in webhook_json.webhook_list:
                         row_value = {
                             'webhook_id'        :webhook.webhook_id,
@@ -382,7 +386,8 @@ class WebhookSuccess(commands.Cog):
                             uuid_val = uuid.uuid4()
                             row_value.update({
                                 'uuid'      :uuid_val,
-                                'guild_id'  :guild.id
+                                'guild_id'  :guild.id,
+                                'created_at':now_str
                             })
                             # デバッグモード
                             if DEBUG_MODE == False:

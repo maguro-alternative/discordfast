@@ -30,7 +30,6 @@ class WebhookList(BaseModel):
     search_and_word     :List[str]
     mention_or_word     :List[str]
     mention_and_word    :List[str]
-    created_at          :str
 
 class AdminSuccessJson(BaseModel):
     """
