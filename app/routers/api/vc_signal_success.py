@@ -186,13 +186,13 @@ class VcSignalSuccess(commands.Cog):
                             role.id
                             for role in guild.get_member(discord_user.id).roles
                         ]
-                        line_post_per = GuildSetPermission(**per[0])
+                        vc_signal_per = GuildSetPermission(**per[0])
                         permission_code = await permission.get_permission_code()
 
                         # 編集可能かどうか
-                        if((line_post_per & permission_code) or
-                        discord_user.id in line_post_per.line_user_id_permission or
-                        len(set(member_roles) & set(line_post_per.line_role_id_permission))):
+                        if((vc_signal_per.vc_permission & permission_code) or
+                        discord_user.id in vc_signal_per.line_user_id_permission or
+                        len(set(member_roles) & set(vc_signal_per.line_role_id_permission))):
                             pass
                         else:
                             return JSONResponse(content={'message':'access token Unauthorized'})

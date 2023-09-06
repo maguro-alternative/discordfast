@@ -155,7 +155,7 @@ class LineSetSuccess(commands.Cog):
                         permission_code = await permission.get_permission_code()
 
                         # 編集可能かどうか
-                        if((line_bot_per & permission_code) or
+                        if((line_bot_per.line_bot_permission & permission_code) or
                         discord_user.id in line_bot_per.line_bot_user_id_permission or
                         len(set(member_roles) & set(line_bot_per.line_bot_role_id_permission))):
                             pass
