@@ -166,15 +166,6 @@ class LinePostView(commands.Cog):
             # パーミッションの番号を取得
             permission_code = await guild_user_permission.get_permission_code()
 
-            # キャッシュ読み取り
-            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
-
-            guild_table = [
-                #g
-                #for g in guild_table_fetch
-                #if int(g.get('guild_id')) == guild_id
-            ]
-
             guild_table:List[Dict[str,Any]] = await DB.select_rows(
                 table_name='guild_set_permissions',
                 columns=[],
@@ -208,9 +199,6 @@ class LinePostView(commands.Cog):
                 len(set(guild_permission_role) & set(role_list)) > 0
                 ):
                 user_permission = 'admin'
-
-            # キャッシュ読み取り
-            #table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
             table_fetch:List[Dict[str,Any]] = await DB.select_rows(
                 table_name=TABLE,

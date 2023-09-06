@@ -251,16 +251,12 @@ class LinePostSuccess(commands.Cog):
                         permission_code = await permission.get_permission_code()
 
                         # 編集可能かどうか
-                        if((line_post_per.line_permission & permission_code) and
-                        discord_user.id in line_post_per.line_user_id_permission and
+                        if((line_post_per.line_permission & permission_code) or
+                        discord_user.id in line_post_per.line_user_id_permission or
                         len(set(member_roles) & set(line_post_per.line_role_id_permission))):
                             pass
                         else:
                             return JSONResponse(content={'message':'access token Unauthorized'})
-                    else:
-                        from model_types.discord_type.guild_permission import Permission
-                        permission = Permission()
-                        permission.administrator = True
 
                     TABLE = f'guilds_line_channel_{guild.id}'
 
