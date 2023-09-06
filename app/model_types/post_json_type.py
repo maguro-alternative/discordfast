@@ -30,6 +30,7 @@ class WebhookList(BaseModel):
     search_and_word     :List[str]
     mention_or_word     :List[str]
     mention_and_word    :List[str]
+    delete_flag         :Optional[bool]
 
 class AdminSuccessJson(BaseModel):
     """

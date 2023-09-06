@@ -382,6 +382,15 @@ class WebhookSuccess(commands.Cog):
                                 from pprint import pprint
                                 pprint(row_value)
 
+                        # 削除
+                        elif webhook.delete_flag:
+                            await DB.delete_row(
+                                table_name=TABLE,
+                                where_clause={
+                                    'uuid':webhook.webhook_uuid
+                                }
+                            )
+
                         else:
                             uuid_val = uuid.uuid4()
                             row_value.update({
