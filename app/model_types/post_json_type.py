@@ -18,7 +18,7 @@ class VcSignalChannelList(BaseModel):
     mention_role_id :List[int]
 
 class WebhookList(BaseModel):
-    webhook_uuid        :Union[UUID,str]
+    uuid                :Union[UUID,str]
     webhook_id          :int
     subscription_type   :str
     subscription_id     :str
