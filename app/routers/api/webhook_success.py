@@ -398,7 +398,7 @@ class WebhookSuccess(commands.Cog):
                             if DEBUG_MODE == False:
                                 await DB.insert_row(
                                     table_name=TABLE,
-                                    row_values={}
+                                    row_values=row_value
                                 )
                             else:
                                 from pprint import pprint
