@@ -364,14 +364,14 @@ class WebhookSuccess(commands.Cog):
                             'mention_and_word'  :webhook.mention_and_word
                         }
                         # 更新
-                        if webhook.webhook_uuid in db_webhook_id_list:
+                        if str(webhook.uuid) in db_webhook_id_list:
                             # デバッグモード
                             if DEBUG_MODE == False:
                                 await DB.update_row(
                                     table_name=TABLE,
                                     row_values=row_value,
                                     where_clause={
-                                        'uuid':webhook.webhook_uuid
+                                        'uuid':webhook.uuid
                                     }
                                 )
                             else:
@@ -383,7 +383,7 @@ class WebhookSuccess(commands.Cog):
                             await DB.delete_row(
                                 table_name=TABLE,
                                 where_clause={
-                                    'uuid':webhook.webhook_uuid
+                                    'uuid':webhook.uuid
                                 }
                             )
 
