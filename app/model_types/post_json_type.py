@@ -104,15 +104,21 @@ class LinePostSuccessJson(BaseModel):
     channel_list:List[LinePostChannelList]
 
 class LineSetSuccessJson(BaseModel):
-    guild_id            :int
-    line_notify_token   :Optional[str]
-    line_bot_token      :Optional[str]
-    line_bot_secret     :Optional[str]
-    line_group_id       :Optional[str]
-    line_client_id      :Optional[str]
-    line_client_secret  :Optional[str]
-    default_channel_id  :int
-    debug_mode          :bool
+    guild_id                    :int
+    line_notify_token           :Optional[str]
+    line_bot_token              :Optional[str]
+    line_bot_secret             :Optional[str]
+    line_group_id               :Optional[str]
+    line_client_id              :Optional[str]
+    line_client_secret          :Optional[str]
+    line_notify_token_del_flag  :Optional[bool]
+    line_bot_token_del_flag     :Optional[bool]
+    line_bot_secret_del_flag    :Optional[bool]
+    line_group_id_del_flag      :Optional[bool]
+    line_client_id_del_flag     :Optional[bool]
+    line_client_secret_del_flag :Optional[bool]
+    default_channel_id          :int
+    debug_mode                  :bool
 
 class VcSignalSuccessJson(BaseModel):
     guild_id            :int

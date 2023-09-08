@@ -8,7 +8,7 @@ load_dotenv()
 
 import os
 
-from base.aio_req import pickle_write,return_permission,get_profile,decrypt_password,encrypt_password
+from base.aio_req import return_permission,get_profile,encrypt_password
 
 from routers.api.chack.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
@@ -88,16 +88,6 @@ class LineSetSuccess(commands.Cog):
                     'guild_id':form.get('guild_id')
                 }
             )
-            # 更新後のテーブルを取得
-            table_fetch = await DB.select_rows(
-                table_name=TABLE,
-                columns=[],
-                where_clause={}
-            )
-            #await DB.disconnect()
-
-            # pickleファイルに書き込み
-            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/linesetsuccess.html',
@@ -194,6 +184,20 @@ class LineSetSuccess(commands.Cog):
                         if len(line_set_json.line_client_secret) > 30:
                             row_value.update({'line_client_secret':await encrypt_password(line_set_json.line_client_secret)})
 
+                    # 削除フラグが立っている場合に削除
+                    if line_set_json.line_notify_token_del_flag:
+                        row_value.update({'line_notify_token':b''})
+                    if line_set_json.line_bot_token_del_flag:
+                        row_value.update({'line_bot_token':b''})
+                    if line_set_json.line_bot_secret_del_flag:
+                        row_value.update({'line_bot_secret':b''})
+                    if line_set_json.line_group_id_del_flag:
+                        row_value.update({'line_group_id':b''})
+                    if line_set_json.line_client_id_del_flag:
+                        row_value.update({'line_client_id':b''})
+                    if line_set_json.line_client_secret_del_flag:
+                        row_value.update({'line_client_secret':b''})
+
                     # デバッグモード
                     if DEBUG_MODE == False:
                         await DB.update_row(
@@ -204,7 +208,7 @@ class LineSetSuccess(commands.Cog):
                             }
                         )
                     else:
-                            import pprint
-                            pprint.pprint(row_value)
+                        import pprint
+                        pprint.pprint(row_value)
 
                     return JSONResponse(content={'message':'success!!'})
