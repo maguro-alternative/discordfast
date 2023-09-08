@@ -1,10 +1,8 @@
-import os
 import re
 import io
 
 import aiohttp
-import asyncio
-import time
+
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,56 +23,6 @@ temple_id
     送信する規定のテキストチャンネルのID
 profile
     LINEのprofileデータ
-"""
-
-
-"""
-ベンチマーク
-
-member_find,role_find,channel_findを並列実行。
-変換したテキストをDiscordに送信。
-
-サーバーメンバー            6
-ロール数                   8
-チャンネル数
-    カテゴリーチャンネル    2
-    テキストチャンネル      4
-    ボイスチャンネル        4
-    計                    10
-
-aiohttp使用
-    0.8482秒
-    1.1233秒
-    0.7441秒
-    0.7937秒
-    0.9899秒
-
-asyncio.loop使用
-    1.0416秒
-    1.2084秒
-    0.9673秒
-    0.9959秒
-    1.1202秒
-
-同期(loop未使用)
-    1.9019秒
-    1.6649秒
-    1.6858秒
-    1.9105秒
-    1.9550秒
-
-asyncio.loop使用
-res = await self.loop.run_in_executor(
-            None,
-            partial(
-                requests.get,
-                f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',
-                headers=self.headers
-            )
-        )
-
-同期(loop未使用)
-res = requests.get(f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',headers=self.headers)
 """
 
 DISCORD_BASE_URL = "https://discord.com/api"
@@ -363,49 +311,3 @@ class ReqestDiscord:
                 ) as resp:
                     return await resp.json()
 
-
-
-if __name__=="_main__":
-    loop = asyncio.get_event_loop()
-    r = ReqestDiscord(int(os.environ['6_GUILD_ID']),100,os.environ['DISCORD_BOT_TOKEN'])
-
-    message = "/test#channel @マグロ・オルタ#member @マグロ#member"
-    channel_id = int(os.environ['6_CHANNEL_ID'])
-
-    start = time.time()
-
-    discord_request = loop.run_until_complete(
-        asyncio.gather(
-            r.members_find(message),
-            r.roles_find(message),
-            r.channel_select(message)
-        )
-    )
-
-    for req_find in discord_request:
-        if req_find != None:
-            if type(req_find[1]) is int:
-                message = message.lstrip(req_find[0])
-                channel_id = req_find[1]
-            else:
-                message = message.replace(req_find[0], req_find[1])
-
-    loop.run_until_complete(r.send_discord(channel_id=channel_id, message=message))
-
-    end = time.time() - start
-
-    print(message)
-    print(end)
-
-if __name__=="__main__":
-    loop = asyncio.get_event_loop()
-    res = ReqestDiscord(int(os.environ['PRO_GUILD_ID']),100,os.environ['PRO_TOKEN'])
-    r=loop.run_until_complete(
-        res.role_get()
-        #asyncio.gather(
-        #    r.member_get(),
-        #    r.role_get(),
-        #    r.channel_get()
-        #)
-    )
-    print(r[0].name)
