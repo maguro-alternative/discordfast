@@ -14,7 +14,7 @@ from model_types.discord_type.discord_type import (
     DiscordChannel
 )
 
-from model_types.file_type import Audio_Files
+from model_types.file_type import AudioFiles
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
@@ -266,7 +266,7 @@ class ReqestDiscord:
         self,
         channel_id: int,
         message: str,
-        fileobj:Audio_Files,
+        fileobj:AudioFiles,
         content_type:str=None
     ) -> Dict:
         """
@@ -276,7 +276,7 @@ class ReqestDiscord:
             Discordのテキストチャンネルのid
         message     :str
             テキストメッセージ
-        fileobj     :Audio_Files
+        fileobj     :AudioFiles
             音声ファイルのオブジェクト
         """
 

@@ -1,7 +1,7 @@
 import io
 import os
 
-class Audio_Files:
+class AudioFiles:
     """
     ファイルのバイナリのデータを格納するクラス
 
