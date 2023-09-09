@@ -17,7 +17,9 @@ from base.aio_req import (
     pickle_read,
     decrypt_password
 )
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
 from model_types.session_type import FastAPISession
 
 from discord.ext import commands

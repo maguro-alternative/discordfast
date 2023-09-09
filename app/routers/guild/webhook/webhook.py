@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,18 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any,Union,Optional
+from typing import List,Dict,Any,Union
 
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     return_permission,
     oauth_check,
-    get_profile,
-    decrypt_password
+    get_profile
 )
 from model_types.discord_type.guild_permission import Permission
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import WebhookSet,GuildSetPermission
@@ -101,14 +101,6 @@ class WebhookView(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            # キャッシュ読み取り
-            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
-            guild_table = [
-                #g
-                #for g in guild_table_fetch
-                #if int(g.get('guild_id')) == guild_id
-            ]
-
             guild_table:List[Dict[str,Any]] = await DB.select_rows(
                 table_name='guild_set_permissions',
                 columns=[],
@@ -143,9 +135,6 @@ class WebhookView(commands.Cog):
                 len(set(guild_permission_role) & set(role_list)) > 0
                 ):
                 user_permission = 'admin'
-
-            # キャッシュ読み取り
-            #table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
 
             table_fetch:List[Dict[str,Any]] = await DB.select_rows(
                 table_name=TABLE,

@@ -20,7 +20,9 @@ from base.aio_req import (
     decrypt_password
 )
 from model_types.discord_type.guild_permission import Permission
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser,DiscordChannel
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildLineChannel,GuildSetPermission

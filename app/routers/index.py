@@ -1,15 +1,18 @@
-from fastapi import APIRouter,Request,Header
+from fastapi import APIRouter,Request
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
 import os
+from typing import List,Dict
 
 from base.aio_req import (
     aio_get_request,
     oauth_check
 )
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
 
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
@@ -23,7 +26,8 @@ templates = Jinja2Templates(directory="templates")
 DISCORD_BASE_URL = "https://discord.com/api"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 class Index(commands.Cog):
     def __init__(self, bot: DBot):
         self.bot = bot
@@ -56,35 +60,22 @@ class Index(commands.Cog):
                 }
             )
 
+        @self.router.get("/index")
+        async def index(request: Request):
+            session = FastAPISession(**request.session)
+            # デバッグモード
+            if DEBUG_MODE == False:
+                access_token = session.discord_oauth_data.access_token
+                oauth_data:Dict = await aio_get_request(
+                    url=f'{DISCORD_BASE_URL}/users/@me',
+                    headers={
+                        'Authorization': f'Bearer {access_token}'
+                    }
+                )
+
 
 # sessionの中身(dict)
 """
-
-{
-    'discord_oauth_data': {
-        'access_token': str, 
-        'expires_in': int, 
-        'refresh_token': str, 
-        'scope': str, 
-        'token_type': str
-    }, 
-    'discord_user': {
-        'id': int, 
-        'username': str, 
-        'global_name': str, 
-        'display_name': str, 
-        'avatar': str(16進数), 
-        'avatar_decoration': str, 
-        'discriminator': int, 
-        'public_flags': int, 
-        'flags': int, 
-        'banner': str(16進数), 
-        'banner_color': str, 
-        'accent_color': int, 
-        'locale': str, 
-        'mfa_enabled': bool, 
-        'premium_type': int
-    }, 
     'discord_connection': [
         {
             'type': 'epicgames', 
@@ -96,96 +87,6 @@ class Index(commands.Cog):
             'verified': bool, 
             'two_way_link': bool, 
             'metadata_visibility': int
-        }, 
-        {
-            'type': 'github', 
-            'id': int, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'instagram', 
-            'id': int, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'spotify', 
-            'id': str, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'steam', 
-            'id': int, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'twitch', 
-            'id': int, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'twitter', 
-            'id': int, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'xbox', 
-            'id': int, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }, 
-        {
-            'type': 'youtube', 
-            'id': str, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
         }
     ]
-}
-
 """

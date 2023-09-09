@@ -14,7 +14,9 @@ from base.aio_req import (
     search_guild,
     oauth_check
 )
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser,MatchGuild
+from model_types.discord_type.discord_user_session import DiscordOAuthData,MatchGuild
+from model_types.discord_type.discord_type import DiscordUser
+
 from model_types.session_type import FastAPISession
 
 from discord.ext import commands

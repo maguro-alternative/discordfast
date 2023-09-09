@@ -8,7 +8,7 @@ from pydub.audio_segment import AudioSegment
 import youtube_dl
 
 
-class Wav_Karaoke:
+class WavKaraoke:
     def __init__(self,user_id:int) -> None:
         """
         カラオケのクラス
@@ -79,7 +79,8 @@ class Wav_Karaoke:
             # 60秒以上の場合
             if time >= 60:
                 speed = time/60
-                base_sound = before_sound.speedup(playback_speed=speed, crossfade=0)
+                if type(before_sound) == AudioSegment:
+                    base_sound = before_sound.speedup(playback_speed=speed, crossfade=0)
             # 60秒未満の場合、そのまま
             else :
                 base_sound = before_sound

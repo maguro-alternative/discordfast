@@ -9,10 +9,10 @@ import os
 import youtube_dl
 
 try:
-    from app.cogs.bin.rank import Wav_Karaoke
+    from app.cogs.bin.rank import WavKaraoke
     from app.core.start import DBot
 except ModuleNotFoundError:
-    from cogs.bin.rank import Wav_Karaoke
+    from cogs.bin.rank import WavKaraoke
     from core.start import DBot
 
 # カラオケ機能
@@ -35,7 +35,7 @@ class karaoke(commands.Cog):
                     await ctx.respond("再生中です。")
                     return
 
-        karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke_ongen = WavKaraoke(user_id = ctx.author.id)
 
         await ctx.respond("downloading...\n"+url)
         # youtube-dlでダウンロード
@@ -83,7 +83,7 @@ class karaoke(commands.Cog):
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
 
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke = WavKaraoke(user_id = ctx.author.id)
         self.sing_user_id = ctx.author.id
 
         #source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")
@@ -125,7 +125,7 @@ class karaoke(commands.Cog):
                 return
 
         await ctx.respond("採点中,,,")
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke = WavKaraoke(user_id = ctx.author.id)
 
         await karaoke.limit_wav_duration()
         # 原曲と音声の長さを除算し、歌っているか判断
@@ -191,7 +191,7 @@ class karaoke(commands.Cog):
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
 
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke = WavKaraoke(user_id = ctx.author.id)
 
         # source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         if user_voice:

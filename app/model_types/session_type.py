@@ -1,7 +1,8 @@
-from pydantic import BaseModel,validator
-from typing import List,Optional,Union,Any
+from pydantic import BaseModel
+from typing import Optional
 
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
 from model_types.line_type.line_oauth import LineIdTokenResponse,LineOAuthData
 
 class FastAPISession(BaseModel):

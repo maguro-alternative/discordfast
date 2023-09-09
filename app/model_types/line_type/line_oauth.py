@@ -15,10 +15,11 @@ class LineProfile(BaseModel):
     message     :Optional[str]
         エラーメッセージ
     """
-    displayName :Optional[str]
-    userId      :Optional[str]
-    pictureUrl  :Optional[str]
-    message     :Optional[str]
+    displayName     :Optional[str]
+    userId          :Optional[str]
+    pictureUrl      :Optional[str]
+    status_message  :Optional[str]
+    message         :Optional[str]
 
 
 class LineCallbackRequest(BaseModel):

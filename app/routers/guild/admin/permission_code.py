@@ -11,7 +11,8 @@ from base.aio_req import (
     oauth_check
 )
 
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
 
 from discord.ext import commands
 try:

@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Optional,Union
-
 from base.aio_req import (
     aio_get_request,
     pickle_read,
@@ -17,8 +15,10 @@ from base.aio_req import (
     oauth_check,
     decrypt_password
 )
-from typing import List,Dict,Any,Tuple
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from typing import List,Dict,Any
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildSetPermission

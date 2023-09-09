@@ -20,7 +20,7 @@ from itertools import groupby,chain
 from cryptography.fernet import Fernet
 
 from model_types.discord_type.guild_permission import Permission
-from model_types.discord_type.discord_user_session import DiscordUser
+from model_types.discord_type.discord_type import DiscordUser
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
