@@ -44,7 +44,7 @@ NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
 LINE_CONTENT_URL = 'https://api-data.line.me/v2/bot'
 
-class Voice_File:
+class VoiceFile:
     """
     Discordの音声ファイルのURLと秒数を格納するクラス
 
@@ -349,13 +349,13 @@ class LineBotAPI:
 
     async def push_voice(
         self,
-        voice_file:List[Voice_File]
+        VoiceFile:List[VoiceFile]
     ) -> Dict:
         """
         LINEBotで音声の送信
 
         param
-        voice_file:List[Voice_File]
+        VoiceFile:List[VoiceFile]
             送信する音声ファイルのクラス
 
         return
@@ -363,7 +363,7 @@ class LineBotAPI:
             レスポンス
         """
         data = []
-        for voice in voice_file:
+        for voice in VoiceFile:
             data.append({
                 'type':'audio',
                 'originalContentUrl':voice.url,

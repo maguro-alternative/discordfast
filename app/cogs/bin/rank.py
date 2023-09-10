@@ -6,7 +6,7 @@ import numpy as np
 import wave
 from pydub.audio_segment import AudioSegment
 import youtube_dl
-
+from yt_dlp import YoutubeDL
 
 class WavKaraoke:
     def __init__(self,user_id:int) -> None:
@@ -17,19 +17,27 @@ class WavKaraoke:
             ダウンロードする音楽ファイルの相対パス
         self.music_file_path        :str
             ダウンロードした音楽ファイルの相対パス
-        self.voice_file_path        :str
+        self.VoiceFile_path        :str
             録音音声ファイルの相対パス
         self.ratio_music_file_path  :str
             60秒に収めた音楽ファイルの相対パス
-        self.ratio_voice_file_path  :str
+        self.ratio_VoiceFile_path  :str
             60秒に収めた録音音声ファイルの相対パス
         """
         self.filename = f".\wave\{user_id}_music"
         self.music_file_path = f'.\wave\{user_id}_music.wav'
-        self.voice_file_path = f'.\wave\{user_id}_voice.wav'
+        self.VoiceFile_path = f'.\wave\{user_id}_voice.wav'
         self.ratio_music_file_path = f'.\wave\{user_id}_ratio_music.wav'
-        self.ratio_voice_file_path = f'.\wave\{user_id}_ratio_voice.wav'
+        self.ratio_VoiceFile_path = f'.\wave\{user_id}_ratio_voice.wav'
         self.loop = asyncio.get_event_loop()
+        self.before_values = [
+            f'.\wave\{user_id}_music.wav',
+            f'.\wave\{user_id}_voice.wav'
+        ]
+        self.after_values = [
+            f'.\wave\{user_id}_ratio_music.wav',
+            f'.\wave\{user_id}_ratio_voice.wav'
+        ]
 
     async def music_wav_open(self) -> AudioSegment:   #音楽のwavファイルを開く
         base_sound = AudioSegment.from_file(self.music_file_path, format="wav")
@@ -40,11 +48,11 @@ class WavKaraoke:
         return base_sound.duration_seconds
 
     async def voice_wav_open(self) -> AudioSegment:   #録音音声のwavファイルを開く
-        base_sound = AudioSegment.from_file(self.voice_file_path, format="wav")
+        base_sound = AudioSegment.from_file(self.VoiceFile_path, format="wav")
         return base_sound
 
     async def voice_wav_second(self) -> float:   #録音音声のwavファイルの秒数を返す
-        base_sound:AudioSegment = AudioSegment.from_file(self.voice_file_path, format="wav")
+        base_sound:AudioSegment = AudioSegment.from_file(self.VoiceFile_path, format="wav")
         return base_sound.duration_seconds
 
     # サンプリング周波数を計算
@@ -61,18 +69,7 @@ class WavKaraoke:
         長さが異なるものも比較できるが、異なる分だけ対応付けをしなければならないので、メモリにデータを残さないといけない。
         約1GBを許容範囲とした結果、wavファイルを60秒に抑えることにした。
         """
-        # 基となる音声ファイルの相対パス
-        before_values = [
-            self.music_file_path,
-            self.voice_file_path
-        ]
-
-        # 60秒に収めた音楽ファイルの相対パス
-        after_values = [
-            self.ratio_music_file_path,
-            self.ratio_voice_file_path
-        ]
-        for before_value,after_value in zip(before_values,after_values):
+        for before_value,after_value in zip(self.before_values,self.after_values):
             before_sound:AudioSegment = AudioSegment.from_file(before_value, format="wav")
             time = before_sound.duration_seconds
 
@@ -89,15 +86,9 @@ class WavKaraoke:
 
     # 採点(類似度計算)
     async def calculate_wav_similarity(self):
-
-        path_list = [
-            self.ratio_music_file_path,
-            self.ratio_voice_file_path
-        ]
-
         # 各wavファイルの振幅データ列とサンプリング周波数を取得し、リストに格納
         x_and_fs_list = []
-        for path in path_list:
+        for path in self.after_values:
             x, fs = await self.loop.run_in_executor(
                 executor=None,
                 func=librosa.load(
@@ -121,7 +112,6 @@ class WavKaraoke:
 
         # メモリ削減のため、特徴量を削除
         del x_and_fs_list
-        del path_list
         gc.collect()
 
         # 類似度を計算
@@ -162,3 +152,31 @@ class WavKaraoke:
                 download=True
             )
         )
+
+    async def yt_song_dl(
+        self,
+        video_url:str,
+    ) -> None:
+        filename = self.filename
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl':  filename + '.%(ext)s',
+            'postprocessors': [
+                {
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'wav',
+                    'preferredquality': '192'
+                },
+                {
+                    'key': 'FFmpegMetadata'
+                },
+            ],
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            #result = ydl.download([video_url])
+            await self.loop.run_in_executor(
+                None,
+                lambda: ydl.download(
+                    [video_url]
+                )
+            )
