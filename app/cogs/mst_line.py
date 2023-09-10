@@ -11,22 +11,18 @@ import io
 import asyncio
 import aiofiles
 
-import asyncpg
-
-from pydub import AudioSegment
-
 from dotenv import load_dotenv
 load_dotenv()
 
 from base.aio_req import decrypt_password
 try:
-    from model_types.line_type.line_message import LineBotAPI,Voice_File
-    from model_types.table_type import GuildLineChannel,LineBotColunm,GuildSetPermission
+    from model_types.line_type.line_message import LineBotAPI,VoiceFile
+    from model_types.table_type import GuildLineChannel,LineBotColunm
     from core.start import DBot
     from core.db_pickle import DB
 except ModuleNotFoundError:
-    from app.model_types.line_type.line_message import LineBotAPI,Voice_File
-    from app.model_types.table_type import GuildLineChannel,LineBotColunm,GuildSetPermission
+    from app.model_types.line_type.line_message import LineBotAPI,VoiceFile
+    from app.model_types.table_type import GuildLineChannel,LineBotColunm
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
@@ -190,7 +186,7 @@ class mst_line(commands.Cog):
         # 音声を送信
         if len(voicelist) > 0:
             await line_bot_api.push_message_notify(message=messagetext)
-            await line_bot_api.push_voice(voice_file=voicelist)
+            await line_bot_api.push_voice(VoiceFile=voicelist)
 
         # ファイルなしの場合、テキストを送信
         if len(imagelist) + len(videolist) + len(voicelist) == 0:
@@ -274,8 +270,9 @@ async def image_checker(
     """
     Discordの送付ファイルから、画像を抜き出す。
     引数:      attachments:    Discordの送付ファイル
-    戻り値:    image_urls:     画像かスタンプのurlリスト
-               attachments:    画像を抜き出したDiscordの送付ファイル
+    戻り値:
+        image_urls:     画像かスタンプのurlリスト
+        attachments:    画像を抜き出したDiscordの送付ファイル
     """
     image = (".jpg", ".png", ".JPG", ".PNG", ".jpeg", ".gif", ".GIF")
     image_urls = []
@@ -297,8 +294,9 @@ async def video_checker(
     """
     Discordの送付ファイルから、動画を抜き出す。
     引数:      attachments:    Discordの送付ファイル
-    戻り値:    video_urls:     動画のurlリスト
-               attachments:    動画を抜き出したDiscordの送付ファイル
+    戻り値:
+        video_urls:     動画のurlリスト
+        attachments:    動画を抜き出したDiscordの送付ファイル
     """
     video = (".mp4", ".MP4", ".MOV", ".mov", ".mpg", ".avi", ".wmv")
     video_urls = []
@@ -315,18 +313,19 @@ async def voice_checker(
     attachments:List[discord.Attachment],
     message:discord.Message
 ) -> Tuple[
-    List[Voice_File],
+    List[VoiceFile],
     List[discord.Attachment]
 ]:
     """
     Discordの送付ファイルから、音声を抜き出す。
     m4a以外のファイルは、ffmpegで変換しDiscordに送信する。
     引数:      attachments:    Discordの送付ファイル
-    戻り値:    video_urls:     音声のurlリスト
-               attachments:    音声を抜き出したDiscordの送付ファイル
+    戻り値:
+        video_urls:     音声のurlリスト
+        attachments:    音声を抜き出したDiscordの送付ファイル
     """
     voice = (".wav",".mp3",".flac",".aif",".m4a",".oga",".ogg")
-    voice_files = []
+    VoiceFiles = []
     loop = asyncio.get_event_loop()
     for attachment in attachments[:]:
         # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
@@ -354,7 +353,7 @@ async def voice_checker(
                     m4a_data = await f.read()
                     # Discordにファイルを送信する
                     m4a_file = discord.File(
-                        fp=io.BytesIO(m4a_data), 
+                        fp=io.BytesIO(m4a_data),
                         filename=output_filename
                     )
                     m4a_file_message = await message.channel.send(f"m4aファイルに変換します。: {attachment.filename} -> {output_filename}", file=m4a_file)
@@ -364,10 +363,21 @@ async def voice_checker(
                 attachments.remove(attachment)
 
             # m4aファイルの秒数を計算
-            ogg_sound = AudioSegment.from_file(output_filename,format="m4a")
-            sound_second = ogg_sound.duration_seconds
+            cmd = "ffprobe -hide_banner {output_filename}.m4a -show_entries format=duration"
+            process = await loop.run_in_executor(
+                None,
+                partial(
+                    subprocess.run,cmd.split(),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True
+                )
+            )
+            stdout_result = process.stdout.decode()
+            match = re.search(r'(\d+\.\d+)', stdout_result)
+            sound_second = float(match.group(1))
 
-            voice_files.append(Voice_File(
+            VoiceFiles.append(VoiceFile(
                 url=voice_url,
                 second=sound_second
             ))
@@ -376,7 +386,7 @@ async def voice_checker(
             os.remove(output_filename)
             os.remove(attachment.filename)
 
-    return voice_files, attachments
+    return VoiceFiles, attachments
 
 def setup(bot:DBot):
     return bot.add_cog(mst_line(bot))
