@@ -16,10 +16,6 @@ except ModuleNotFoundError:
 from dotenv import load_dotenv
 load_dotenv()
 
-from base.aio_req import pickle_read
-from base.database import PostgresDB
-
-import os
 from typing import List
 
 # ボイスチャンネルの入退室を通知
@@ -85,7 +81,8 @@ class vc_count(commands.Cog):
             else:
                 return
 
-        client = self.bot.get_channel(send_channel_id)
+        client = self.bot.get_channel(int(send_channel_id))
+        print(type(send_channel_id))
 
         # メンションするロールの取り出し
         mentions = [
