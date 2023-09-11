@@ -66,22 +66,30 @@ class Index(commands.Cog):
             session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
-                access_token = session.discord_oauth_data.access_token
-                if not await oauth_check(access_token=access_token):
-                    request.session.pop('discord_oauth_data')
-                    request.session.pop('discord_user')
+                if session.discord_oauth_data:
+                    access_token = session.discord_oauth_data.access_token
+                    if not await oauth_check(access_token=access_token):
+                        request.session.pop('discord_oauth_data')
+                        request.session.pop('discord_user')
+                        return JSONResponse(
+                            status_code=401,
+                            content={
+                                'message':'認証情報が無効です'
+                            }
+                        )
+                    else:
+                        json_content = {
+                            "username":session.discord_user.username,
+                            "avatar":session.discord_user.avatar
+                        }
+                        return JSONResponse(
+                            status_code=200,
+                            content=json_content
+                        )
+                else:
                     return JSONResponse(
                         status_code=401,
                         content={
                             'message':'認証情報が無効です'
                         }
-                    )
-                else:
-                    json_content = {
-                        "username":session.discord_user.username,
-                        "avatar":session.discord_user.avatar
-                    }
-                    return JSONResponse(
-                        status_code=200,
-                        content=json_content
                     )
