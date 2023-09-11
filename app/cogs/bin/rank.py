@@ -4,7 +4,11 @@ import asyncio
 import librosa
 import numpy as np
 import wave
-from pydub.audio_segment import AudioSegment
+import os
+
+import subprocess
+from functools import partial
+import re
 import youtube_dl
 from yt_dlp import YoutubeDL
 
@@ -17,18 +21,18 @@ class WavKaraoke:
             ダウンロードする音楽ファイルの相対パス
         self.music_file_path        :str
             ダウンロードした音楽ファイルの相対パス
-        self.VoiceFile_path        :str
+        self.voice_file_path        :str
             録音音声ファイルの相対パス
         self.ratio_music_file_path  :str
             60秒に収めた音楽ファイルの相対パス
-        self.ratio_VoiceFile_path  :str
+        self.ratio_voice_file_path  :str
             60秒に収めた録音音声ファイルの相対パス
         """
         self.filename = f".\wave\{user_id}_music"
         self.music_file_path = f'.\wave\{user_id}_music.wav'
-        self.VoiceFile_path = f'.\wave\{user_id}_voice.wav'
+        self.voice_file_path = f'.\wave\{user_id}_voice.wav'
         self.ratio_music_file_path = f'.\wave\{user_id}_ratio_music.wav'
-        self.ratio_VoiceFile_path = f'.\wave\{user_id}_ratio_voice.wav'
+        self.ratio_voice_file_path = f'.\wave\{user_id}_ratio_voice.wav'
         self.loop = asyncio.get_event_loop()
         self.before_values = [
             f'.\wave\{user_id}_music.wav',
@@ -39,21 +43,13 @@ class WavKaraoke:
             f'.\wave\{user_id}_ratio_voice.wav'
         ]
 
-    async def music_wav_open(self) -> AudioSegment:   #音楽のwavファイルを開く
-        base_sound = AudioSegment.from_file(self.music_file_path, format="wav")
-        return base_sound
-
     async def music_wav_second(self) -> float:   #音楽のwavファイルの秒数を返す
-        base_sound:AudioSegment = AudioSegment.from_file(self.music_file_path, format="wav")
-        return base_sound.duration_seconds
-
-    async def voice_wav_open(self) -> AudioSegment:   #録音音声のwavファイルを開く
-        base_sound = AudioSegment.from_file(self.VoiceFile_path, format="wav")
-        return base_sound
+        with wave.open(self.music_file_path,mode='rb') as wf:
+            return float(wf.getnframes()) / wf.getframerate()
 
     async def voice_wav_second(self) -> float:   #録音音声のwavファイルの秒数を返す
-        base_sound:AudioSegment = AudioSegment.from_file(self.VoiceFile_path, format="wav")
-        return base_sound.duration_seconds
+        with wave.open(self.voice_file_path,mode='rb') as wf:
+            return float(wf.getnframes()) / wf.getframerate()
 
     # サンプリング周波数を計算
     async def get_sampling_frequency(self,file_path:str) -> int:
@@ -70,19 +66,31 @@ class WavKaraoke:
         約1GBを許容範囲とした結果、wavファイルを60秒に抑えることにした。
         """
         for before_value,after_value in zip(self.before_values,self.after_values):
-            before_sound:AudioSegment = AudioSegment.from_file(before_value, format="wav")
-            time = before_sound.duration_seconds
+            cmd = f"ffprobe -hide_banner {before_value} -show_entries format=duration"
+            process = await self.loop.run_in_executor(
+                None,
+                partial(
+                    subprocess.run,cmd.split(),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True
+                )
+            )
+            stdout_result = process.stdout.decode()
+            match = re.search(r'(\d+\.\d+)', stdout_result)
+            sound_second = float(match.group(1))
 
-            # 60秒以上の場合
-            if time >= 60:
-                speed = time/60
-                if type(before_sound) == AudioSegment:
-                    base_sound = before_sound.speedup(playback_speed=speed, crossfade=0)
-            # 60秒未満の場合、そのまま
-            else :
-                base_sound = before_sound
-            # 書き込み
-            base_sound.export(after_value, format="wav")
+            if sound_second >= 60:
+                cmd = f'ffmpeg -i {before_value} -filter:a "atempo={sound_second / 60}" -t 60 {after_value}'
+                await self.loop.run_in_executor(
+                    None,
+                    partial(
+                        subprocess.run,cmd.split(),
+                        check=True
+                    )
+                )
+            else:
+                os.rename(before_value,after_value)
 
     # 採点(類似度計算)
     async def calculate_wav_similarity(self):
@@ -127,32 +135,6 @@ class WavKaraoke:
 
         return round(eval*100,4)
 
-    # youtube-dlでダウンロード
-    async def song_dl(self,video_url:str) -> None:
-        filename = self.filename
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl':  filename + '.%(ext)s',
-            'postprocessors': [
-                {
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'wav',
-                    'preferredquality': '192'
-                },
-                {
-                    'key': 'FFmpegMetadata'
-                },
-            ],
-        }
-        ydl = youtube_dl.YoutubeDL(ydl_opts)
-        await self.loop.run_in_executor(
-            None,
-            lambda: ydl.extract_info(
-                video_url,
-                download=True
-            )
-        )
-
     async def yt_song_dl(
         self,
         video_url:str,
@@ -173,7 +155,6 @@ class WavKaraoke:
             ],
         }
         with YoutubeDL(ydl_opts) as ydl:
-            #result = ydl.download([video_url])
             await self.loop.run_in_executor(
                 None,
                 lambda: ydl.download(
