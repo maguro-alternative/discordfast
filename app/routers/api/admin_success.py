@@ -7,39 +7,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-
-from base.database import PostgresDB
-from base.aio_req import pickle_write
+from base.aio_req import return_permission,get_profile
 from routers.api.chack.post_user_check import user_checker
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
 
-from core.pickes_save.guild_permissions_columns import GUILD_SET_COLUMNS
+from model_types.post_json_type import AdminSuccessJson
+from model_types.session_type import FastAPISession
 
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
-
-
-from core.db_pickle import *
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -134,9 +125,10 @@ class AdminSuccess(commands.Cog):
                 'webhook_role_id_permission'    :webhook_role_id_permission
             }
 
-            await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
-            await db.update_row(
+            await DB.update_row(
                 table_name=TABLE,
                 row_values=row_value,
                 where_clause={
@@ -145,19 +137,16 @@ class AdminSuccess(commands.Cog):
             )
 
             # 更新後のテーブルを取得
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
 
-            await db.disconnect()
+            #await DB.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/adminsuccess.html',
@@ -167,3 +156,83 @@ class AdminSuccess(commands.Cog):
                     'title':'成功'
                 }
             )
+
+        @self.router.post('/api/admin-success-json')
+        async def admin_post_json(
+            admin_json  :AdminSuccessJson,
+            request     :Request
+        ):
+            session = FastAPISession(**request.session)
+            if DB.conn == None:
+                await DB.connect()
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = session.discord_oauth_data.access_token
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
+
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
+
+            TABLE = 'guild_set_permissions'
+
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # サーバの権限を取得
+                permission = await return_permission(
+                    guild_id=admin_json.guild_id,
+                    user_id=discord_user.id,
+                    access_token=access_token
+                )
+            else:
+                from model_types.discord_type.guild_permission import Permission
+                permission = Permission()
+                permission.administrator = True
+
+            # 管理者ではない場合
+            if permission.administrator == False:
+                return JSONResponse(content={'message':'access token Unauthorized'})
+
+            row_value = {
+                'line_permission'               :admin_json.line_permission,
+                'line_user_id_permission'       :admin_json.line_user_id_permission,
+                'line_role_id_permission'       :admin_json.line_role_id_permission,
+                'line_bot_permission'           :admin_json.line_bot_permission,
+                'line_bot_user_id_permission'   :admin_json.line_bot_user_id_permission,
+                'line_bot_role_id_permission'   :admin_json.line_bot_role_id_permission,
+                'vc_permission'                 :admin_json.vc_permission,
+                'vc_user_id_permission'         :admin_json.vc_user_id_permission,
+                'vc_role_id_permission'         :admin_json.vc_role_id_permission,
+                'webhook_permission'            :admin_json.webhook_permission,
+                'webhook_user_id_permission'    :admin_json.webhook_user_id_permission,
+                'webhook_role_id_permission'    :admin_json.webhook_role_id_permission
+            }
+
+            # デバッグモード
+            if DEBUG_MODE == False:
+                import pprint
+                pprint.pprint(row_value)
+                await DB.update_row(
+                    table_name=TABLE,
+                    row_values=row_value,
+                    where_clause={
+                        'guild_id':admin_json.guild_id
+                    }
+                )
+                pprint.pprint(
+                    await DB.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={
+                            'guild_id':admin_json.guild_id
+                        }
+                    )
+                )
+            else:
+                import pprint
+                pprint.pprint(row_value)
+                print(DEBUG_MODE)
+
+            return JSONResponse(content={'message':'success!!'})

@@ -44,8 +44,10 @@ from routers.api import (
 
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
 
@@ -76,7 +78,7 @@ class ReadyLoad(commands.Cog):
             "http://localhost:5000",
             "http://localhost",
             self.callback_url,
-            "http://localhost:8000",
+            "http://localhost:3000",
         ]
         # new テンプレート関連の設定 (jinja2)
         self.templates = Jinja2Templates(directory="templates")
@@ -160,13 +162,11 @@ class ReadyLoad(commands.Cog):
             print("exit")
             await server.shutdown()
             await self.bot.close()
+            await DB.disconnect()
         else:
-            await server.serve()
-            print("exit")
-            await server.shutdown()
-            await self.bot.close()
-            #loop = asyncio.new_event_loop()
-            #loop.run_until_complete(await server.serve())
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(await server.serve())
+            await DB.disconnect()
 
 def setup(bot:DBot):
     return bot.add_cog(ReadyLoad(bot))

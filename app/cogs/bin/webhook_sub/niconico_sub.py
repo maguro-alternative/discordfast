@@ -6,32 +6,19 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
-import io
-import pickle
 from datetime import datetime,timezone
 from typing import Dict,List
 
-from base.database import PostgresDB
+from model_types.table_type import WebhookSet
+from core.db_pickle import DB
+
 from base.aio_req import (
     pickle_read,
     pickle_write
 )
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
-
 async def niconico_subsc(
-    webhook:Dict,
+    webhook:WebhookSet,
     webhook_url:str,
     table_name:str
 ) -> None:
@@ -47,14 +34,14 @@ async def niconico_subsc(
         webhookの情報が登録されているテーブル名
     """
     # rssのurl
-    niconico_rss_url = f"https://www.nicovideo.jp/user/{webhook.get('subscription_id')}/video?rss=2.0"
+    niconico_rss_url = f"https://www.nicovideo.jp/user/{webhook.subscription_id}/video?rss=2.0"
     # rssを取得し展開
     niconico = feedparser.parse(
         url_file_stream_or_string=niconico_rss_url
     )
-    
+
     # 最終更新日を格納
-    created_at = webhook.get('created_at')
+    created_at = webhook.created_at
     update_at = ''
 
 
@@ -65,7 +52,7 @@ async def niconico_subsc(
         for entry in niconico.entries:
             # Webhookに最後にアップロードした時刻
             strTime = datetime.strptime(
-                created_at, 
+                created_at,
                 '%a %b %d %H:%M:%S %z %Y'
             )
             # 動画の投稿時刻
@@ -78,15 +65,15 @@ async def niconico_subsc(
                 # 現在時刻の取得
                 now_time = datetime.now(timezone.utc)
                 update_at = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
-            
+
             # htmlとしてパース
             soup = BeautifulSoup(entry.summary, 'html.parser')
-            
+
             # 最新の動画が投稿されていた場合
             if strTime < lastUpdate:
                 # すべてのimgタグのsrcを取得する
                 img_src_list = [
-                    img['src'] 
+                    img['src']
                     for img in soup.find_all('img')
                 ]
 
@@ -94,18 +81,18 @@ async def niconico_subsc(
                 if mention_flag:
                     # メンションするロールの取り出し
                     mentions = [
-                        f"<@&{int(role_id)}> " 
-                        for role_id in webhook.get('mention_roles')
+                        f"<@&{int(role_id)}> "
+                        for role_id in webhook.mention_roles
                     ]
                     members = [
-                        f"<@{int(member_id)}> " 
-                        for member_id in webhook.get('mention_members')
+                        f"<@{int(member_id)}> "
+                        for member_id in webhook.mention_members
                     ]
                     text = " ".join(mentions) + " " + " ".join(members)
 
                 # タイトルとリンクをテキストにする
-                text += f' {entry.title}\n{entry.link}' 
-            
+                text += f' {entry.title}\n{entry.link}'
+
                 # webhookに投稿
                 async with sessions.post(
                     url=webhook_url,
@@ -120,27 +107,14 @@ async def niconico_subsc(
         # 投稿があった場合、投稿日時を更新
         if upload_flag:
             # データベースに接続し、最終更新日を更新
-            await db.connect()
-            await db.update_row(
+            if DB.conn == None:
+                await DB.connect()
+            await DB.update_row(
                 table_name=table_name,
                 row_values={
                     'created_at':update_at
                 },
                 where_clause={
-                    'uuid':webhook.get('uuid')
+                    'uuid':webhook.uuid
                 }
             )
-            table_fetch = await db.select_rows(
-                table_name=table_name,
-                columns=[],
-                where_clause={}
-            )
-
-            await db.disconnect()
-
-            # pickleファイルに書き込み
-            await pickle_write(
-                filename=table_name,
-                table_fetch=table_fetch
-            )
-                

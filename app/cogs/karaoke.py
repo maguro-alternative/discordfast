@@ -3,16 +3,14 @@ import discord
 from discord.ext import commands
 from discord import Option
 import asyncio
-from pydub import AudioSegment
 import os
-
-import youtube_dl
+from pydub import AudioSegment
 
 try:
-    from app.cogs.bin.rank import Wav_Karaoke
+    from app.cogs.bin.rank import WavKaraoke
     from app.core.start import DBot
 except ModuleNotFoundError:
-    from cogs.bin.rank import Wav_Karaoke
+    from cogs.bin.rank import WavKaraoke
     from core.start import DBot
 
 # カラオケ機能
@@ -35,17 +33,14 @@ class karaoke(commands.Cog):
                     await ctx.respond("再生中です。")
                     return
 
-        karaoke_ongen = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke_ongen = WavKaraoke(user_id = ctx.author.id)
 
         await ctx.respond("downloading...\n"+url)
         # youtube-dlでダウンロード
         try:
-            await karaoke_ongen.song_dl(url)
-        except youtube_dl.utils.DownloadError:
+            await karaoke_ongen.yt_song_dl(url)
+        except:
             await ctx.channel.send(f'<@{ctx.author.id}> 403エラー もう一度ダウンロードし直してください。')
-
-        song = AudioSegment.from_file(f".\wave\{ctx.author.id}_music.wav", format="wav")
-        song.export(f".\wave\{ctx.author.id}_music.wav", format='wav')
 
         await ctx.channel.send(f"<@{ctx.author.id}> ダウンロード完了! /start_record で採点します。")
 
@@ -83,7 +78,7 @@ class karaoke(commands.Cog):
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
 
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke = WavKaraoke(user_id = ctx.author.id)
         self.sing_user_id = ctx.author.id
 
         #source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")
@@ -125,7 +120,7 @@ class karaoke(commands.Cog):
                 return
 
         await ctx.respond("採点中,,,")
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke = WavKaraoke(user_id = ctx.author.id)
 
         await karaoke.limit_wav_duration()
         # 原曲と音声の長さを除算し、歌っているか判断
@@ -191,7 +186,7 @@ class karaoke(commands.Cog):
             await ctx.respond("ボイスチャンネルに入ってください。")
             return
 
-        karaoke = Wav_Karaoke(user_id = ctx.author.id)
+        karaoke = WavKaraoke(user_id = ctx.author.id)
 
         # source = discord.FFmpegPCMAudio(f"./wave/{ctx.author.id}_music.wav")              # ダウンロードしたwavファイルをDiscordで流せるように変換
         if user_voice:
@@ -221,8 +216,7 @@ async def finished_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationC
 
     # 録音したユーザーの音声を取り出す
     for user_id, audio in sink.audio_data.items():
-        if user_id == ctx.author.id:     # 歌ったユーザーIDと一致した場合
-            # print(type(audio.file))
+        if user_id == ctx.author.id:# 歌ったユーザーIDと一致した場合
             # mp3ファイルとして書き込み。その後wavファイルに変換。
             song = AudioSegment.from_file(audio.file, format="mp3")
             song.export(f'.\wave\{ctx.author.id}_voice.wav', format='wav')
@@ -234,8 +228,11 @@ async def record_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationCon
         for user_id, audio in sink.audio_data.items()
     ]
     # discordにファイル形式で送信。拡張子はmp3。
-    files = [discord.File(audio.file, f"{user_id}.{sink.encoding}") for user_id, audio in sink.audio_data.items()]
-    await ctx.channel.send(f"録音終了! 音声ファイルはこちら! {', '.join(recorded_users)}.", files=files) 
+    files = [
+        discord.File(audio.file, f"{user_id}.{sink.encoding}")
+        for user_id, audio in sink.audio_data.items()
+    ]
+    await ctx.channel.send(f"録音終了! 音声ファイルはこちら! {', '.join(recorded_users)}.", files=files)
 
 def check_error(er):
     print(f'Error check: {er}')

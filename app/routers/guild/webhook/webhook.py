@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -7,38 +7,51 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any
+from typing import List,Dict,Any,Union
 
-from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     return_permission,
-    oauth_check
+    oauth_check,
+    get_profile
 )
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.guild_permission import Permission
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
 
+from model_types.session_type import FastAPISession
+
+from model_types.table_type import WebhookSet,GuildSetPermission
+
+from discord.channel import (
+    VoiceChannel,
+    StageChannel,
+    TextChannel,
+    CategoryChannel
+)
+from discord import Guild
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+
+GuildChannel = Union[
+    VoiceChannel,
+    StageChannel,
+    TextChannel,
+    CategoryChannel
+]
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -85,13 +98,17 @@ class WebhookView(commands.Cog):
             # パーミッションの番号を取得
             permission_code = await guild_user_permission.get_permission_code()
 
-            # キャッシュ読み取り
-            guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
-            guild_table = [
-                g
-                for g in guild_table_fetch
-                if int(g.get('guild_id')) == guild_id
-            ]
+            if DB.conn == None:
+                await DB.connect()
+
+            guild_table:List[Dict[str,Any]] = await DB.select_rows(
+                table_name='guild_set_permissions',
+                columns=[],
+                where_clause={
+                    'guild_id':guild_id
+                }
+            )
+
             guild_permission_code = 8
             guild_permission_user = list()
             guild_permission_role = list()
@@ -119,8 +136,13 @@ class WebhookView(commands.Cog):
                 ):
                 user_permission = 'admin'
 
-            # キャッシュ読み取り
-            table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
+            table_fetch:List[Dict[str,Any]] = await DB.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={
+                    'guild_id':guild_id
+                }
+            )
 
             # webhook一覧を取得
             all_webhook = await aio_get_request(
@@ -171,3 +193,159 @@ class WebhookView(commands.Cog):
                     "title": "webhookの送信設定/" + guild['name']
                 }
             )
+
+        @self.router.get('/guild/{guild_id}/webhook/view')
+        async def webhook(
+            guild_id:int,
+            request:Request
+        ) -> JSONResponse:
+            session = FastAPISession(**request.session)
+            if DB.conn == None:
+                await DB.connect()
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token = session.discord_oauth_data.access_token
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
+
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
+
+            for guild in self.bot.guilds:
+                if guild_id == guild.id:
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+
+                        # 編集可能かどうか
+                        chenge_permission = await chenge_permission_check(
+                            user_id=discord_user.id,
+                            permission=permission,
+                            guild=guild
+                        )
+                    else:
+                        #import pprint
+                        chenge_permission = False
+
+                    # Botが所属しているサーバを取得
+                    TABLE = f'webhook_{guild.id}'
+
+                    db_webhooks:List[Dict] = await DB.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={}
+                    )
+
+                    db_webhooks:List[WebhookSet] = [
+                        WebhookSet(**w)
+                        for w in db_webhooks
+                    ]
+
+                    db_webhooks:List[Dict] = [
+                        vars(w)
+                        for w in db_webhooks
+                    ]
+
+                    channels_json = dict()
+
+                    all_webhook = await guild.webhooks()
+                    webhooks = [
+                        {
+                            'id'            :str(w.id),
+                            'name'          :w.name,
+                            'channelId'     :str(w.channel_id),
+                            'channelName'   :guild.get_channel(w.channel_id).name
+                        }
+                        for w in all_webhook
+                    ]
+
+                    # サーバー内のメンバー一覧
+                    guild_users = [
+                        {
+                            'id'                :str(user.id),
+                            'name'              :user.name,
+                            'userDisplayName'   :user.display_name
+                        }
+                        for user in guild.members
+                    ]
+
+                    # サーバー内でのロール一覧
+                    guild_roles = [
+                        {
+                            'id'    :str(user.id),
+                            'name'  :user.name
+                        }
+                        for user in guild.roles
+                    ]
+
+                    channels_json.update({
+                        'webhooks'          :webhooks,
+                        'guildUsers'        :guild_users,
+                        'guildRoles'        :guild_roles,
+                        'chengePermission'  :chenge_permission,
+                        'webhookSet'        :db_webhooks
+                    })
+
+                    return JSONResponse(content=channels_json)
+
+async def chenge_permission_check(
+    user_id:int,
+    permission:Permission,
+    guild:Guild
+) -> bool:
+    """
+    ログインユーザが編集可能かどうか識別
+
+    Args:
+        user_id (int):
+            DiscordUserのid
+        permission (Permission):
+            ユーザの権限
+        guild (Guild):
+            サーバ情報
+
+    Returns:
+        bool: 編集可能かどうか
+    """
+    # パーミッションの番号を取得
+    permission_code = await permission.get_permission_code()
+
+    # アクセス権限の設定を取得
+    guild_p:List[Dict] = await DB.select_rows(
+        table_name='guild_set_permissions',
+        columns=[],
+        where_clause={
+            'guild_id':guild.id
+        }
+    )
+    guild_line_permission = GuildSetPermission(**guild_p[0])
+
+    # 指定された権限を持っているか、管理者権限を持っているか
+    and_code = guild_line_permission.webhook_permission & permission_code
+    admin_code = 8 & permission_code
+
+    # ロールid一覧を取得
+    guild_user_data = guild.get_member(user_id)
+    guild_user_roles = [
+        role.id
+        for role in guild_user_data.roles
+    ]
+
+    # 許可されている場合、管理者の場合
+    if (and_code == permission_code or
+        admin_code == 8 or
+        user_id in guild_line_permission.webhook_user_id_permission or
+        len(set(guild_line_permission.webhook_role_id_permission) & set(guild_user_roles)) > 0
+        ):
+        # 変更可能
+        return True
+    else:
+        # 変更不可
+        return False

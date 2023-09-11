@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Header
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+from typing import List,Dict
 
-from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
     oauth_check,
@@ -17,26 +17,21 @@ from base.aio_req import (
     pickle_read,
     decrypt_password
 )
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
-from model_types.discord_type.discord_request_type import DiscordBaseRequest
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
@@ -81,12 +76,14 @@ class GuildSetView(commands.Cog):
                 access_token=oauth_session.access_token
             )
 
-            try:
-                tasks = await pickle_read(
-                    filename=f"task_{guild_id}"
-                )
-            except FileNotFoundError:
-                tasks = list()
+            if DB.conn == None:
+                await DB.connect()
+
+            tasks = await DB.select_rows(
+                table_name=f"task_{guild_id}",
+                columns=[],
+                where_clause={}
+            )
 
             return templates.TemplateResponse(
                 "guild/guild.html",
@@ -100,9 +97,10 @@ class GuildSetView(commands.Cog):
                 }
             )
 
-        @self.router.post('/guild')
+        @self.router.get('/guild/{guild_id}/view')
         async def guild(
-            request:DiscordBaseRequest
+            guild_id:int,
+            request:Request
         ) -> JSONResponse:
             """
             指定されたサーバidのページデータを取得
@@ -113,44 +111,66 @@ class GuildSetView(commands.Cog):
             Returns:
                 JSONResponse: _description_
             """
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
+            session = FastAPISession(**request.session)
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token = session.discord_oauth_data.access_token
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
-                    # サーバの権限を取得
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
+                if guild_id == guild.id:
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+
+                        permission_code = await permission.get_permission_code()
+                    else:
+                        permission_code = 0
                     if guild.icon == None:
                         guild_icon_url = ''
                     else:
                         guild_icon_url = guild.icon.url
-                    """
-                    if db.conn == None:
-                        await db.connect()
 
-                    task_info = await db.select_rows(
+                    if DB.conn == None:
+                        await DB.connect()
+
+                    task_info:List[Dict] = await DB.select_rows(
                         table_name=f"task_{guild.id}",
                         columns=[],
                         where_clause={}
                     )
-                    task_list# = LineBotColunm(**line_bot_info[0])
-                    """
+
+                    task_list = [
+                        {
+                            'taskNumber'    :task.get('task_number'),
+                            'taskTitle'     :task.get('task_title'),
+                            'timeLimit'     :str(task.get('time_limit')),
+                            'taskChannel'   :int(task.get('task_channel')),
+                            'alertLevel'    :task.get('alert_level'),
+                            'alertRole'     :int(task.get('alert_role')),
+                            'alertUser'     :int(task.get('alert_user'))
+                        }
+                        for task in task_info
+                    ]
 
                     json_content = {
                         'guildIconUrl'  :guild_icon_url,
-                        'permissionCode':await permission.get_permission_code(),
-                        # 'taskList':task_list
+                        'guildName'     :guild.name,
+                        'permissionCode':permission_code,
+                        'taskList'      :task_list
                     }
+
                     return JSONResponse(content=json_content)
 
             return JSONResponse(content={'message':'not guild'})

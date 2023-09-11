@@ -123,7 +123,7 @@
             
             {% for chan in all_channel %}
                 <!--テキストチャンネルの場合-->
-                {% if chan.type == 0 %}
+                {% if chan.type == 0 or chan.type == 15 %}
                     <option value={{chan.id}} 
                         {% if chan.id|int == line_row.default_channel_id|int %}
                             selected

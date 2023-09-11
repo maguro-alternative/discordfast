@@ -18,7 +18,8 @@ class PostgresDB:
             user:str,
             password:str,
             database:str,
-            host:str
+            host:str,
+            max_connections: int = 1
     ):
         """
         PostgreSQLのクラス
@@ -39,6 +40,11 @@ class PostgresDB:
         self.database = database
         self.host = host
         self.conn:Connection = None
+        self.semaphore = asyncio.Semaphore(max_connections)  # 同時に実行できる操作数の制限
+        self.dburl = f'{database}://{host}:5432/postgres?user={user}&password={password}'
+
+        # 排他制御用のロック
+        self.lock = asyncio.Lock()
 
     async def connect(self):
         """
@@ -50,6 +56,7 @@ class PostgresDB:
             database=self.database,
             host=self.host
         )
+        print('connect')
 
     async def disconnect(self):
         """
@@ -58,6 +65,8 @@ class PostgresDB:
         if self.conn == None:
             raise DataBaseNotConnect
         await self.conn.close()
+        self.conn = None
+        print('disconnect')
 
     async def create_table(self, table_name:str, columns:dict) -> str:
         """
@@ -119,27 +128,29 @@ class PostgresDB:
         else:
             columns_str = ', '.join(columns)
 
-        if where_clause is None:
-            sql = f"SELECT {columns_str} FROM {table_name};"
-        else:
-            where_clause_str = ' AND '.join(
-                [
-                    f"{column}=${i+1}" for i, column in enumerate(
-                        where_clause.keys()
-                    )
-                ]
-            )
-            where_clause_values = list(where_clause.values())
-            sql = f"SELECT {columns_str} FROM {table_name} "
-            if where_clause_str:
-                sql += f"WHERE {where_clause_str};"
+        async with self.lock:   # 排他制御のためにロックを獲得
+        #async with self.semaphore:  # セマフォで同時実行数を制御
+            if where_clause is None:
+                sql = f"SELECT {columns_str} FROM {table_name};"
             else:
-                sql += ";"
+                where_clause_str = ' AND '.join(
+                    [
+                        f"{column}=${i+1}" for i, column in enumerate(
+                            where_clause.keys()
+                        )
+                    ]
+                )
+                where_clause_values = list(where_clause.values())
+                sql = f"SELECT {columns_str} FROM {table_name} "
+                if where_clause_str:
+                    sql += f"WHERE {where_clause_str};"
+                else:
+                    sql += ";"
 
-        try:
-            return await self.conn.fetch(sql, *where_clause_values)
-        except asyncpg.exceptions.UndefinedTableError:
-            return [f"{table_name} does not exist"]
+            try:
+                return await self.conn.fetch(sql, *where_clause_values)
+            except asyncpg.exceptions.UndefinedTableError:
+                return [f"{table_name} does not exist"]
 
     async def insert_row(
         self,
@@ -469,159 +480,3 @@ class PostgresDB:
             columns_dict.update(tmp_dict)
 
         return columns_dict
-
-
-async def main():
-    import re
-    import uuid
-    user = os.getenv('PGUSER')
-    password = os.getenv('PGPASSWORD')
-    database = os.getenv('PGDATABASE')
-    host = os.getenv('PGHOST')
-    db = PostgresDB(
-        user=user,
-        password=password,
-        database=database,
-        host=host
-    )
-    # ローカル側のカラム(こちらに合わせる)
-    columns = {
-        'uuid':'UUID PRIMARY KEY',
-        'guild_id': 'NUMERIC',
-        'webhook_id':'NUMERIC',
-        'subscription_type':'VARCHAR(50)',
-        'subscription_id': 'VARCHAR(50)',
-        'mention_roles':'NUMERIC[]',
-        'mention_members':'NUMERIC[]',
-        'ng_or_word':'VARCHAR(50)[]',
-        'ng_and_word':'VARCHAR(50)[]',
-        'search_or_word':'VARCHAR(50)[]',
-        'search_and_word':'VARCHAR(50)[]',
-        'mention_or_word':'VARCHAR(50)[]',
-        'mention_and_word':'VARCHAR(50)[]',
-        'created_at':'VARCHAR(50)'
-    }
-
-    new_columns:Dict = {
-        'uuid':'',
-        'guild_id': 0,
-        'webhook_id':0,
-        'subscription_type':'',
-        'subscription_id': '',
-        'mention_roles':[],
-        'mention_members':[],
-        'ng_or_word':[],
-        'ng_and_word':[],
-        'search_or_word':[],
-        'search_and_word':[],
-        'mention_or_word':[],
-        'mention_and_word':[],
-        'created_at':''
-    }
-
-    table_fetch = [
-        {
-            'uuid':uuid.UUID('e04ddf59-8f06-49e9-b0a1-b3a21724a22e'),
-            'guild_id': 0,
-            'webhook_id':0,
-            'subscription_type':'twitter',
-            'subscription_id': 'a',
-            'mention_roles':[1],
-            'mention_members':[1,2],
-            'search_or_word':[],
-            'search_and_word':[],
-            'mention_or_word':[],
-            'mention_and_word':[],
-            'created_at':'Tue May 23 05:00:00 +0000 2022'
-        },
-        {
-            'uuid':uuid.UUID('e04ddf59-8f06-49e9-b0a1-b3a21724a22e'),
-            'guild_id': 0,
-            'webhook_id':0,
-            'subscription_type':'twitter',
-            'subscription_id': 'a',
-            'mention_roles':[1],
-            'mention_members':[1,2],
-            'search_or_word':[],
-            'search_and_word':[],
-            'mention_or_word':[],
-            'mention_and_word':[],
-            'created_at':'Tue May 23 05:00:00 +0000 2022'
-        }
-    ]
-
-    set_columns:Dict = {}
-    table_name='webhook_838937935822585928'
-    await db.connect()
-
-    # データベース側のカラム
-    table_columns = await db.get_columns_type(table_name=table_name)
-    print(table_columns)
-
-    missing_items = [
-        {key:value}
-        for key,value in new_columns.items()
-        if key not in table_columns.keys()
-    ]
-    for column_name,data_type in columns.items():
-        table_data_type:str = table_columns.get(column_name)
-        # (数字)が含まれていた場合、取り除く
-        data_type:str = re.sub(r'\(\d+\)','',data_type)
-
-        # データベース側になかった場合
-        # 主キーで、変更があった場合
-        if (table_data_type == None or
-            table_data_type not in data_type.lower() and (
-            'PRIMARY KEY' in data_type or
-            'primary key' in data_type
-            )):
-
-            if isinstance(new_columns[column_name],list):
-                new_columns[column_name] = tuple(new_columns[column_name])
-
-            set_columns.update(
-                {
-                    column_name:new_columns[column_name]
-                }
-            )
-        # 完全一致(大文字小文字区別せず)あった場合
-        # 主キーで、変更がない場合
-        elif (table_data_type == data_type.lower() or
-            (table_data_type in data_type.lower() and (
-            'PRIMARY KEY' in data_type or
-            'primary key' in data_type
-            ))):
-            set_columns.update(
-                {
-                    column_name:'Unchanged'
-                }
-            )
-
-    #print(set_columns.values())
-    if (len(list(set_columns.values())) == 1 and
-        list(set_columns.values())[0] == "Unchanged"):
-        unchanged = True
-    else:
-        unchanged = False
-
-    for i,table in enumerate(table_fetch):
-        for table_key,table_value in table.items():
-            if set_columns.get(table_key) == "Unchanged":
-                table.update({table_key:table_value})
-
-        for item in missing_items:
-            for key,value in item.items():
-                table.update({key:value})
-
-        table_fetch[i] = table
-        print(table)
-
-    await db.disconnect()
-
-    print(set_columns)
-    #print(table_fetch)
-
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())

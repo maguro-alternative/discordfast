@@ -37,8 +37,11 @@ class Logout(commands.Cog):
             if request.session.get("discord_oauth_data") != None:
                 request.session.pop("discord_oauth_data")
 
-            # ホームページにリダイレクトする
-            return RedirectResponse(url="/")
+            if request.session.get('react'):
+                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
+            else:
+                # ホームページにリダイレクトする
+                return RedirectResponse(url="/")
 
         @self.router.get("/line-logout")
         async def line_logout(request: Request):
@@ -48,5 +51,8 @@ class Logout(commands.Cog):
             if request.session.get("line_oauth_data") != None:
                 request.session.pop("line_oauth_data")
 
-            # ホームページにリダイレクトする
-            return RedirectResponse(url="/")
+            if request.session.get('react'):
+                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
+            else:
+                # ホームページにリダイレクトする
+                return RedirectResponse(url="/")

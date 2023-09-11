@@ -1,19 +1,20 @@
-import os
 import re
 import io
 
 import aiohttp
-import asyncio
-import time
 
 from dotenv import load_dotenv
 load_dotenv()
 
 from typing import List,Tuple,Dict
 
-#from discord_type import Discord_Member,Discord_Role,Discord_Channel
-from model_types.discord_type.discord_type import Discord_Member,Discord_Role,Discord_Channel
-from model_types.file_type import Audio_Files
+from model_types.discord_type.discord_type import (
+    DiscordMember,
+    DiscordRole,
+    DiscordChannel
+)
+
+from model_types.file_type import AudioFiles
 
 # DiscordAPIを直接叩いてLINEのメッセージを変換
 """
@@ -25,56 +26,6 @@ temple_id
     送信する規定のテキストチャンネルのID
 profile
     LINEのprofileデータ
-"""
-
-
-"""
-ベンチマーク
-
-member_find,role_find,channel_findを並列実行。
-変換したテキストをDiscordに送信。
-
-サーバーメンバー            6
-ロール数                   8
-チャンネル数
-    カテゴリーチャンネル    2
-    テキストチャンネル      4
-    ボイスチャンネル        4
-    計                    10
-
-aiohttp使用
-    0.8482秒
-    1.1233秒
-    0.7441秒
-    0.7937秒
-    0.9899秒
-
-asyncio.loop使用
-    1.0416秒
-    1.2084秒
-    0.9673秒
-    0.9959秒
-    1.1202秒
-
-同期(loop未使用)
-    1.9019秒
-    1.6649秒
-    1.6858秒
-    1.9105秒
-    1.9550秒
-
-asyncio.loop使用
-res = await self.loop.run_in_executor(
-            None,
-            partial(
-                requests.get,
-                f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',
-                headers=self.headers
-            )
-        )
-
-同期(loop未使用)
-res = requests.get(f'https://discordapp.com/api/guilds/{self.guild_id}/members?limit={self.limit}',headers=self.headers)
 """
 
 DISCORD_BASE_URL = "https://discord.com/api"
@@ -105,71 +56,71 @@ class ReqestDiscord:
             'Authorization': f'Bot {token}'
         }
 
-    async def member_get(self) -> List[Discord_Member]:
+    async def member_get(self) -> List[DiscordMember]:
         """
         サーバーのユーザーを取得する。
         戻り値
-        List[Discord_Member]
+        List[DiscordMember]
         """
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/members?limit={self.limit}',
-                headers = self.headers
+                url=f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/members?limit={self.limit}',
+                headers=self.headers
             ) as resp:
                 # 取得したユーザー情報を展開
                 res:Dict = await resp.json()
                 member_list = []
                 for member in res:
-                    r = Discord_Member.new_from_json_dict(member)
+                    r = DiscordMember(**member)
                     member_list.append(r)
 
         return member_list
 
 
-    async def role_get(self) -> List[Discord_Role]:
+    async def role_get(self) -> List[DiscordRole]:
         """
         ロールを取得する。
         戻り値
-        List[Discord_Role]
+        List[DiscordRole]
         """
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/roles',
-                headers = self.headers
+                url=f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/roles',
+                headers=self.headers
             ) as resp:
                 # 取得したロール情報を取得
                 res = await resp.json()
                 role_list = []
                 for role in res:
-                    r = Discord_Role.new_from_json_dict(role)
+                    r = DiscordRole(**role)
                     role_list.append(r)
 
         return role_list
 
-    async def channel_get(self) -> List[Discord_Channel]:
+    async def channel_get(self) -> List[DiscordChannel]:
         """
         チャンネルを取得する。
         戻り値
-        List[Discord_Channel]
+        List[DiscordChannel]
         """
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/channels',
-                headers = self.headers
+                url=f'{DISCORD_BASE_URL}/guilds/{self.guild_id}/channels',
+                headers=self.headers
             ) as resp:
                 # 取得したチャンネルを展開
                 res = await resp.json()
                 channel_list = []
                 for channel in res:
-                    r = Discord_Channel.new_from_json_dict(channel)
+                    r = DiscordChannel(**channel)
                     channel_list.append(r)
 
         return channel_list
 
-    async def channel_info_get(self,channel_id:int) -> Discord_Channel:
+    async def channel_info_get(self,channel_id:int) -> DiscordChannel:
         """
         チャンネル情報を取得する。
 
@@ -183,13 +134,13 @@ class ReqestDiscord:
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url = f'{DISCORD_BASE_URL}/channels/{channel_id}',
-                headers = self.headers
+                url=f'{DISCORD_BASE_URL}/channels/{channel_id}',
+                headers=self.headers
             ) as resp:
                 # 取得したチャンネルを展開
                 res = await resp.json()
 
-                r = Discord_Channel.new_from_json_dict(res)
+                r = DiscordChannel(**res)
         return r
 
     async def members_find(self, message: str) -> str:
@@ -215,7 +166,10 @@ class ReqestDiscord:
 
             # メッセージに「@{ユーザー名}#{4桁の数字}member」が含まれていた場合
             if f'@{member.user.username}#{member.user.discreminator}#member' in member_mention_list:
-                message = message.replace(f'@{member.user.username}#{member.user.discreminator}#member',f'<@{member.user.id}>')
+                message = message.replace(
+                    f'@{member.user.username}#{member.user.discreminator}#member',
+                    f'<@{member.user.id}>'
+                )
                 member_mention_list = [
                     user for user in member_mention_list
                     if user != f'@{member.user.username}#{member.user.discreminator}#member'
@@ -301,9 +255,9 @@ class ReqestDiscord:
 
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                url = f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
-                headers = self.headers,
-                data = {'content': f'{message}'}
+                url=f'{DISCORD_BASE_URL}/channels/{channel_id}/messages',
+                headers=self.headers,
+                data={'content': f'{message}'}
             ) as resp:
                 return await resp.json()
 
@@ -312,7 +266,7 @@ class ReqestDiscord:
         self,
         channel_id: int,
         message: str,
-        fileobj:Audio_Files,
+        fileobj:AudioFiles,
         content_type:str=None
     ) -> Dict:
         """
@@ -322,7 +276,7 @@ class ReqestDiscord:
             Discordのテキストチャンネルのid
         message     :str
             テキストメッセージ
-        fileobj     :Audio_Files
+        fileobj     :AudioFiles
             音声ファイルのオブジェクト
         """
 
@@ -363,49 +317,3 @@ class ReqestDiscord:
                 ) as resp:
                     return await resp.json()
 
-
-
-if __name__=="_main__":
-    loop = asyncio.get_event_loop()
-    r = ReqestDiscord(int(os.environ['6_GUILD_ID']),100,os.environ['DISCORD_BOT_TOKEN'])
-
-    message = "/test#channel @マグロ・オルタ#member @マグロ#member"
-    channel_id = int(os.environ['6_CHANNEL_ID'])
-
-    start = time.time()
-
-    discord_request = loop.run_until_complete(
-        asyncio.gather(
-            r.members_find(message),
-            r.roles_find(message),
-            r.channel_select(message)
-        )
-    )
-
-    for req_find in discord_request:
-        if req_find != None:
-            if type(req_find[1]) is int:
-                message = message.lstrip(req_find[0])
-                channel_id = req_find[1]
-            else:
-                message = message.replace(req_find[0], req_find[1])
-
-    loop.run_until_complete(r.send_discord(channel_id=channel_id, message=message))
-
-    end = time.time() - start
-
-    print(message)
-    print(end)
-
-if __name__=="__main__":
-    loop = asyncio.get_event_loop()
-    res = ReqestDiscord(int(os.environ['PRO_GUILD_ID']),100,os.environ['PRO_TOKEN'])
-    r=loop.run_until_complete(
-        res.role_get()
-        #asyncio.gather(
-        #    r.member_get(),
-        #    r.role_get(),
-        #    r.channel_get()
-        #)
-    )
-    print(r[0].name)

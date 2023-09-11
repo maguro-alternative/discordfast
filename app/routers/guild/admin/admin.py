@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Header
 from fastapi.responses import RedirectResponse,HTMLResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-
-from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
     pickle_read,
@@ -17,34 +15,29 @@ from base.aio_req import (
     oauth_check,
     decrypt_password
 )
-from typing import List,Dict,Any,Tuple
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
-from model_types.discord_type.discord_request_type import DiscordBaseRequest
+from typing import List,Dict,Any
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
+from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildSetPermission
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
-
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -98,12 +91,23 @@ class AdminView(commands.Cog):
             )
 
             # キャッシュ読み取り
-            guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE_NAME)
+            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE_NAME)
             guild_table = [
-                g
-                for g in guild_table_fetch
-                if int(g.get('guild_id')) == guild_id
+                #g
+                #for g in guild_table_fetch
+                #if int(g.get('guild_id')) == guild_id
             ]
+
+            if DB.conn == None:
+                await DB.connect()
+
+            guild_table:List[Dict[str,Any]] = await DB.select_rows(
+                table_name=TABLE_NAME,
+                columns=[],
+                where_clause={
+                    'guild_id':guild_id
+                }
+            )
 
             user_permission:str = 'normal'
 
@@ -127,33 +131,43 @@ class AdminView(commands.Cog):
                 }
             )
 
-        @self.router.post('/guild/admin')
+        @self.router.get('/guild/{guild_id}/admin/view')
         async def admin(
-            request:DiscordBaseRequest
+            guild_id:int,
+            request:Request
         ) -> JSONResponse:
-            if db.conn == None:
-                await db.connect()
-            # アクセストークンの復号化
-            access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
-            # Discordのユーザ情報を取得
-            discord_user = await get_profile(access_token=access_token)
+            session = FastAPISession(**request.session)
+            if DB.conn == None:
+                await DB.connect()
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token = session.discord_oauth_data.access_token
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
+
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
             TABLE_NAME = 'guild_set_permissions'
 
-            # トークンが無効
-            if discord_user == None:
-                return JSONResponse(content={'message':'access token Unauthorized'})
-
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
-                    # サーバの権限を取得
-                    permission = await return_permission(
-                        guild_id=guild.id,
-                        user_id=discord_user.id,
-                        access_token=access_token
-                    )
+                if guild_id == guild.id:
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+                    else:
+                        from model_types.discord_type.guild_permission import Permission
+                        permission = Permission()
+                        permission.administrator = True
                     guild_members = [
                         {
-                            'userId'            :member.id,
+                            'userId'            :str(member.id),
                             'userName'          :member.name,
                             'userDisplayName'   :member.display_name
                         }
@@ -161,12 +175,12 @@ class AdminView(commands.Cog):
                     ]
                     guild_roles = [
                         {
-                            'roleId'    :role.id,
+                            'roleId'    :str(role.id),
                             'roleName'  :role.name
                         }
                         for role in guild.roles
                     ]
-                    p = await db.select_rows(
+                    p:List[Dict] = await DB.select_rows(
                         table_name=TABLE_NAME,
                         columns=[],
                         where_clause={

@@ -8,32 +8,30 @@ load_dotenv()
 
 import os
 
-from base.database import PostgresDB
-from base.aio_req import pickle_write,encrypt_password
-from core.db_pickle import *
+from base.aio_req import return_permission,get_profile,encrypt_password
+
 from routers.api.chack.post_user_check import user_checker
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
+from model_types.table_type import GuildSetPermission
+from model_types.post_json_type import LineSetSuccessJson
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -82,26 +80,14 @@ class LineSetSuccess(commands.Cog):
                 'debug_mode':debug_mode
             }
 
-            await db.connect()
-            await db.update_row(
+            if DB.conn == None:
+                await DB.connect()
+            await DB.update_row(
                 table_name=TABLE,
                 row_values=row_values,
                 where_clause={
                     'guild_id':form.get('guild_id')
                 }
-            )
-            # 更新後のテーブルを取得
-            table_fetch = await db.select_rows(
-                table_name=TABLE,
-                columns=[],
-                where_clause={}
-            )
-            await db.disconnect()
-
-            # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
             )
 
             return templates.TemplateResponse(
@@ -112,3 +98,118 @@ class LineSetSuccess(commands.Cog):
                     'title':'成功'
                 }
             )
+
+        @self.router.post('/api/line-set-success-json')
+        async def line_set_success(
+            line_set_json: LineSetSuccessJson,
+            request: Request
+        ):
+            session = FastAPISession(**request.session)
+            if DB.conn == None:
+                await DB.connect()
+
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = session.discord_oauth_data.access_token
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
+
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
+
+            ADMIN_TABLE = 'guild_set_permissions'
+
+            for guild in self.bot.guilds:
+                if line_set_json.guild_id == guild.id:
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+                        per = await DB.select_rows(
+                            table_name=ADMIN_TABLE,
+                            columns=[],
+                            where_clause={
+                                'guild_id':guild.id
+                            }
+                        )
+                        member_roles = [
+                            role.id
+                            for role in guild.get_member(discord_user.id).roles
+                        ]
+                        line_bot_per = GuildSetPermission(**per[0])
+                        permission_code = await permission.get_permission_code()
+
+                        # 編集可能かどうか
+                        if((line_bot_per.line_bot_permission & permission_code) or
+                        discord_user.id in line_bot_per.line_bot_user_id_permission or
+                        len(set(member_roles) & set(line_bot_per.line_bot_role_id_permission))):
+                            pass
+                        else:
+                            return JSONResponse(content={'message':'access token Unauthorized'})
+                    else:
+                        from model_types.discord_type.guild_permission import Permission
+                        permission = Permission()
+                        permission.administrator = True
+
+                    TABLE = 'line_bot'
+
+                    row_value = {
+                        'default_channel_id':line_set_json.default_channel_id,
+                        'debug_mode'        :line_set_json.debug_mode
+                    }
+
+                    # 変更があった場合に追加
+                    # 同時に暗号化も行う
+                    if line_set_json.line_notify_token:
+                        if len(line_set_json.line_notify_token) > 30:
+                            row_value.update({'line_notify_token':await encrypt_password(line_set_json.line_notify_token)})
+                    if line_set_json.line_bot_token:
+                        if len(line_set_json.line_bot_token) > 30:
+                            row_value.update({'line_bot_token':await encrypt_password(line_set_json.line_bot_token)})
+                    if line_set_json.line_bot_secret:
+                        if len(line_set_json.line_bot_secret) > 30:
+                            row_value.update({'line_bot_secret':await encrypt_password(line_set_json.line_bot_secret)})
+                    if line_set_json.line_group_id:
+                        if len(line_set_json.line_group_id) > 30:
+                            row_value.update({'line_group_id':await encrypt_password(line_set_json.line_group_id)})
+                    if line_set_json.line_client_id:
+                        if len(line_set_json.line_client_id) > 9:
+                            row_value.update({'line_client_id':await encrypt_password(line_set_json.line_client_id)})
+                    if line_set_json.line_client_secret:
+                        if len(line_set_json.line_client_secret) > 30:
+                            row_value.update({'line_client_secret':await encrypt_password(line_set_json.line_client_secret)})
+
+                    # 削除フラグが立っている場合に削除
+                    if line_set_json.line_notify_token_del_flag:
+                        row_value.update({'line_notify_token':b''})
+                    if line_set_json.line_bot_token_del_flag:
+                        row_value.update({'line_bot_token':b''})
+                    if line_set_json.line_bot_secret_del_flag:
+                        row_value.update({'line_bot_secret':b''})
+                    if line_set_json.line_group_id_del_flag:
+                        row_value.update({'line_group_id':b''})
+                    if line_set_json.line_client_id_del_flag:
+                        row_value.update({'line_client_id':b''})
+                    if line_set_json.line_client_secret_del_flag:
+                        row_value.update({'line_client_secret':b''})
+
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        await DB.update_row(
+                            table_name=TABLE,
+                            row_values=row_value,
+                            where_clause={
+                                'guild_id':guild.id
+                            }
+                        )
+                    else:
+                        import pprint
+                        pprint.pprint(row_value)
+
+                    return JSONResponse(content={'message':'success!!'})

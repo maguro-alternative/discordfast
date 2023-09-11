@@ -11,35 +11,33 @@ import re
 import uuid
 from datetime import datetime,timezone
 
-from base.database import PostgresDB
-from base.aio_req import pickle_write
-from core.db_pickle import *
+from base.aio_req import return_permission,get_profile
+
 from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
 
 from routers.api.chack.post_user_check import user_checker
-from model_types.discord_type.discord_user_session import DiscordOAuthData,DiscordUser
+from model_types.discord_type.discord_user_session import DiscordOAuthData
+from model_types.discord_type.discord_type import DiscordUser
+
+from model_types.table_type import GuildSetPermission,WebhookSet
+from model_types.post_json_type import WebhookSuccessJson
+from model_types.session_type import FastAPISession
 
 from discord.ext import commands
 try:
     from core.start import DBot
+    from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.core.db_pickle import DB
 
 DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_BASE_URL = "https://discord.com/api"
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
-db = PostgresDB(
-    user=USER,
-    password=PASSWORD,
-    database=DATABASE,
-    host=HOST
-)
+# デバッグモード
+DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -69,7 +67,8 @@ class WebhookSuccess(commands.Cog):
 
             TABLE = f'webhook_{form.get("guild_id")}'
 
-            await db.connect()
+            if DB.conn == None:
+                await DB.connect()
 
             FORM_NAMES = (
                 "webhookSelect_",
@@ -137,7 +136,7 @@ class WebhookSuccess(commands.Cog):
                     'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
                 }
 
-                print(row)
+                #print(row)
 
                 # 入力漏れがあった場合
                 if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or
@@ -187,7 +186,7 @@ class WebhookSuccess(commands.Cog):
 
             # まとめて追加
             if len(create_webhook_list) > 0:
-                await db.batch_insert_row(
+                await DB.batch_insert_row(
                     table_name=TABLE,
                     row_values=create_webhook_list
                 )
@@ -240,7 +239,7 @@ class WebhookSuccess(commands.Cog):
 
             # まとめて更新
             if len(change_webhook_list) > 0:
-                await db.primary_batch_update_rows(
+                await DB.primary_batch_update_rows(
                     table_name=TABLE,
                     set_values_and_where_columns=change_webhook_list,
                     table_colum=WEBHOOK_COLUMNS
@@ -248,26 +247,23 @@ class WebhookSuccess(commands.Cog):
 
             # 削除
             for del_num in del_webhook_numbers:
-                await db.delete_row(
+                await DB.delete_row(
                     table_name=TABLE,
                     where_clause={
                         'uuid':form.get(f'uuid_{del_num}')
                     }
                 )
 
-            table_fetch = await db.select_rows(
+            table_fetch = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
                 where_clause={}
             )
 
-            await db.disconnect()
+            #await DB.disconnect()
 
             # pickleファイルに書き込み
-            await pickle_write(
-                filename=TABLE,
-                table_fetch=table_fetch
-            )
+            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
 
             return templates.TemplateResponse(
                 'api/webhooksuccess.html',
@@ -277,3 +273,136 @@ class WebhookSuccess(commands.Cog):
                     'title':'成功'
                 }
             )
+
+        @self.router.post('/api/webhook-success-json')
+        async def webhook_post(
+            webhook_json:WebhookSuccessJson,
+            request:Request
+        ):
+            session = FastAPISession(**request.session)
+            if DB.conn == None:
+                await DB.connect()
+
+            # デバッグモード
+            if DEBUG_MODE == False:
+                # アクセストークンの復号化
+                access_token:str = session.discord_oauth_data.access_token
+                # Discordのユーザ情報を取得
+                discord_user = await get_profile(access_token=access_token)
+
+                # トークンが無効
+                if discord_user == None:
+                    return JSONResponse(content={'message':'access token Unauthorized'})
+
+            ADMIN_TABLE = 'guild_set_permissions'
+
+            for guild in self.bot.guilds:
+                if webhook_json.guild_id == guild.id:
+                    # デバッグモード
+                    if DEBUG_MODE == False:
+                        # サーバの権限を取得
+                        permission = await return_permission(
+                            guild_id=guild.id,
+                            user_id=discord_user.id,
+                            access_token=access_token
+                        )
+                        per = await DB.select_rows(
+                            table_name=ADMIN_TABLE,
+                            columns=[],
+                            where_clause={
+                                'guild_id':guild.id
+                            }
+                        )
+                        member_roles = [
+                            role.id
+                            for role in guild.get_member(discord_user.id).roles
+                        ]
+                        webhook_per = GuildSetPermission(**per[0])
+                        permission_code = await permission.get_permission_code()
+
+                        # 編集可能かどうか
+                        if((webhook_per.webhook_permission & permission_code) or
+                        discord_user.id in webhook_per.line_user_id_permission or
+                        len(set(member_roles) & set(webhook_per.line_role_id_permission))):
+                            pass
+                        else:
+                            return JSONResponse(content={'message':'access token Unauthorized'})
+
+                    TABLE = f'webhook_{guild.id}'
+
+                    db_webhook = await DB.select_rows(
+                        table_name=TABLE,
+                        columns=[],
+                        where_clause={}
+                    )
+
+                    db_webhook = [
+                        WebhookSet(**webhook)
+                        for webhook in db_webhook
+                    ]
+
+                    db_webhook_id_list = [
+                        webhook_id.uuid
+                        for webhook_id in db_webhook
+                    ]
+
+                    # 登録した時刻を登録
+                    now_time = datetime.now(timezone.utc)
+                    now_str = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
+
+                    for webhook in webhook_json.webhook_list:
+                        row_value = {
+                            'webhook_id'        :webhook.webhook_id,
+                            'subscription_type' :webhook.subscription_type,
+                            'subscription_id'   :webhook.subscription_id,
+                            'mention_roles'     :webhook.mention_roles,
+                            'mention_members'   :webhook.mention_members,
+                            'ng_or_word'        :webhook.ng_or_word,
+                            'ng_and_word'       :webhook.ng_and_word,
+                            'search_or_word'    :webhook.search_or_word,
+                            'search_and_word'   :webhook.search_and_word,
+                            'mention_or_word'   :webhook.mention_or_word,
+                            'mention_and_word'  :webhook.mention_and_word
+                        }
+                        # 更新
+                        if str(webhook.uuid) in db_webhook_id_list:
+                            # デバッグモード
+                            if DEBUG_MODE == False:
+                                await DB.update_row(
+                                    table_name=TABLE,
+                                    row_values=row_value,
+                                    where_clause={
+                                        'uuid':webhook.uuid
+                                    }
+                                )
+                            else:
+                                from pprint import pprint
+                                pprint(row_value)
+
+                        # 削除
+                        elif webhook.delete_flag:
+                            await DB.delete_row(
+                                table_name=TABLE,
+                                where_clause={
+                                    'uuid':webhook.uuid
+                                }
+                            )
+
+                        else:
+                            uuid_val = uuid.uuid4()
+                            row_value.update({
+                                'uuid'      :uuid_val,
+                                'guild_id'  :guild.id,
+                                'created_at':now_str
+                            })
+                            # デバッグモード
+                            if DEBUG_MODE == False:
+                                await DB.insert_row(
+                                    table_name=TABLE,
+                                    row_values=row_value
+                                )
+                            else:
+                                from pprint import pprint
+                                pprint(row_value)
+
+                    return JSONResponse(content={'message':'success!!'})
