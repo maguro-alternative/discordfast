@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -7,17 +7,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any,Union,Optional
+from typing import List,Dict,Any,Union
 
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     return_permission,
     oauth_check,
     get_profile,
     sort_discord_channel,
-    sort_channels,
-    decrypt_password
+    sort_channels
 )
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData

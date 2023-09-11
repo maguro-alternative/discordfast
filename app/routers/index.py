@@ -1,9 +1,10 @@
-from fastapi import APIRouter,Request
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
 import os
-from typing import List,Dict
+from typing import Dict
 
 from base.aio_req import (
     aio_get_request,
@@ -44,9 +45,9 @@ class Index(commands.Cog):
                 if not await oauth_check(access_token=oauth_session.access_token):
                     request.session.pop('discord_oauth_data')
 
-            bot_data:dict = await aio_get_request(
-                url = DISCORD_BASE_URL + '/users/@me',
-                headers = {
+            bot_data:Dict = await aio_get_request(
+                url=f'{DISCORD_BASE_URL}/users/@me',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -66,27 +67,21 @@ class Index(commands.Cog):
             # デバッグモード
             if DEBUG_MODE == False:
                 access_token = session.discord_oauth_data.access_token
-                oauth_data:Dict = await aio_get_request(
-                    url=f'{DISCORD_BASE_URL}/users/@me',
-                    headers={
-                        'Authorization': f'Bearer {access_token}'
+                if not await oauth_check(access_token=access_token):
+                    request.session.pop('discord_oauth_data')
+                    request.session.pop('discord_user')
+                    return JSONResponse(
+                        status_code=401,
+                        content={
+                            'message':'認証情報が無効です'
+                        }
+                    )
+                else:
+                    json_content = {
+                        "username":session.discord_user.username,
+                        "avatar":session.discord_user.avatar
                     }
-                )
-
-
-# sessionの中身(dict)
-"""
-    'discord_connection': [
-        {
-            'type': 'epicgames', 
-            'id': str, 
-            'name': str, 
-            'visibility': int, 
-            'friend_sync': bool, 
-            'show_activity': bool, 
-            'verified': bool, 
-            'two_way_link': bool, 
-            'metadata_visibility': int
-        }
-    ]
-"""
+                    return JSONResponse(
+                        status_code=200,
+                        content=json_content
+                    )
