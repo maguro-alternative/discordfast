@@ -110,7 +110,6 @@ class mst_line(commands.Cog):
         # ユーザーネームの空白文字を削除
         user_name = re.sub("[\u3000 \t]", "",message.author.name)
 
-
         # テキストメッセージ
         messagetext = f"{message.channel.name}にて、{user_name}"
 
@@ -363,7 +362,7 @@ async def voice_checker(
                 attachments.remove(attachment)
 
             # m4aファイルの秒数を計算
-            cmd = "ffprobe -hide_banner {output_filename}.m4a -show_entries format=duration"
+            cmd = f"ffprobe -hide_banner {output_filename}.m4a -show_entries format=duration"
             process = await loop.run_in_executor(
                 None,
                 partial(

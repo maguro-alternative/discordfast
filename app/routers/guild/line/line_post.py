@@ -260,15 +260,16 @@ class LinePostView(commands.Cog):
                 # 新規作成された場合
                 if len(new_channel) > 0:
                     for new in new_channel:
-                        new_row = {
-                            'channel_id': new['id'],
-                            'guild_id':guild_id,
-                            'line_ng_channel':False,
-                            'ng_message_type':[],
-                            'message_bot':False,
-                            'ng_users':[]
-                        }
-                        new_values.append(new_row)
+                        if new['id'] not in table_ids:
+                            new_row = {
+                                'channel_id': new['id'],
+                                'guild_id':guild_id,
+                                'line_ng_channel':False,
+                                'ng_message_type':[],
+                                'message_bot':False,
+                                'ng_users':[]
+                            }
+                            new_values.append(new_row)
 
                         line_row.update(
                             {

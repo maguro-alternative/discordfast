@@ -4,8 +4,7 @@ from discord.ext import commands
 from discord import Option
 import asyncio
 import os
-from functools import partial
-import subprocess
+from pydub import AudioSegment
 
 try:
     from app.cogs.bin.rank import WavKaraoke
@@ -215,29 +214,12 @@ class karaoke(commands.Cog):
 # 録音終了時に呼び出される関数
 async def finished_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationContext):
 
-    loop = asyncio.get_event_loop()
-    # discordにファイル形式で送信。拡張子はmp3。
-    files = [
-        discord.File(audio.file, f"{user_id}.{sink.encoding}")
-        for user_id, audio in sink.audio_data.items()
-        if user_id == ctx.author.id
-    ]
-    file_path = f".\wave\{ctx.author.id}_voice"
-    file_message = await ctx.channel.send(f"録音終了", files=files)
-    await file_message.attachments[0].save(f"{file_path}.{sink.encoding}")
-    await file_message.delete()
-
-    # mp3ファイルとして書き込み。その後wavファイルに変換。
-    cmd = f'ffmpeg -i "{file_path}.{sink.encoding}" -vn -ac 2 -ar 44100 -acodec pcm_s16le -f wav "{file_path}.wav"'
-    await loop.run_in_executor(
-        None,
-        partial(
-            subprocess.run,cmd.split(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True
-        )
-    )
+    # 録音したユーザーの音声を取り出す
+    for user_id, audio in sink.audio_data.items():
+        if user_id == ctx.author.id:# 歌ったユーザーIDと一致した場合
+            # mp3ファイルとして書き込み。その後wavファイルに変換。
+            song = AudioSegment.from_file(audio.file, format="mp3")
+            song.export(f'.\wave\{ctx.author.id}_voice.wav', format='wav')
 
 async def record_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationContext):
     # 録音したユーザーの音声を取り出す
@@ -246,7 +228,10 @@ async def record_callback(sink:discord.sinks.MP3Sink, ctx:discord.ApplicationCon
         for user_id, audio in sink.audio_data.items()
     ]
     # discordにファイル形式で送信。拡張子はmp3。
-    files = [discord.File(audio.file, f"{user_id}.{sink.encoding}") for user_id, audio in sink.audio_data.items()]
+    files = [
+        discord.File(audio.file, f"{user_id}.{sink.encoding}")
+        for user_id, audio in sink.audio_data.items()
+    ]
     await ctx.channel.send(f"録音終了! 音声ファイルはこちら! {', '.join(recorded_users)}.", files=files)
 
 def check_error(er):

@@ -82,7 +82,6 @@ class vc_count(commands.Cog):
                 return
 
         client = self.bot.get_channel(int(send_channel_id))
-        print(type(send_channel_id))
 
         # メンションするロールの取り出し
         mentions = [

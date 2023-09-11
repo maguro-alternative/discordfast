@@ -4,12 +4,8 @@ import asyncio
 import librosa
 import numpy as np
 import wave
-import os
 
-import subprocess
-from functools import partial
-import re
-import youtube_dl
+from pydub import AudioSegment
 from yt_dlp import YoutubeDL
 
 class WavKaraoke:
@@ -66,31 +62,18 @@ class WavKaraoke:
         約1GBを許容範囲とした結果、wavファイルを60秒に抑えることにした。
         """
         for before_value,after_value in zip(self.before_values,self.after_values):
-            cmd = f"ffprobe -hide_banner {before_value} -show_entries format=duration"
-            process = await self.loop.run_in_executor(
-                None,
-                partial(
-                    subprocess.run,cmd.split(),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    check=True
-                )
-            )
-            stdout_result = process.stdout.decode()
-            match = re.search(r'(\d+\.\d+)', stdout_result)
-            sound_second = float(match.group(1))
+            before_sound:AudioSegment = AudioSegment.from_file(before_value, format="wav")
+            time = before_sound.duration_seconds
 
-            if sound_second >= 60:
-                cmd = f'ffmpeg -i {before_value} -filter:a "atempo={sound_second / 60}" -t 60 {after_value}'
-                await self.loop.run_in_executor(
-                    None,
-                    partial(
-                        subprocess.run,cmd.split(),
-                        check=True
-                    )
-                )
-            else:
-                os.rename(before_value,after_value)
+            # 60秒以上の場合
+            if time >= 60:
+                speed = time/60
+                base_sound = before_sound.speedup(playback_speed=speed, crossfade=0)
+            # 60秒未満の場合、そのまま
+            else :
+                base_sound = before_sound
+            # 書き込み
+            base_sound.export(after_value, format="wav")
 
     # 採点(類似度計算)
     async def calculate_wav_similarity(self):
