@@ -8,7 +8,6 @@ from fastapi.templating import Jinja2Templates
 
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette_csrf import CSRFMiddleware
 
 import asyncio
 import uvicorn
@@ -93,12 +92,6 @@ class ReadyLoad(commands.Cog):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-        )
-        self.app.add_middleware(
-            CSRFMiddleware,
-            secret=os.environ.get('MIDDLE_KEY'),
-            cookie_samesite=None,
-            cookie_secure=True,
         )
 
         # 各パス
