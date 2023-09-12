@@ -63,7 +63,7 @@ class CallBack(commands.Cog):
             state   : str,
             request : Request
         ):
-            print(request.session)
+            print(request.cookies)
             # セッションの初期化
             if request.session.get('discord_user') != None:
                 request.session.pop("discord_user")
@@ -202,18 +202,19 @@ class CallBack(commands.Cog):
 
         @self.router.get('/oauth_save_state/{state}')
         async def oauth_save_state(
-            request:Request,
-            state:str
+            state:str,
+            request:Request
         ):
             request.session['state'] = state
             request.session['react'] = True
             print(request.session)
+            print(request.cookies)
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_nonce/{nonce}')
         async def oauth_save_nonce(
-            request:Request,
-            nonce:str
+            nonce:str,
+            request:Request
         ):
             request.session['nonce'] = nonce
             request.session['react'] = True
