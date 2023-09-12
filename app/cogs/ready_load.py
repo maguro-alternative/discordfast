@@ -86,8 +86,6 @@ class ReadyLoad(commands.Cog):
         # templates/static以下のファイルを静的に扱えるようにする
         self.app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
-        # session使用
-        self.app.add_middleware(SessionMiddleware, secret_key=os.environ.get('MIDDLE_KEY'))
         # オリジン間のリソースを共有
         self.app.add_middleware(
             CORSMiddleware,
@@ -102,6 +100,12 @@ class ReadyLoad(commands.Cog):
             secret=os.environ.get('MIDDLE_KEY'),
             cookie_samesite=None,
             cookie_secure=True,
+        )
+
+        # session使用
+        self.app.add_middleware(
+            SessionMiddleware,
+            secret_key=os.environ.get('MIDDLE_KEY')
         )
 
         # 各パス
