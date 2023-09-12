@@ -64,6 +64,7 @@ class CallBack(commands.Cog):
             request : Request
         ):
             print(request.cookies)
+            print(request.session)
             # セッションの初期化
             if request.session.get('discord_user') != None:
                 request.session.pop("discord_user")
