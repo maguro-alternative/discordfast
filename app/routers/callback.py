@@ -63,6 +63,7 @@ class CallBack(commands.Cog):
             state   : str,
             request : Request
         ):
+            print(request.session)
             # セッションの初期化
             if request.session.get('discord_user') != None:
                 request.session.pop("discord_user")
@@ -73,7 +74,6 @@ class CallBack(commands.Cog):
 
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
-                print(request.session)
                 raise HTTPException(status_code=400, detail="認証失敗")
             # stateが一致した場合、削除して続行
             else:
