@@ -77,6 +77,7 @@ class ReadyLoad(commands.Cog):
         origins = [
             "http://localhost:3000",
             "http://192.168.1.6:3000",
+            "https://discordfast-front.vercel.app"
             #self.callback_url
         ]
         # new テンプレート関連の設定 (jinja2)
