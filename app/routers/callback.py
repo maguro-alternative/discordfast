@@ -73,6 +73,7 @@ class CallBack(commands.Cog):
 
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
+                print(request.session.get("state"),state)
                 raise HTTPException(status_code=400, detail="認証失敗")
             # stateが一致した場合、削除して続行
             else:
