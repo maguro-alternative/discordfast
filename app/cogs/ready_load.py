@@ -92,6 +92,8 @@ class ReadyLoad(commands.Cog):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            cookie_samesite=None,
+            cookie_secure=True,
         )
 
         # 各パス
