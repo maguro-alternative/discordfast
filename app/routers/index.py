@@ -79,6 +79,7 @@ class Index(commands.Cog):
                         )
                     else:
                         json_content = {
+                            "id":str(session.discord_user.id),
                             "username":session.discord_user.username,
                             "avatar":session.discord_user.avatar
                         }
