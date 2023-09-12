@@ -75,10 +75,7 @@ class ReadyLoad(commands.Cog):
         )
         self.callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
         origins = [
-            "http://localhost:5000",
-            "http://localhost",
-            self.callback_url,
-            "http://localhost:3000",
+            self.callback_url
         ]
         # new テンプレート関連の設定 (jinja2)
         self.templates = Jinja2Templates(directory="templates")
