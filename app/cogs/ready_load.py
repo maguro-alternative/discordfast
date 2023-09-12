@@ -108,7 +108,8 @@ class ReadyLoad(commands.Cog):
         # session使用
         self.app.add_middleware(
             SessionMiddleware,
-            secret_key=os.environ.get('MIDDLE_KEY')
+            secret_key=os.environ.get('MIDDLE_KEY'),
+            same_site='none'
         )
 
         # 各パス
