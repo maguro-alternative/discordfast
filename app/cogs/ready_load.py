@@ -76,6 +76,7 @@ class ReadyLoad(commands.Cog):
         self.callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
         origins = [
             "http://localhost:3000",
+            "http://192.168.1.6:3000",
             self.callback_url
         ]
         # new テンプレート関連の設定 (jinja2)
