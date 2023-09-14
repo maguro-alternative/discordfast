@@ -55,9 +55,13 @@ class WebhookSuccess(commands.Cog):
 
             # OAuth2トークンが有効かどうか判断
             check_code = await user_checker(
-                request=request,
                 oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
-                user_session=DiscordUser(**request.session.get('discord_user'))
+                user_session=DiscordUser(**request.session.get('discord_user')),
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == int(form.get('guild_id'))
+                ][0]
             )
 
             if check_code == 302:
@@ -127,7 +131,6 @@ class WebhookSuccess(commands.Cog):
                 none_flag = False
 
                 uuid_val = uuid.uuid4()
-                #uuid_uint64 = int.from_bytes(uuid_val.bytes, byteorder='big', signed=False)
                 row = {
                     'uuid':uuid_val,
                     'guild_id': int(form.get("guild_id")),
@@ -165,7 +168,6 @@ class WebhookSuccess(commands.Cog):
 
                     for key in key_list:
                         row_list.append(form.get(f'{form_name}{webhook_num}_{key}'))
-                        #print(f'{form_name}{webhook_num}_{key}',form.get(f'{form_name}{webhook_num}_{key}'))
 
                     row.update({
                         row_name:row_list
@@ -260,11 +262,6 @@ class WebhookSuccess(commands.Cog):
                 where_clause={}
             )
 
-            #await DB.disconnect()
-
-            # pickleファイルに書き込み
-            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
-
             return templates.TemplateResponse(
                 'api/webhooksuccess.html',
                 {
@@ -302,9 +299,12 @@ class WebhookSuccess(commands.Cog):
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
                         permission = await return_permission(
-                            guild_id=guild.id,
                             user_id=discord_user.id,
-                            access_token=access_token
+                            guild=[
+                                guild
+                                for guild in self.bot.guilds
+                                if guild.id == webhook_json.guild_id
+                            ][0]
                         )
                         per = await DB.select_rows(
                             table_name=ADMIN_TABLE,

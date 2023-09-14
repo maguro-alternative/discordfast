@@ -190,10 +190,8 @@ async def search_role(
 
     return match_role
 
-async def treturn_permission(
-    guild_id:int,
+async def return_permission(
     user_id:int,
-    access_token:str,
     guild:Guild
 ) -> Permission:
     """
@@ -205,79 +203,25 @@ async def treturn_permission(
         ユーザのid
     access_token    :str
         ユーザのアクセストークン
-
     """
+    user_permission = Permission()
+    role_permission = Permission()
+    permission_code = 0
     user = [
         member
         for member in guild.members
         if member.id == user_id
     ]
 
-async def return_permission(
-    guild_id:int,
-    user_id:int,
-    access_token:str
-) -> Permission:
-    """
-    指定されたユーザの権限を返す(ロールの権限も含む)
+    # 権限コードをor計算で足し合わせる
+    for role in user[0].roles:
+        permission_code |= role.permissions.value
 
-    guild_id        :int
-        サーバのid
-    user_id         :int
-        ユーザのid
-    access_token    :str
-        ユーザのアクセストークン
+    await user_permission.get_permissions(permissions=user[0].guild_permissions.value)
+    await role_permission.get_permissions(permissions=permission_code)
 
-    """
+    return user_permission | role_permission
 
-    # ログインユーザの情報を取得
-    guild_user = await aio_get_request(
-        url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/members/{user_id}',
-        headers={
-            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-        }
-    )
-
-    # サーバのロールを取得
-    guild_role = await aio_get_request(
-        url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/roles',
-        headers={
-            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-        }
-    )
-
-    # ログインユーザのロールの詳細を取得
-    match_role = await search_role(
-        guild_role_get=guild_role,
-        user_role_get=guild_user
-    )
-
-    # ログインユーザの所属しているサーバを取得
-    guild_info = await aio_get_request(
-        url=f'{DISCORD_BASE_URL}/users/@me/guilds',
-        headers={
-            'Authorization': f'Bearer {access_token}'
-        }
-    )
-
-    permission = 0
-    user_permission = Permission()
-
-    # サーバでの権限を取得
-    for info in guild_info:
-        if str(guild_id) == info["id"]:
-            permission = info["permissions"]
-            break
-
-    await user_permission.get_permissions(permissions=permission)
-
-    for role in match_role:
-        # サーバー管理者であるかどうかを調べる
-        role_permission = Permission()
-        await role_permission.get_permissions(permissions=int(role["permissions"]))
-        user_permission = user_permission | role_permission
-
-    return user_permission
 
 async def discord_oauth_check(
     access_token:str

@@ -85,9 +85,12 @@ class AdminView(commands.Cog):
 
             # サーバの権限を取得
             guild_user_permission = await return_permission(
-                guild_id=guild_id,
                 user_id=user_session.id,
-                access_token=oauth_session.access_token
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == guild_id
+                ][0]
             )
 
             # キャッシュ読み取り
@@ -157,9 +160,8 @@ class AdminView(commands.Cog):
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
                         permission = await return_permission(
-                            guild_id=guild.id,
                             user_id=discord_user.id,
-                            access_token=access_token
+                            guild=guild
                         )
                     else:
                         from model_types.discord_type.guild_permission import Permission

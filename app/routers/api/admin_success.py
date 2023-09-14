@@ -48,9 +48,13 @@ class AdminSuccess(commands.Cog):
 
             # OAuth2トークンが有効かどうか判断
             check_code = await user_checker(
-                request=request,
                 oauth_session=DiscordOAuthData(**request.session.get('discord_oauth_data')),
-                user_session=DiscordUser(**request.session.get('discord_user'))
+                user_session=DiscordUser(**request.session.get('discord_user')),
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == int(form.get('guild_id'))
+                ][0]
             )
 
             if check_code == 302:
@@ -182,9 +186,12 @@ class AdminSuccess(commands.Cog):
             if DEBUG_MODE == False:
                 # サーバの権限を取得
                 permission = await return_permission(
-                    guild_id=admin_json.guild_id,
                     user_id=discord_user.id,
-                    access_token=access_token
+                    guild=[
+                        guild
+                        for guild in self.bot.guilds
+                        if guild.id == admin_json.guild_id
+                    ][0]
                 )
             else:
                 from model_types.discord_type.guild_permission import Permission

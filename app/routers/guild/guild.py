@@ -69,9 +69,12 @@ class GuildSetView(commands.Cog):
 
             # サーバの権限を取得
             permission = await return_permission(
-                guild_id=guild_id,
                 user_id=user_session.id,
-                access_token=oauth_session.access_token
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == guild_id
+                ][0]
             )
 
             if DB.conn == None:
@@ -127,9 +130,8 @@ class GuildSetView(commands.Cog):
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
                         permission = await return_permission(
-                            guild_id=guild.id,
                             user_id=discord_user.id,
-                            access_token=access_token
+                            guild=guild
                         )
 
                         permission_code = await permission.get_permission_code()

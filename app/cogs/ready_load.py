@@ -98,13 +98,6 @@ class ReadyLoad(commands.Cog):
             allow_headers=["*"],
         )
 
-        self.app.add_middleware(
-            CSRFMiddleware,
-            secret=os.environ.get('MIDDLE_KEY'),
-            cookie_samesite=None,
-            cookie_secure=True,
-        )
-
         # session使用
         self.app.add_middleware(
             SessionMiddleware,
