@@ -12,7 +12,7 @@ from typing import List,Dict,Any,Union
 from base.aio_req import (
     aio_get_request,
     return_permission,
-    discord_oauth_check
+    discord_oauth_check,
     get_profile,
     sort_discord_channel,
     sort_channels

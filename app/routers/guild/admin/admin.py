@@ -12,7 +12,7 @@ from base.aio_req import (
     pickle_read,
     get_profile,
     return_permission,
-    discord_oauth_check
+    discord_oauth_check,
     decrypt_password
 )
 from typing import List,Dict,Any

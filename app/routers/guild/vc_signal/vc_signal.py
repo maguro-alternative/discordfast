@@ -13,7 +13,7 @@ from base.aio_req import (
     aio_get_request,
     pickle_read,
     return_permission,
-    discord_oauth_check
+    discord_oauth_check,
     get_profile,
     sort_discord_vc_channel,
     sort_channels,
