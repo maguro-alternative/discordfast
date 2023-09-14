@@ -329,7 +329,7 @@ async def check_permission(
 
     return user_permission
 
-async def oauth_check(
+async def discord_oauth_check(
     access_token:str
 ) -> bool:
     """

@@ -12,7 +12,7 @@ from typing import List,Dict
 from base.aio_req import (
     aio_get_request,
     search_guild,
-    oauth_check
+    discord_oauth_check
 )
 from model_types.discord_type.discord_user_session import DiscordOAuthData,MatchGuild
 from model_types.discord_type.discord_type import DiscordUser
@@ -49,7 +49,7 @@ class GuildsView(commands.Cog):
                 user_session = DiscordUser(**request.session.get('discord_user'))
                 print(f"アクセスしたユーザー:{user_session.username}")
                 # トークンの有効期限が切れていた場合、再ログインする
-                if not await oauth_check(access_token=oauth_session.access_token):
+                if not await discord_oauth_check(access_token=oauth_session.access_token):
                     return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)

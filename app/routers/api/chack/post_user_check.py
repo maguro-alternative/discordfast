@@ -1,7 +1,7 @@
 from base.aio_req import (
     aio_get_request,
     return_permission,
-    oauth_check
+    discord_oauth_check
 )
 from starlette.requests import Request
 
@@ -38,7 +38,7 @@ async def user_checker(
         )
 
         # トークンの有効期限が切れている場合、ログイン画面に遷移
-        if (not await oauth_check(
+        if (not await discord_oauth_check(
                 access_token=oauth_session.access_token
             )):
             return 302

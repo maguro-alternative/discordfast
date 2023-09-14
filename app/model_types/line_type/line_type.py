@@ -23,6 +23,8 @@ class LineBotInfo(BaseModel):
     pictureUrl          :Optional[str]
         プロフィール画像のURL。「https://」から始まる画像UR
         ボットにプロフィール画像を設定していない場合は、レスポンスに含まれない
+    displayName         :Optional[str]
+        ボットの表示名
     userId              :Optional[str]
         ボットのユーザーID
     message             :Optional[str]
@@ -37,6 +39,7 @@ class LineBotInfo(BaseModel):
     premiumId           :Optional[str]
     pictureUrl          :Optional[str]
     userId              :Optional[str]
+    displayName         :Optional[str]
     message             :Optional[str]
     details             :Optional[List[Dict[str,str]]]
 

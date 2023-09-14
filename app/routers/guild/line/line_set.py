@@ -14,7 +14,7 @@ from base.aio_req import (
     aio_get_request,
     pickle_read,
     return_permission,
-    oauth_check,
+    discord_oauth_check
     get_profile,
     sort_channels,
     sort_discord_channel,
@@ -65,7 +65,7 @@ class LineSetView(commands.Cog):
                 oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
                 user_session = DiscordUser(**request.session.get('discord_user'))
                 # トークンの有効期限が切れていた場合、再ログインする
-                if not await oauth_check(access_token=oauth_session.access_token):
+                if not await discord_oauth_check(access_token=oauth_session.access_token):
                     return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)

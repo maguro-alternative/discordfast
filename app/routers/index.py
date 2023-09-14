@@ -8,8 +8,8 @@ from typing import Dict
 
 from base.aio_req import (
     aio_get_request,
-    oauth_check
-)
+    discord_oauth_check
+    )
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
 
@@ -42,7 +42,7 @@ class Index(commands.Cog):
                 user_session = DiscordUser(**request.session.get('discord_user'))
                 print(f"アクセスしたユーザー:{user_session.username}")
                 # トークンの有効期限が切れていた場合、認証情報を削除
-                if not await oauth_check(access_token=oauth_session.access_token):
+                if not await discord_oauth_check(access_token=oauth_session.access_token):
                     request.session.pop('discord_oauth_data')
 
             bot_data:Dict = await aio_get_request(
@@ -61,14 +61,48 @@ class Index(commands.Cog):
                 }
             )
 
-        @self.router.get("/index")
-        async def index(request: Request):
+        @self.router.get("/index-discord")
+        async def index_discord(request: Request):
             session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
                 if session.discord_oauth_data:
                     access_token = session.discord_oauth_data.access_token
-                    if not await oauth_check(access_token=access_token):
+                    if not await discord_oauth_check(access_token=access_token):
+                        request.session.pop('discord_oauth_data')
+                        request.session.pop('discord_user')
+                        return JSONResponse(
+                            status_code=401,
+                            content={
+                                'message':'認証情報が無効です'
+                            }
+                        )
+                    else:
+                        json_content = {
+                            "id":str(session.discord_user.id),
+                            "username":session.discord_user.username,
+                            "avatar":session.discord_user.avatar
+                        }
+                        return JSONResponse(
+                            status_code=200,
+                            content=json_content
+                        )
+                else:
+                    return JSONResponse(
+                        status_code=401,
+                        content={
+                            'message':'認証情報が無効です'
+                        }
+                    )
+
+        @self.router.get("/index-line")
+        async def index_line(request: Request):
+            session = FastAPISession(**request.session)
+            # デバッグモード
+            if DEBUG_MODE == False:
+                if session.line_oauth_data:
+                    access_token = session.line_oauth_data.access_token
+                    if not await discord_oauth_check(access_token=access_token):
                         request.session.pop('discord_oauth_data')
                         request.session.pop('discord_user')
                         return JSONResponse(
