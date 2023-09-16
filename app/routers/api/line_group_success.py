@@ -12,7 +12,8 @@ from typing import List,Dict
 
 from base.aio_req import (
     aio_get_request,
-    decrypt_password
+    decrypt_password,
+    line_oauth_check
 )
 
 from discord.ext import commands
@@ -29,6 +30,7 @@ from model_types.table_type import LineBotColunm
 
 from model_types.post_json_type import LineGroupSuccessJson
 from model_types.line_type.line_oauth import LineTokenVerify,LineProfile
+from model_types.session_type import FastAPISession
 
 LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
 LINE_BOT_URL = 'https://api.line.me/v2/bot'
@@ -53,6 +55,13 @@ class LineGroupSuccess(commands.Cog):
 
             TABLE = "line_bot"
 
+            token_valid:bool = await line_oauth_check(
+                access_token=request.session['line_oauth_data']['access_token']
+            )
+
+            if token_valid == False:
+                return JSONResponse(content={'message':'access token Unauthorized'})
+
             form = await request.form()
             default_channel_id:int = int(form.get('default_channel_id'))
 
@@ -73,13 +82,6 @@ class LineGroupSuccess(commands.Cog):
                 columns=[],
                 where_clause={}
             )
-            #await DB.disconnect()
-
-            # pickleファイルに書き込み
-            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
-
-            # LINE Botのトークンなどを取り出す
-            #line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
 
             bot_info:List[dict] = [
                 bot
@@ -140,13 +142,17 @@ class LineGroupSuccess(commands.Cog):
             )
 
         @self.router.post('/api/line-group-success-json')
-        async def line_group_success(request: LineGroupSuccessJson):
+        async def line_group_success(
+            request: Request,
+            line_group_json: LineGroupSuccessJson
+        ):
+            session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
             # デバッグモード
             if DEBUG_MODE == False:
                 # アクセストークンの復号化
-                access_token:str = await decrypt_password(decrypt_password=request.access_token.encode('utf-8'))
+                access_token:str = session.line_oauth_data.access_token
                 # LINEのユーザ情報を取得
                 line_user = await aio_get_request(
                     url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
@@ -168,12 +174,12 @@ class LineGroupSuccess(commands.Cog):
             TABLE = "line_bot"
 
             for guild in self.bot.guilds:
-                if request.guild_id == guild.id:
+                if line_group_json.guild_id == guild.id:
                     l = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
                         where_clause={
-                            'guild_id':request.guild_id
+                            'guild_id':line_group_json.guild_id
                         }
                     )
 
@@ -187,7 +193,7 @@ class LineGroupSuccess(commands.Cog):
                     if DEBUG_MODE == False:
                         # グループIDが有効かどうか判断
                         r = await aio_get_request(
-                            url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{request.sub}",
+                            url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{session.line_user.sub}",
                             headers={
                                 'Authorization': f'Bearer {line_bot_token}'
                             }
@@ -221,11 +227,11 @@ class LineGroupSuccess(commands.Cog):
                         import pprint
                         pprint.pprint(row_value)
 
-                    if request.change_alert:
+                    if line_group_json.change_alert:
                         # 変更URL
                         #url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/group/'
 
-                        change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel_or_thread(request.default_channel_id).name}」に変更されました。"
+                        change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel_or_thread(line_group_json.default_channel_id).name}」に変更されました。"
                         #change_text += f"\n変更はこちらから\n{url}"
 
                         # LINEのインスタンスを作成
@@ -238,7 +244,7 @@ class LineGroupSuccess(commands.Cog):
                         await line_bot_api.push_message_notify(
                             message=change_text
                         )
-                        send_channel = guild.get_channel_or_thread(request.default_channel_id)
+                        send_channel = guild.get_channel_or_thread(line_group_json.default_channel_id)
 
                         await send_channel.send(change_text)
 

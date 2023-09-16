@@ -156,40 +156,6 @@ async def search_guild(
 
     return match_guild
 
-
-async def search_role(
-    guild_role_get:List[dict],
-    user_role_get:List[dict]
-) -> List[dict]:
-    """
-    ユーザがサーバ内で持っているロールの詳細を取得する
-
-    param:
-    guild_role_get  :List[dict]
-        サーバにある全てのロール
-    user_role_get   :List[dict]
-        ユーザ情報
-
-    return:
-    List
-        ユーザーが持っているロール一覧
-    """
-    guild_role_id = []
-    user_role_id = []
-    match_role = []
-
-    for guild_role in guild_role_get:
-        guild_role_id.append(guild_role['id'])
-
-    for user_guild in user_role_get["roles"]:
-        user_role_id.append(user_guild)
-
-    for role_id,role in zip(guild_role_id,guild_role_get):
-        if role_id in user_role_id:
-            match_role.append(role)
-
-    return match_role
-
 async def return_permission(
     user_id:int,
     guild:Guild
