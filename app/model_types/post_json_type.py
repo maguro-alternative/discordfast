@@ -3,6 +3,21 @@ from typing import List,Optional,Union,Any
 from uuid import UUID
 
 class LinePostChannelList(BaseModel):
+    """
+    LINEBotの送信設定に関するテーブル
+
+    param:
+    channel_id      :int
+        Discordのチャンネルのid
+    line_ng_channel :bool
+        送信しないチャンネルかどうか
+    ng_message_type :List[str]
+        送信しないメッセージの種類
+    message_bot     :bool
+        ボットのメッセージを送信するかどうか
+    ng_users        :List[int]
+        送信しないユーザのid
+    """
     channel_id      :int
     line_ng_channel :bool
     ng_message_type :List[str]
@@ -10,6 +25,23 @@ class LinePostChannelList(BaseModel):
     ng_users        :List[int]
 
 class VcSignalChannelList(BaseModel):
+    """
+    ボイスチャンネルの入退室管理に関するテーブル
+
+    param:
+    vc_id           :int
+        ボイスチャンネルのid
+    send_signal     :bool
+        送信するかどうか
+    send_channel_id :int
+        送信するチャンネルのid
+    join_bot        :bool
+        ボットの入退室を通知するかどうか
+    everyone_mention:bool
+        入退室時にeveryoneをメンションするかどうか
+    mention_role_id :List[int]
+        メンションするロールのid
+    """
     vc_id           :int
     send_signal     :bool
     send_channel_id :int
@@ -18,6 +50,37 @@ class VcSignalChannelList(BaseModel):
     mention_role_id :List[int]
 
 class WebhookList(BaseModel):
+    """
+    Webhookの設定に関するテーブル
+
+    param:
+    uuid                :Union[UUID,str]
+        Webhookのuuid
+    webhook_id          :int
+        Webhookのid
+    subscription_type   :str
+        Webhookの種類(niconico, youtube)
+    subscription_id     :str
+        Webhookのid(niconico, youtube)
+    mention_roles       :List[int]
+        メンションするロールのid
+    mention_members     :List[int]
+        メンションするユーザのid
+    ng_or_word          :List[str]
+        通知しないワード
+    ng_and_word         :List[str]
+        通知しないワード
+    search_or_word      :List[str]
+        検索するワード
+    search_and_word     :List[str]
+        検索するワード
+    mention_or_word     :List[str]
+        メンションするワード
+    mention_and_word    :List[str]
+        メンションするワード
+    delete_flag         :Optional[bool]
+        削除フラグ
+    """
     uuid                :Union[UUID,str]
     webhook_id          :int
     subscription_type   :str
@@ -85,9 +148,6 @@ class LineGroupSuccessJson(BaseModel):
     param:
     guild_id            :int
         Discordサーバのid
-    access_token        :str
-        DiscordOAuthのトークン
-        暗号化された状態で送られてくる
     default_channel_id  :int
         Discordに送信するチャンネルのid
     change_alert        :bool
@@ -95,15 +155,58 @@ class LineGroupSuccessJson(BaseModel):
         Trueだと送信
     """
     guild_id            :int
-    access_token        :str
     default_channel_id  :int
     change_alert        :bool
 
 class LinePostSuccessJson(BaseModel):
+    """
+    LINEBotの送信設定に関するテーブル
+
+    param:
+    guild_id        :int
+        Discordサーバのid
+    channel_list    :List[LinePostChannelList]
+        LINEBotの送信設定に関するテーブル
+    """
     guild_id    :int
     channel_list:List[LinePostChannelList]
 
 class LineSetSuccessJson(BaseModel):
+    """
+    LINEBotの設定に関するテーブル
+
+    param:
+    guild_id                    :int
+        Discordサーバのid
+    line_notify_token           :Optional[str]
+        LINEの通知用トークン
+    line_bot_token              :Optional[str]
+        LINEBotのトークン
+    line_bot_secret             :Optional[str]
+        LINEBotのシークレット
+    line_group_id               :Optional[str]
+        LINEのグループid
+    line_client_id              :Optional[str]
+        LINEのクライアントid
+    line_client_secret          :Optional[str]
+        LINEのクライアントシークレット
+    line_notify_token_del_flag  :Optional[bool]
+        LINEの通知用トークンを削除するかどうか
+    line_bot_token_del_flag     :Optional[bool]
+        LINEBotのトークンを削除するかどうか
+    line_bot_secret_del_flag    :Optional[bool]
+        LINEBotのシークレットを削除するかどうか
+    line_group_id_del_flag      :Optional[bool]
+        LINEのグループidを削除するかどうか
+    line_client_id_del_flag     :Optional[bool]
+        LINEのクライアントidを削除するかどうか
+    line_client_secret_del_flag :Optional[bool]
+        LINEのクライアントシークレットを削除するかどうか
+    default_channel_id          :int
+        Discordに送信するチャンネルのid
+    debug_mode                  :bool
+        デバッグモードかどうか
+    """
     guild_id                    :int
     line_notify_token           :Optional[str]
     line_bot_token              :Optional[str]
@@ -121,9 +224,27 @@ class LineSetSuccessJson(BaseModel):
     debug_mode                  :bool
 
 class VcSignalSuccessJson(BaseModel):
+    """
+    ボイスチャンネルの入退室管理に関するテーブル
+
+    param:
+    guild_id            :int
+        Discordサーバのid
+    vc_channel_list     :List[VcSignalChannelList]
+        ボイスチャンネルの入退室管理に関するテーブル
+    """
     guild_id            :int
     vc_channel_list     :List[VcSignalChannelList]
 
 class WebhookSuccessJson(BaseModel):
+    """
+    Webhookの設定に関するテーブル
+
+    param:
+    guild_id    :int
+        Discordサーバのid
+    webhook_list:List[WebhookList]
+        Webhookの設定に関するテーブル
+    """
     guild_id    :int
     webhook_list:List[WebhookList]
