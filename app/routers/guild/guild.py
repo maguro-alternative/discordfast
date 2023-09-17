@@ -166,7 +166,7 @@ class GuildSetView(commands.Cog):
 
                     json_content = {
                         'guildIconUrl'  :guild_icon_url,
-                        'guildIcon'     :guild.icon,
+                        'guildIcon'     :guild._icon,
                         'guildName'     :guild.name,
                         'permissionCode':permission_code,
                         'taskList'      :task_list
