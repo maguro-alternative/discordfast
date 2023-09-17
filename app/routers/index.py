@@ -8,8 +8,9 @@ from typing import Dict
 
 from base.aio_req import (
     aio_get_request,
-    discord_oauth_check
-    )
+    discord_oauth_check,
+    line_oauth_check
+)
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
 
@@ -102,9 +103,9 @@ class Index(commands.Cog):
             if DEBUG_MODE == False:
                 if session.line_oauth_data:
                     access_token = session.line_oauth_data.access_token
-                    if not await discord_oauth_check(access_token=access_token):
-                        request.session.pop('discord_oauth_data')
-                        request.session.pop('discord_user')
+                    if not await line_oauth_check(access_token=access_token):
+                        request.session.pop('line_oauth_data')
+                        request.session.pop('line_user')
                         return JSONResponse(
                             status_code=401,
                             content={
@@ -113,9 +114,9 @@ class Index(commands.Cog):
                         )
                     else:
                         json_content = {
-                            "id":str(session.discord_user.id),
-                            "username":session.discord_user.username,
-                            "avatar":session.discord_user.avatar
+                            "id":session.line_user.sub,
+                            "username":session.line_user.name,
+                            "avatar":session.line_user.picture
                         }
                         return JSONResponse(
                             status_code=200,
