@@ -179,7 +179,6 @@ class CallBack(commands.Cog):
             request.session['line_user'] = line_id_token
 
             if request.session.get('react'):
-                request.session.pop('react')
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
             else:
                 # ホームページにリダイレクトする
