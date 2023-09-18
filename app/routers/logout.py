@@ -38,6 +38,7 @@ class Logout(commands.Cog):
                 request.session.pop("discord_oauth_data")
 
             if request.session.get('react'):
+                request.session.pop("react")
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
             else:
                 # ホームページにリダイレクトする
@@ -52,6 +53,7 @@ class Logout(commands.Cog):
                 request.session.pop("line_oauth_data")
 
             if request.session.get('react'):
+                request.session.pop("react")
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
             else:
                 # ホームページにリダイレクトする
