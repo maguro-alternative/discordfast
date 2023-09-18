@@ -151,7 +151,7 @@ class GuildSetView(commands.Cog):
                         where_clause={}
                     )
 
-                    if "does not exist" not in task_info:
+                    if "does not exist" not in task_info[0]:
                         task_list = [
                             {
                                 'taskNumber'    :task.get('task_number'),
