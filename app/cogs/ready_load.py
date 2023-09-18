@@ -105,6 +105,15 @@ class ReadyLoad(commands.Cog):
             https_only=True,
         )
 
+        self.app.add_middleware(
+            CSRFMiddleware,
+            secret=os.environ.get('MIDDLE_KEY'),
+            cookie_samesite='none',
+            cookie_secure=True,
+            cookie_httponly=True,
+            sensitive_cookies='csrftoken',
+        )
+
         # 各パス
         self.app.include_router(router=Index(bot=self.bot).router)
         self.app.include_router(router=LineBotWebhook(bot=self.bot).router)
