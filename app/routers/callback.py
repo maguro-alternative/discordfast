@@ -59,6 +59,7 @@ class CallBack(commands.Cog):
 
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
+                request.session.pop("state")
                 raise HTTPException(status_code=400, detail="認証失敗")
             # stateが一致した場合、削除して続行
             else:
@@ -107,7 +108,6 @@ class CallBack(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            print(request.session)
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
                 request.session.pop("state")
@@ -171,6 +171,7 @@ class CallBack(commands.Cog):
 
             request.session.pop("state")
             request.session.pop("nonce")
+            request.session.pop('guild_id')
 
             # idトークンが正しくない場合
             if line_id_token.get('error_description') != None:
