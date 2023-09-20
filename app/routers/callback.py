@@ -106,6 +106,8 @@ class CallBack(commands.Cog):
         ):
             if DB.conn == None:
                 await DB.connect()
+
+            print(request.session)
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
                 request.session.pop("state")
