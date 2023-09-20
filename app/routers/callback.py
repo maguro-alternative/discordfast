@@ -184,7 +184,7 @@ class CallBack(commands.Cog):
             request.session['line_user'] = line_id_token
 
             if request.session.get('react'):
-                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
+                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/group/{guild_id}')
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url=f"/group/{guild_id}")
