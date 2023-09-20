@@ -189,7 +189,7 @@ class CallBack(commands.Cog):
                 # ホームページにリダイレクトする
                 return RedirectResponse(url=f"/group/{guild_id}")
 
-        @self.router.put('/oauth_save_state/{state}')
+        @self.router.get('/oauth_save_state/{state}')
         async def oauth_save_state(
             state:str,
             request:Request
@@ -198,7 +198,7 @@ class CallBack(commands.Cog):
             request.session['react'] = True
             return {'message':'ok'}
 
-        @self.router.put('/oauth_save_nonce/{nonce}')
+        @self.router.get('/oauth_save_nonce/{nonce}')
         async def oauth_save_nonce(
             nonce:str,
             request:Request
@@ -207,7 +207,7 @@ class CallBack(commands.Cog):
             request.session['react'] = True
             return {'message':'ok'}
 
-        @self.router.put('/oauth_save_guild_id/{guild_id}')
+        @self.router.get('/oauth_save_guild_id/{guild_id}')
         async def oauth_save_guild_id(
             guild_id:str,
             request:Request
