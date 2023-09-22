@@ -8,12 +8,8 @@ import os
 from datetime import datetime
 from typing import Dict
 
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
-
 from model_types.table_type import WebhookSet
+from model_types.youtube_api_type import YouTubeChannelList,YouTubeChannelInfo
 from core.db_pickle import DB
 
 async def youtube_subsc(
@@ -48,11 +44,13 @@ async def youtube_subsc(
             url=new_videos_url
         ) as resp:
             new_videos_info:dict = await resp.json()
-            # 最新動画を取得
-            videos_item:list[Dict] = new_videos_info.get('items')
+            youtube_info = YouTubeChannelList(**new_videos_info)
 
-        for item in videos_item:
-            upload_time_str = item.get('snippet').get('publishTime')
+            # 最新動画を取得
+            videos_items = youtube_info.items
+
+        for i,item in enumerate(videos_items):
+            upload_time_str = item.snippet.publishTime
             upload_time = datetime.strptime(
                 upload_time_str,
                 '%Y-%m-%dT%H:%M:%SZ'
@@ -63,18 +61,19 @@ async def youtube_subsc(
                     async with sessions.get(
                         url=channel_url
                     ) as re:
-                        channel_info:dict = await re.json()
+                        channel:dict = await re.json()
+                        channel_info = YouTubeChannelInfo(**channel)
                         # チャンネルの基本情報を取得
-                        channel_item:dict = channel_info.get('items')[0]
+                        channel_item = channel_info.items[0]
                         # チャンネルのアイコンを取得
-                        channel_icon_url:str = channel_item.get('snippet').get('thumbnails').get('high').get('url')
+                        channel_icon_url:str = channel_item.snippet.thumbnails.high.url
                         # チャンネル名を取得
-                        channel_title = channel_item.get('snippet').get('title')
+                        channel_title = channel_item.snippet.title
 
                 # YouTube動画のタイトル
-                video_title = item.get('snippet').get('title')
+                video_title = item.snippet.title
                 # YouTube動画のURL
-                video_url = f"https://youtu.be/{item.get('id').get('videoId')}"
+                video_url = f"https://youtu.be/{item.id.videoId}"
 
                 if len(webhook.mention_roles) > 0:
                     # メンションするロールの取り出し
@@ -102,7 +101,7 @@ async def youtube_subsc(
                         'content':text
                     }
                 ) as re:
-                    if item == videos_item[-1]:
+                    if i == len(videos_items)-1:
                         # データベースに接続し、最終更新日を更新
                         if DB.conn == None:
                             await DB.connect()
