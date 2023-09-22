@@ -534,6 +534,8 @@ class VcSignalView(commands.Cog):
                     ]
 
                     channels_json.update({
+                        'guildIcon'         :guild._icon,
+                        'guildName'         :guild.name,
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
                         'vcChannels'        :vc_channel_dict,

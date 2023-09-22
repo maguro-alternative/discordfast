@@ -288,6 +288,8 @@ class WebhookView(commands.Cog):
                     ]
 
                     channels_json.update({
+                        'guildIcon'         :guild._icon,
+                        'guildName'         :guild.name,
                         'webhooks'          :webhooks,
                         'guildUsers'        :guild_users,
                         'guildRoles'        :guild_roles,

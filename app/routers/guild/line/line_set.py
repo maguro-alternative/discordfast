@@ -343,6 +343,8 @@ class LineSetView(commands.Cog):
 
                     # フロント側に送るjsonを作成(linebotの情報は先頭3桁のみ)
                     channels_json.update({
+                        'guildIcon'         :guild._icon,
+                        'guildName'         :guild.name,
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
                         'threads'           :threads,

@@ -196,6 +196,8 @@ class AdminView(commands.Cog):
                     guild_permission = GuildSetPermission(**p[0])
 
                     json_content = {
+                        'guildIcon'                 :guild._icon,
+                        'guildName'                 :guild.name,
                         'guildMembers'              :guild_members,
                         'guildRoles'                :guild_roles,
                         'linePermission'            :guild_permission.line_permission,
