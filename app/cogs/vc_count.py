@@ -52,6 +52,29 @@ class vc_count(commands.Cog):
             }
         )
 
+        # テーブルがない場合、作成
+        if len(vc_table_fetch) == 0:
+            await DB.insert_row(
+                table_name=TABLE,
+                row_values={
+                    'vc_id':vc_channel_id,
+                    'guild_id':member.guild.id,
+                    'send_signal':True,
+                    'send_channel_id':0,
+                    'everyone_mention':False,
+                    'join_bot':False,
+                    'mention_role_id':[]
+                }
+            )
+            # 読み取り
+            vc_table_fetch:List[dict] = await DB.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={
+                    'vc_id':vc_channel_id
+                }
+            )
+
         vc_channel = GuildVcChannel(**vc_table_fetch[0])
 
         # 通知が拒否されていた場合、終了
