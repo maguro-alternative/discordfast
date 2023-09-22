@@ -1,6 +1,5 @@
 from base.aio_req import (
-    aio_get_request,
-    check_permission
+    aio_get_request
 )
 
 from cogs.bin.base_type.tweet_type import TwitterTweet

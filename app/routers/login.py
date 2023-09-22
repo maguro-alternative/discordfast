@@ -1,5 +1,5 @@
 from fastapi import APIRouter,Request,Header
-from fastapi.responses import RedirectResponse,HTMLResponse
+from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -8,17 +8,16 @@ load_dotenv()
 
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     decrypt_password
 )
 
-from cryptography.fernet import Fernet
 import urllib.parse
 
 import os
 import secrets
 from typing import Dict,List
-
+from model_types.table_type import LineBotColunm
+from model_types.line_type.line_type import LineBotInfo
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -132,6 +131,66 @@ class Login(commands.Cog):
             )
 
 
+        @self.router.get("/line-login/view")
+        async def line_login_select(request: Request):
+            if DB.conn == None:
+                await DB.connect()
+
+            # line_botテーブルをロード
+            line_bot_table:List[Dict] = await DB.select_rows(
+                table_name="line_bot",
+                columns=[],
+                where_clause={}
+            )
+
+            # Botが所属しているサーバidを取得
+            bot_guild_ids:List[int] = [
+                bot_guild.id
+                for bot_guild in self.bot.guilds
+            ]
+
+            # Botが所属しているサーバからLINEの認証情報があるところ
+            line_login_bots:List[LineBotColunm] = [
+                LineBotColunm(**guild)
+                for guild in line_bot_table
+                if (len(guild.get('line_client_id')) > 0 and
+                    len(guild.get('line_client_secret')) > 0 and
+                    len(guild.get('line_bot_token')) > 0 and
+                    int(guild.get('guild_id')) in bot_guild_ids
+                    )
+            ]
+
+            bot_profiles = list()
+
+            # ログインできるBotをListに並べる
+            for line in line_login_bots:
+                # トークンを復号
+                line_bot_token:str = await decrypt_password(encrypted_password=line.line_bot_token)
+                line_clinet_id:str = await decrypt_password(encrypted_password=line.line_client_id)
+
+                # LINEのcallbackurlをエンコードする
+                redirect_uri = os.environ.get('LINE_CALLBACK_URL')
+                redirect_encode_uri:str = urllib.parse.quote(redirect_uri)
+                # LINEBotの情報を取得
+                bot_profile_tmp:Dict = await aio_get_request(
+                    url=f"{LINE_BASE_URL}/v2/bot/info",
+                    headers={
+                        'Authorization' : f'Bearer {line_bot_token}'
+                    }
+                )
+                bot_profile:LineBotInfo = LineBotInfo(**bot_profile_tmp)
+                # 識別のためDiscordサーバーのidを追加
+                bot_profiles.append({
+                    'pictureUrl'            :bot_profile.pictureUrl,
+                    'displayName'           :bot_profile.displayName,
+                    'clientId'              :line_clinet_id,
+                    'redirectEncodeUri'     :redirect_encode_uri,
+                    'guildId'               :str(line.guild_id)
+                })
+
+            return JSONResponse(content=bot_profiles)
+
+
         @self.router.get("/line-login/{guild_id}")
         async def line_login(
             request: Request,
@@ -145,7 +204,6 @@ class Login(commands.Cog):
             if request.session.get("line_oauth_data") != None:
                 request.session.pop("line_oauth_data")
 
-
             # ランダムなstate値の生成
             state = secrets.token_urlsafe(16)
             nonce = secrets.token_urlsafe(16)
@@ -158,18 +216,16 @@ class Login(commands.Cog):
             line_bot_table:List[Dict] = await DB.select_rows(
                 table_name="line_bot",
                 columns=[],
-                where_clause={}
+                where_clause={
+                    'guild_id':guild_id
+                }
             )
 
             # 主キーがサーバーのidと一致するものを取り出す
-            guild_set_line_bot:List[Dict] = [
-                line
-                for line in line_bot_table
-                if int(line.get('guild_id')) == guild_id
-            ]
+            guild_set_line_bot:LineBotColunm = LineBotColunm(**line_bot_table[0])
 
             # クライアントidを復号
-            client_id:str = await decrypt_password(encrypted_password=bytes(guild_set_line_bot[0].get('line_client_id')))
+            client_id:str = await decrypt_password(encrypted_password=guild_set_line_bot.line_client_id)
 
             # LINEのcallbackurlをエンコードする
             redirect_uri = os.environ.get('LINE_CALLBACK_URL')
@@ -177,8 +233,8 @@ class Login(commands.Cog):
 
             try:
                 oauth_data:Dict = await aio_get_request(
-                    url = f'{LINE_BASE_URL}/oauth2/v2.1/verify?access_token={request.session["line_oauth_data"]["access_token"]}', 
-                    headers = {}
+                    url=f'{LINE_BASE_URL}/oauth2/v2.1/verify?access_token={request.session["line_oauth_data"]["access_token"]}',
+                    headers={}
                 )
                 if oauth_data.get('error_description') == 'access token expired':
                     return RedirectResponse(url=LINE_REDIRECT_URL.format(client_id,redirect_encode_uri,state,nonce),status_code=302)

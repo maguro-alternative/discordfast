@@ -8,7 +8,7 @@ load_dotenv()
 
 import os
 from base.aio_req import (
-    oauth_check
+    discord_oauth_check
 )
 
 from model_types.discord_type.discord_user_session import DiscordOAuthData
@@ -43,7 +43,7 @@ class PermissionCode(commands.Cog):
                 oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
                 user_session = DiscordUser(**request.session.get('discord_user'))
                 # トークンの有効期限が切れていた場合、再ログインする
-                if not await oauth_check(access_token=oauth_session.access_token):
+                if not await discord_oauth_check(access_token=oauth_session.access_token):
                     return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)

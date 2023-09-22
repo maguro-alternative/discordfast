@@ -1,12 +1,10 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse,JSONResponse
+from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
 from dotenv import load_dotenv
 load_dotenv()
-
-import urllib.parse
 
 import os
 from typing import Dict,List
@@ -14,7 +12,6 @@ from typing import Dict,List
 from base.aio_req import (
     aio_get_request,
     aio_post_request,
-    encrypt_password,
     decrypt_password
 )
 
@@ -22,29 +19,18 @@ from discord.ext import commands
 try:
     from core.start import DBot
     from core.db_pickle import DB
-    from model_types.discord_type.discord_user_session import DiscordOAuthData
     from model_types.table_type import LineBotColunm
-    from model_types.line_type.line_oauth import (
-        LineCallbackRequest,
-        LineOAuthData,
-        LineIdTokenResponse
-    )
+    from model_types.line_type.line_oauth import LineOAuthData
 except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
-    from app.model_types.discord_type.discord_user_session import DiscordOAuthData
     from app.model_types.table_type import LineBotColunm
-    from app.model_types.line_type.line_oauth import (
-        LineCallbackRequest,
-        LineOAuthData,
-        LineIdTokenResponse
-    )
+    from app.model_types.line_type.line_oauth import LineOAuthData
 
 DISCORD_BASE_URL = "https://discord.com/api"
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 LINE_REDIRECT_URI = os.environ.get('LINE_CALLBACK_URL')
-LINE_REDIRECT_URI_ENCODE = urllib.parse.quote(LINE_REDIRECT_URI)
 LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
 
 ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
@@ -71,8 +57,10 @@ class CallBack(commands.Cog):
             if request.session.get("discord_oauth_data") != None:
                 request.session.pop("discord_oauth_data")
 
+            print(request.session.get("state") , state)
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
+                request.session.pop("state")
                 raise HTTPException(status_code=400, detail="認証失敗")
             # stateが一致した場合、削除して続行
             else:
@@ -106,6 +94,7 @@ class CallBack(commands.Cog):
             )
 
             if request.session.get('react'):
+                request.session.pop('react')
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
             else:
                 # ホームページにリダイレクトする
@@ -119,6 +108,8 @@ class CallBack(commands.Cog):
         ):
             if DB.conn == None:
                 await DB.connect()
+
+            print(request.session.get("state") , state)
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
                 request.session.pop("state")
@@ -182,6 +173,7 @@ class CallBack(commands.Cog):
 
             request.session.pop("state")
             request.session.pop("nonce")
+            request.session.pop('guild_id')
 
             # idトークンが正しくない場合
             if line_id_token.get('error_description') != None:
@@ -192,15 +184,15 @@ class CallBack(commands.Cog):
             request.session['line_user'] = line_id_token
 
             if request.session.get('react'):
-                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
+                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/group/{guild_id}')
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url=f"/group/{guild_id}")
 
         @self.router.get('/oauth_save_state/{state}')
         async def oauth_save_state(
-            request:Request,
-            state:str
+            state:str,
+            request:Request
         ):
             request.session['state'] = state
             request.session['react'] = True
@@ -208,9 +200,18 @@ class CallBack(commands.Cog):
 
         @self.router.get('/oauth_save_nonce/{nonce}')
         async def oauth_save_nonce(
-            request:Request,
-            nonce:str
+            nonce:str,
+            request:Request
         ):
             request.session['nonce'] = nonce
+            request.session['react'] = True
+            return {'message':'ok'}
+
+        @self.router.get('/oauth_save_guild_id/{guild_id}')
+        async def oauth_save_guild_id(
+            guild_id:str,
+            request:Request
+        ):
+            request.session['guild_id'] = guild_id
             request.session['react'] = True
             return {'message':'ok'}

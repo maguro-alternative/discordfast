@@ -11,11 +11,9 @@ from typing import List,Dict
 
 from base.aio_req import (
     aio_get_request,
-    oauth_check,
+    discord_oauth_check,
     return_permission,
-    get_profile,
-    pickle_read,
-    decrypt_password
+    get_profile
 )
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
@@ -56,7 +54,7 @@ class GuildSetView(commands.Cog):
                 oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
                 user_session = DiscordUser(**request.session.get('discord_user'))
                 # トークンの有効期限が切れていた場合、再ログインする
-                if not await oauth_check(access_token=oauth_session.access_token):
+                if not await discord_oauth_check(access_token=oauth_session.access_token):
                     return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
@@ -71,9 +69,12 @@ class GuildSetView(commands.Cog):
 
             # サーバの権限を取得
             permission = await return_permission(
-                guild_id=guild_id,
                 user_id=user_session.id,
-                access_token=oauth_session.access_token
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == guild_id
+                ][0]
             )
 
             if DB.conn == None:
@@ -129,9 +130,8 @@ class GuildSetView(commands.Cog):
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
                         permission = await return_permission(
-                            guild_id=guild.id,
                             user_id=discord_user.id,
-                            access_token=access_token
+                            guild=guild
                         )
 
                         permission_code = await permission.get_permission_code()
@@ -151,21 +151,25 @@ class GuildSetView(commands.Cog):
                         where_clause={}
                     )
 
-                    task_list = [
-                        {
-                            'taskNumber'    :task.get('task_number'),
-                            'taskTitle'     :task.get('task_title'),
-                            'timeLimit'     :str(task.get('time_limit')),
-                            'taskChannel'   :int(task.get('task_channel')),
-                            'alertLevel'    :task.get('alert_level'),
-                            'alertRole'     :int(task.get('alert_role')),
-                            'alertUser'     :int(task.get('alert_user'))
-                        }
-                        for task in task_info
-                    ]
+                    if "does not exist" not in task_info[0]:
+                        task_list = [
+                            {
+                                'taskNumber'    :task.get('task_number'),
+                                'taskTitle'     :task.get('task_title'),
+                                'timeLimit'     :str(task.get('time_limit')),
+                                'taskChannel'   :int(task.get('task_channel')),
+                                'alertLevel'    :task.get('alert_level'),
+                                'alertRole'     :int(task.get('alert_role')),
+                                'alertUser'     :int(task.get('alert_user'))
+                            }
+                            for task in task_info
+                        ]
+                    else:
+                        task_list = []
 
                     json_content = {
                         'guildIconUrl'  :guild_icon_url,
+                        'guildIcon'     :guild._icon,
                         'guildName'     :guild.name,
                         'permissionCode':permission_code,
                         'taskList'      :task_list

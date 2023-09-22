@@ -23,6 +23,7 @@ from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_type import DiscordUser
 
 DISCORD_BASE_URL = "https://discord.com/api"
+LINE_BASE_URL = "https://api.line.me"
 
 DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
@@ -155,44 +156,9 @@ async def search_guild(
 
     return match_guild
 
-
-async def search_role(
-    guild_role_get:List[dict],
-    user_role_get:List[dict]
-) -> List[dict]:
-    """
-    ユーザがサーバ内で持っているロールの詳細を取得する
-
-    param:
-    guild_role_get  :List[dict]
-        サーバにある全てのロール
-    user_role_get   :List[dict]
-        ユーザ情報
-
-    return:
-    List
-        ユーザーが持っているロール一覧
-    """
-    guild_role_id = []
-    user_role_id = []
-    match_role = []
-
-    for guild_role in guild_role_get:
-        guild_role_id.append(guild_role['id'])
-
-    for user_guild in user_role_get["roles"]:
-        user_role_id.append(user_guild)
-
-    for role_id,role in zip(guild_role_id,guild_role_get):
-        if role_id in user_role_id:
-            match_role.append(role)
-
-    return match_role
-
 async def return_permission(
-    guild_id:int,
     user_id:int,
-    access_token:str
+    guild:Guild
 ) -> Permission:
     """
     指定されたユーザの権限を返す(ロールの権限も含む)
@@ -203,133 +169,27 @@ async def return_permission(
         ユーザのid
     access_token    :str
         ユーザのアクセストークン
-
     """
-
-    # ログインユーザの情報を取得
-    guild_user = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{user_id}',
-        headers = {
-            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-        }
-    )
-
-    # サーバのロールを取得
-    guild_role = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/roles',
-        headers = {
-            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-        }
-    )
-
-    # ログインユーザのロールの詳細を取得
-    match_role = await search_role(
-        guild_role_get=guild_role,
-        user_role_get=guild_user
-    )
-
-    # ログインユーザの所属しているサーバを取得
-    guild_info = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/users/@me/guilds',
-        headers = {
-            'Authorization': f'Bearer {access_token}'
-        }
-    )
-
-    permission = 0
     user_permission = Permission()
+    role_permission = Permission()
+    permission_code = 0
+    user = [
+        member
+        for member in guild.members
+        if member.id == user_id
+    ]
 
-    # サーバでの権限を取得
-    for info in guild_info:
-        if str(guild_id) == info["id"]:
-            permission = info["permissions"]
-            break
+    # 権限コードをor計算で足し合わせる
+    for role in user[0].roles:
+        permission_code |= role.permissions.value
 
-    await user_permission.get_permissions(permissions=permission)
+    await user_permission.get_permissions(permissions=user[0].guild_permissions.value)
+    await role_permission.get_permissions(permissions=permission_code)
 
-    for role in match_role:
-        # サーバー管理者であるかどうかを調べる
-        role_permission = Permission()
-        await role_permission.get_permissions(permissions=int(role["permissions"]))
-        user_permission = user_permission | role_permission
-
-    return user_permission
+    return user_permission | role_permission
 
 
-async def check_permission(
-    guild_id:int,
-    user_id:int,
-    access_token:str,
-    permission_16:int
-) -> bool:
-    """
-    指定されたユーザが権限を持っているか確認
-
-    guild_id        :int
-        サーバのid
-    user_id         :int
-        ユーザのid
-    access_token    :str
-        ユーザのアクセストークン
-    permission_16   :int
-        確認する権限、16進数で構成されている
-        詳細はdiscordのリファレンスを参照
-    """
-    # 指定されたパーミッションはあるか
-    user_permission:bool = False
-
-    # ログインユーザの情報を取得
-    guild_user = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{user_id}',
-        headers = {
-            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-        }
-    )
-
-    # サーバのロールを取得
-    guild_role = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/guilds/{guild_id}/roles',
-        headers = {
-            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-        }
-    )
-
-    # ログインユーザのロールの詳細を取得
-    match_role = await search_role(
-        guild_role_get = guild_role,
-        user_role_get = guild_user
-    )
-
-    # ログインユーザの所属しているサーバを取得
-    guild_info = await aio_get_request(
-        url = DISCORD_BASE_URL + f'/users/@me/guilds',
-        headers = {
-            'Authorization': f'Bearer {access_token}'
-        }
-    )
-
-    permission = None
-
-    # サーバでの権限を取得
-    for info in guild_info:
-        if str(guild_id) == info["id"]:
-            permission = info["permissions"]
-            break
-
-    if len(match_role) == 0:
-        if permission & permission_16 == permission_16:
-            user_permission = True
-
-    for role in match_role:
-        # サーバー管理者であるかどうかを調べる
-        if (permission & permission_16 == permission_16 or
-            int(role["permissions"]) & permission_16 == permission_16):
-            user_permission = True
-            break
-
-    return user_permission
-
-async def oauth_check(
+async def discord_oauth_check(
     access_token:str
 ) -> bool:
     """
@@ -345,12 +205,36 @@ async def oauth_check(
         無効の場合、Falseが返される
     """
     oauth_data:dict = await aio_get_request(
-        url = DISCORD_BASE_URL + '/users/@me',
-        headers = {
+        url=f'{DISCORD_BASE_URL}/users/@me',
+        headers={
             'Authorization': f'Bearer {access_token}'
         }
     )
     if oauth_data.get('message') == '401: Unauthorized':
+        return False
+    else:
+        return True
+
+async def line_oauth_check(
+    access_token:str
+) -> bool:
+    """
+    OAuth2のトークンが有効か判断する
+
+    param:
+    access_token:str
+        OAuth2のトークン
+
+    return:
+    bool
+        トークンが有効な場合、True
+        無効の場合、Falseが返される
+    """
+    oauth_data:dict = await aio_get_request(
+        url=f'{LINE_BASE_URL}/oauth2/v2.1/verify?access_token={access_token}',
+        headers={}
+    )
+    if oauth_data.get('error_description') == 'access token expired':
         return False
     else:
         return True
@@ -371,8 +255,8 @@ async def get_profile(
         無効の場合、Falseが返される
     """
     oauth_data:dict = await aio_get_request(
-        url = DISCORD_BASE_URL + '/users/@me',
-        headers = {
+        url=f'{DISCORD_BASE_URL}/users/@me',
+        headers={
             'Authorization': f'Bearer {access_token}'
         }
     )
@@ -478,7 +362,7 @@ async def sort_discord_vc_channel(
     channel_dict = {}
 
     for parent_id, group in groupby(
-        sorted_channels, 
+        sorted_channels,
         key=lambda c: c['parent_id']
     ):
         if parent_id is None:
@@ -497,7 +381,6 @@ async def sort_discord_vc_channel(
             listtmp = [
                 tmp
                 for tmp in listtmp
-                #if tmp['type'] == 2 or tmp['type'] == 4
             ]
             channel_dict[str(parent_id)] = listtmp
             # リストを空にする

@@ -12,7 +12,7 @@ from base.aio_req import (
     pickle_read,
     get_profile,
     return_permission,
-    oauth_check,
+    discord_oauth_check,
     decrypt_password
 )
 from typing import List,Dict,Any
@@ -57,7 +57,7 @@ class AdminView(commands.Cog):
                 oauth_session = DiscordOAuthData(**request.session.get('discord_oauth_data'))
                 user_session = DiscordUser(**request.session.get('discord_user'))
                 # トークンの有効期限が切れていた場合、再ログインする
-                if not await oauth_check(access_token=oauth_session.access_token):
+                if not await discord_oauth_check(access_token=oauth_session.access_token):
                     return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
@@ -85,9 +85,12 @@ class AdminView(commands.Cog):
 
             # サーバの権限を取得
             guild_user_permission = await return_permission(
-                guild_id=guild_id,
                 user_id=user_session.id,
-                access_token=oauth_session.access_token
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == guild_id
+                ][0]
             )
 
             # キャッシュ読み取り
@@ -157,9 +160,8 @@ class AdminView(commands.Cog):
                     if DEBUG_MODE == False:
                         # サーバの権限を取得
                         permission = await return_permission(
-                            guild_id=guild.id,
                             user_id=discord_user.id,
-                            access_token=access_token
+                            guild=guild
                         )
                     else:
                         from model_types.discord_type.guild_permission import Permission
@@ -194,6 +196,8 @@ class AdminView(commands.Cog):
                     guild_permission = GuildSetPermission(**p[0])
 
                     json_content = {
+                        'guildIcon'                 :guild._icon,
+                        'guildName'                 :guild.name,
                         'guildMembers'              :guild_members,
                         'guildRoles'                :guild_roles,
                         'linePermission'            :guild_permission.line_permission,

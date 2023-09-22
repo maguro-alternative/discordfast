@@ -7,6 +7,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from starlette.middleware.sessions import SessionMiddleware
+#from starlette.middleware.cors import CORSMiddleware
+from starlette_csrf import CSRFMiddleware
+
+#from fastapi.middleware import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 import asyncio
@@ -75,18 +79,15 @@ class ReadyLoad(commands.Cog):
         )
         self.callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
         origins = [
-            "http://localhost:5000",
-            "http://localhost",
-            self.callback_url,
             "http://localhost:3000",
+            "http://192.168.1.6:3000",
+            os.environ.get('REACT_URL')
         ]
         # new テンプレート関連の設定 (jinja2)
         self.templates = Jinja2Templates(directory="templates")
         # templates/static以下のファイルを静的に扱えるようにする
         self.app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
-        # session使用
-        self.app.add_middleware(SessionMiddleware, secret_key=os.environ.get('MIDDLE_KEY'))
         # オリジン間のリソースを共有
         self.app.add_middleware(
             CORSMiddleware,
@@ -96,8 +97,24 @@ class ReadyLoad(commands.Cog):
             allow_headers=["*"],
         )
 
-        # 各パス
+        # session使用
+        self.app.add_middleware(
+            SessionMiddleware,
+            secret_key=os.environ.get('MIDDLE_KEY'),
+            same_site='none',
+            https_only=True,
+        )
 
+        self.app.add_middleware(
+            CSRFMiddleware,
+            secret=os.environ.get('MIDDLE_KEY'),
+            cookie_samesite='none',
+            cookie_secure=True,
+            cookie_httponly=True,
+            sensitive_cookies='csrftoken',
+        )
+
+        # 各パス
         self.app.include_router(router=Index(bot=self.bot).router)
         self.app.include_router(router=LineBotWebhook(bot=self.bot).router)
 

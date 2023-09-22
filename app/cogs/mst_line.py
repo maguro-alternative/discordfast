@@ -60,6 +60,28 @@ class mst_line(commands.Cog):
             }
         )
 
+        # テーブルが存在しない場合、作成
+        if len(line_tabel_fetch) == 0:
+            await DB.insert_row(
+                table_name=TABLE,
+                row_values={
+                    'channel_id':message.channel.id,
+                    'guild_id':message.guild.id,
+                    'line_ng_channel':False,
+                    'message_bot':False,
+                    'ng_message_type':[],
+                    'ng_users':[]
+                }
+            )
+            # 再度読み取り
+            line_tabel_fetch:List[dict] = await DB.select_rows(
+                table_name=TABLE,
+                columns=[],
+                where_clause={
+                    'channel_id':message.channel.id
+                }
+            )
+
         line_bot_fetch = LineBotColunm(**line_bot_tabel_fetch[0])
         line_fetch = GuildLineChannel(**line_tabel_fetch[0])
 

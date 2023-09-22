@@ -157,7 +157,7 @@ class LineGroup(commands.Cog):
                 }
             )
 
-        @self.router.get('/group/{guild_id}/view')
+        @self.router.get('/group/{guild_id}/line-group/view')
         async def group(
             request:Request,
             guild_id:int
