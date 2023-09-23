@@ -1,5 +1,4 @@
 from discord.ext import commands,tasks
-import aiohttp
 
 try:
     # Botのみ起動の場合
@@ -25,13 +24,6 @@ load_dotenv()
 import os
 from typing import Dict,List
 from datetime import datetime
-
-from base.database import PostgresDB
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
-
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -81,6 +73,7 @@ class Task_Loop(commands.Cog):
                     for w in webhook_table
                 ]
                 guild_webhooks = await guild.webhooks()
+                print(guild_webhooks)
 
                 # 登録してあるwebhookを一つ一つ処理
                 for webhook in webhook_fetch:

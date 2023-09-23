@@ -7,15 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from datetime import datetime,timezone
-from typing import Dict,List
 
 from model_types.table_type import WebhookSet
 from core.db_pickle import DB
-
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
 
 async def niconico_subsc(
     webhook:WebhookSet,
