@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List,Optional
 
 
 class YouTubeChannelItemSnippetThumbnails(BaseModel):
@@ -63,6 +63,18 @@ class YouTubeChannelItemSnippetThumbnails(BaseModel):
     default:YouTubeChannelItemSnippetThumbnailsDefault
     high:YouTubeChannelItemSnippetThumbnailsHigh
     medium:YouTubeChannelItemSnippetThumbnailsMedium
+
+class YouTubeAPIError(BaseModel):
+    class YouTubeAPIErrorItem(BaseModel):
+        class YouTubeAPIErrorList(BaseModel):
+            domain:str
+            message:str
+            reason:str
+        code:int
+        error:YouTubeAPIErrorList
+        message:str
+
+    error:YouTubeAPIErrorItem
 
 class YouTubeChannelList(BaseModel):
     class YouTubeChannelItemList(BaseModel):
@@ -175,7 +187,8 @@ class YouTubeChannelInfo(BaseModel):
         id:str
         kind:str
         snippet:YouTubeChannelSnippetList
-    etag:str
-    items:List[YouTubeChannelInfoItem]
-    kind:str
-    pageInfo:YouTubeChannelList.YouTubeChannelPageInfo
+    etag:Optional[str]
+    items:Optional[List[YouTubeChannelInfoItem]]
+    kind:Optional[str]
+    pageInfo:Optional[YouTubeChannelList.YouTubeChannelPageInfo]
+    error:Optional[YouTubeAPIError]

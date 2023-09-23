@@ -6,10 +6,10 @@ load_dotenv()
 import os
 
 from datetime import datetime,timezone
-from typing import Dict
+import feedparser
 
 from model_types.table_type import WebhookSet
-from model_types.youtube_api_type import YouTubeChannelList,YouTubeChannelInfo
+from model_types.youtube_api_type import YouTubeChannelInfo
 from core.db_pickle import DB
 
 async def youtube_subsc(
@@ -32,6 +32,8 @@ async def youtube_subsc(
     channel_url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={webhook.subscription_id}&key={youtube_api_key}"
     new_videos_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={webhook.subscription_id}&order=date&type=video&key={youtube_api_key}&maxResults=5"
 
+    youtube_channel_rss_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={webhook.subscription_id}"
+
     # 最終更新日を格納
     created_at = webhook.created_at
     last_upload_time = datetime.strptime(
@@ -39,41 +41,46 @@ async def youtube_subsc(
         '%a %b %d %H:%M:%S %z %Y'
     )
 
+    # rssを取得し展開
+    youtube_rss = feedparser.parse(
+        url_file_stream_or_string=youtube_channel_rss_url
+    )
+
+    webhook_content = {
+        'content':''
+    }
+
     async with aiohttp.ClientSession() as sessions:
-        async with sessions.get(
-            url=new_videos_url
-        ) as resp:
-            new_videos_info:dict = await resp.json()
-            youtube_info = YouTubeChannelList(**new_videos_info)
-
-            # 最新動画を取得
-            videos_items = youtube_info.items
-
-        for i,item in enumerate(videos_items):
-            upload_time_str = item.snippet.publishTime
-            upload_time = datetime.strptime(
-                upload_time_str,
-                '%Y-%m-%dT%H:%M:%SZ'
-            ).replace(tzinfo=timezone.utc)
-            # 更新があった場合
-            if last_upload_time < upload_time:
+        for i,entry in enumerate(youtube_rss.entries):
+            # 動画の投稿時刻
+            lastUpdate = datetime.strptime(
+                entry.published,
+                '%Y-%m-%dT%H:%M:%S%z'
+            )
+            # 最新の動画が投稿されていた場合
+            if last_upload_time < lastUpdate:
+                # 最終更新日を更新
+                last_upload_time = lastUpdate
                 if not bool('channel_info' in locals()):
                     async with sessions.get(
                         url=channel_url
                     ) as re:
                         channel:dict = await re.json()
                         channel_info = YouTubeChannelInfo(**channel)
-                        # チャンネルの基本情報を取得
-                        channel_item = channel_info.items[0]
-                        # チャンネルのアイコンを取得
-                        channel_icon_url:str = channel_item.snippet.thumbnails.high.url
-                        # チャンネル名を取得
-                        channel_title = channel_item.snippet.title
+                        if channel_info.error:
+                            return
+                        else:
+                            # チャンネルの基本情報を取得
+                            channel_item = channel_info.items[0]
+                            webhook_content.update({
+                                'username':channel_item.snippet.title,
+                                'avatar_url':channel_item.snippet.thumbnails.high.url
+                            })
 
                 # YouTube動画のタイトル
-                video_title = item.snippet.title
+                video_title = entry.title
                 # YouTube動画のURL
-                video_url = f"https://youtu.be/{item.id.videoId}"
+                video_url = entry.link
 
                 if len(webhook.mention_roles) > 0:
                     # メンションするロールの取り出し
@@ -92,23 +99,23 @@ async def youtube_subsc(
 
                 text += '\n' + video_title + '\n' + video_url
 
+                webhook_content.update({
+                    'content':text
+                })
+
                 # webhookに投稿
                 async with sessions.post(
                     url=webhook_url,
-                    data={
-                        'username':channel_title,
-                        'avatar_url':channel_icon_url,
-                        'content':text
-                    }
+                    data=webhook_content
                 ) as re:
-                    if i == len(videos_items)-1:
+                    if i == len(youtube_rss.entries)-1:
                         # データベースに接続し、最終更新日を更新
                         if DB.conn == None:
                             await DB.connect()
                         await DB.update_row(
                             table_name=table_name,
                             row_values={
-                                'created_at':upload_time.strftime('%a %b %d %H:%M:%S %z %Y')
+                                'created_at':datetime.now(timezone.utc).strftime('%a %b %d %H:%M:%S %z %Y')
                             },
                             where_clause={
                                 'uuid':webhook.uuid
