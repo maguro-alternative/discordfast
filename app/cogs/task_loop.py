@@ -25,13 +25,7 @@ load_dotenv()
 import os
 from typing import Dict,List
 from datetime import datetime
-
-from base.database import PostgresDB
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
-
+import traceback
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -85,7 +79,7 @@ class Task_Loop(commands.Cog):
                 # 登録してあるwebhookを一つ一つ処理
                 for webhook in webhook_fetch:
                     for guild_webhook in guild_webhooks:
-                        if guild_webhook.id == webhook.webhook_id:
+                        if guild_webhook.id == int(webhook.webhook_id):
                             webhook_url = guild_webhook.url
                             break
 
@@ -239,7 +233,14 @@ class Task_Loop(commands.Cog):
                             )
                             print(limit.seconds)
         except Exception as e:
-            print(e)
+            async with aiohttp.ClientSession() as sessions:
+                async with sessions.post(
+                    url=webhook_url,
+                    data={
+                        'content':f"エラーが発生しました。\n```{e}\n{traceback.format_exc()}```"
+                    }
+                ) as re:
+                    print(e)
 
 def setup(bot:DBot):
     return bot.add_cog(Task_Loop(bot))

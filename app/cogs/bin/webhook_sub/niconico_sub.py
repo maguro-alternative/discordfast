@@ -7,15 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from datetime import datetime,timezone
-from typing import Dict,List
 
 from model_types.table_type import WebhookSet
 from core.db_pickle import DB
-
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
 
 async def niconico_subsc(
     webhook:WebhookSet,
@@ -42,8 +36,6 @@ async def niconico_subsc(
 
     # 最終更新日を格納
     created_at = webhook.created_at
-    update_at = ''
-
 
     async with aiohttp.ClientSession() as sessions:
         upload_flag = False
@@ -60,11 +52,6 @@ async def niconico_subsc(
                 entry.published,
                 '%a, %d %b %Y %H:%M:%S %z'
             )
-            # 最初の要素の場合(最新の要素)
-            if entry == niconico.entries[0]:
-                # 現在時刻の取得
-                now_time = datetime.now(timezone.utc)
-                update_at = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
 
             # htmlとしてパース
             soup = BeautifulSoup(entry.summary, 'html.parser')
@@ -106,6 +93,9 @@ async def niconico_subsc(
 
         # 投稿があった場合、投稿日時を更新
         if upload_flag:
+            # 現在時刻の取得
+            now_time = datetime.now(timezone.utc)
+            update_at = now_time.strftime('%a %b %d %H:%M:%S %z %Y')
             # データベースに接続し、最終更新日を更新
             if DB.conn == None:
                 await DB.connect()
