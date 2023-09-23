@@ -57,7 +57,6 @@ async def niconico_subsc(
             soup = BeautifulSoup(entry.summary, 'html.parser')
 
             # 最新の動画が投稿されていた場合
-            print(lastUpdate)
             if strTime < lastUpdate:
                 # すべてのimgタグのsrcを取得する
                 img_src_list = [

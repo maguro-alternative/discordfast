@@ -73,20 +73,17 @@ class Task_Loop(commands.Cog):
                     for w in webhook_table
                 ]
                 guild_webhooks = await guild.webhooks()
-                print(guild_webhooks)
 
                 # 登録してあるwebhookを一つ一つ処理
                 for webhook in webhook_fetch:
                     for guild_webhook in guild_webhooks:
-                        print(webhook.webhook_id, guild_webhook.url)
-                        if guild_webhook.id == webhook.webhook_id:
+                        if guild_webhook.id == int(webhook.webhook_id):
                             webhook_url = guild_webhook.url
                             break
 
                     if not bool('webhook_url' in locals()):
                         break
 
-                    print(webhook.subscription_type)
                     # twitterの場合
                     if webhook.subscription_type == 'twitter':
                         await twitter_subsc(
