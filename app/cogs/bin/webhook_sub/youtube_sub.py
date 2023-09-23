@@ -49,6 +49,7 @@ async def youtube_subsc(
     webhook_content = {
         'content':''
     }
+    text = ''
 
     async with aiohttp.ClientSession() as sessions:
         for i,entry in enumerate(youtube_rss.entries):
