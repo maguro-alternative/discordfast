@@ -266,7 +266,8 @@ class PostgresDB:
             sql += f"WHERE {where_clause_str};"
         else:
             sql += ";"
-        await self.conn.execute(sql, *values)
+        async with self.lock:   # 排他制御のためにロックを獲得
+            await self.conn.execute(sql, *values)
 
     async def primary_batch_update_rows(
         self,
