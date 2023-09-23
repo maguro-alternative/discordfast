@@ -85,6 +85,7 @@ class Task_Loop(commands.Cog):
                     if not bool('webhook_url' in locals()):
                         break
 
+                    print(webhook.subscription_type)
                     # twitterの場合
                     if webhook.subscription_type == 'twitter':
                         await twitter_subsc(
