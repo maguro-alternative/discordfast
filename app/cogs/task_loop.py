@@ -25,6 +25,7 @@ load_dotenv()
 import os
 from typing import Dict,List
 from datetime import datetime
+import traceback
 
 DISCORD_BASE_URL = "https://discord.com/api"
 
@@ -236,7 +237,7 @@ class Task_Loop(commands.Cog):
                 async with sessions.post(
                     url=webhook_url,
                     data={
-                        'content':f"エラーが発生しました。\n```{e}\n{e.args}```"
+                        'content':f"エラーが発生しました。\n```{e}\n{traceback.format_exc()}```"
                     }
                 ) as re:
                     print(e)
