@@ -21,6 +21,8 @@ except ModuleNotFoundError:
 from dotenv import load_dotenv
 load_dotenv()
 
+from base.aio_req import aio_post_request
+
 import os
 from typing import Dict,List
 from datetime import datetime
@@ -232,6 +234,12 @@ class Task_Loop(commands.Cog):
                             print(limit.seconds)
         except Exception as e:
             print(e)
+            await aio_post_request(
+                url=os.environ["WEBHOOK"],
+                data={
+                    'content':f"エラーが発生しました。\n```{e}\n{e.args}```"
+                }
+            )
 
 def setup(bot:DBot):
     return bot.add_cog(Task_Loop(bot))
