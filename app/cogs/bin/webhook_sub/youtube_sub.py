@@ -109,16 +109,15 @@ async def youtube_subsc(
                     url=webhook_url,
                     data=webhook_content
                 ) as re:
-                    if i == len(youtube_rss.entries)-1:
-                        # データベースに接続し、最終更新日を更新
-                        if DB.conn == None:
-                            await DB.connect()
-                        await DB.update_row(
-                            table_name=table_name,
-                            row_values={
-                                'created_at':datetime.now(timezone.utc).strftime('%a %b %d %H:%M:%S %z %Y')
-                            },
-                            where_clause={
-                                'uuid':webhook.uuid
-                            }
-                        )
+                    # データベースに接続し、最終更新日を更新
+                    if DB.conn == None:
+                        await DB.connect()
+                    await DB.update_row(
+                        table_name=table_name,
+                        row_values={
+                            'created_at':datetime.now(timezone.utc).strftime('%a %b %d %H:%M:%S %z %Y')
+                        },
+                        where_clause={
+                            'uuid':webhook.uuid
+                        }
+                    )
