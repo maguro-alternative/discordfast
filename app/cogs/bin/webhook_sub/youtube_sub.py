@@ -5,7 +5,7 @@ load_dotenv()
 
 import os
 
-from datetime import datetime
+from datetime import datetime,timezone
 from typing import Dict
 
 from model_types.table_type import WebhookSet
@@ -54,7 +54,7 @@ async def youtube_subsc(
             upload_time = datetime.strptime(
                 upload_time_str,
                 '%Y-%m-%dT%H:%M:%SZ'
-            )
+            ).replace(tzinfo=timezone.utc)
             # 更新があった場合
             if last_upload_time < upload_time:
                 if not bool('channel_info' in locals()):
