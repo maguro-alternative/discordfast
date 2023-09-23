@@ -78,7 +78,7 @@ class Task_Loop(commands.Cog):
                 # 登録してあるwebhookを一つ一つ処理
                 for webhook in webhook_fetch:
                     for guild_webhook in guild_webhooks:
-                        print(webhook_url, guild_webhook.url)
+                        print(webhook.webhook_id, guild_webhook.url)
                         if guild_webhook.id == webhook.webhook_id:
                             webhook_url = guild_webhook.url
                             break
