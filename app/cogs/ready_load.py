@@ -94,7 +94,7 @@ class ReadyLoad(commands.Cog):
             allow_methods=["*"],
             allow_headers=["*"],
             allow_credentials=True,
-            expose_headers=["*"]
+            expose_headers=["Cookie"]
         )
 
         # session使用
