@@ -58,8 +58,6 @@ class CallBack(commands.Cog):
                 request.session.pop("discord_oauth_data")
 
             print(request.session.get("state") , state)
-            print(request.session)
-            print(request.headers)
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
                 request.session.pop("state")
@@ -196,10 +194,8 @@ class CallBack(commands.Cog):
             state:str,
             request:Request
         ):
-            print(request.session)
             request.session['state'] = state
             request.session['react'] = True
-            print(request.session)
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_nonce/{nonce}')
@@ -209,7 +205,6 @@ class CallBack(commands.Cog):
         ):
             request.session['nonce'] = nonce
             request.session['react'] = True
-            print(request.session)
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_guild_id/{guild_id}')
@@ -219,5 +214,4 @@ class CallBack(commands.Cog):
         ):
             request.session['guild_id'] = guild_id
             request.session['react'] = True
-            print(request.session)
             return {'message':'ok'}
