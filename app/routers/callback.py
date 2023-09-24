@@ -196,6 +196,7 @@ class CallBack(commands.Cog):
             state:str,
             request:Request
         ):
+            print(request.session)
             request.session['state'] = state
             request.session['react'] = True
             print(request.session)
