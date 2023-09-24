@@ -110,7 +110,7 @@ class ReadyLoad(commands.Cog):
             secret=os.environ.get('MIDDLE_KEY'),
             cookie_samesite='none',
             cookie_secure=True,
-            cookie_httponly=True,
+            #cookie_httponly=True,
             sensitive_cookies='csrftoken',
         )
 
