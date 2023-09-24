@@ -100,14 +100,17 @@ class GuildsView(commands.Cog):
             session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
-                access_token = session.discord_oauth_data.access_token
-                # ログインユーザが所属しているサーバを取得
-                user_in_guild_get:List[Dict] = await aio_get_request(
-                    url=f'{DISCORD_BASE_URL}/users/@me/guilds',
-                    headers={
-                        'Authorization': f'Bearer {access_token}'
-                    }
-                )
+                if session.discord_oauth_data:
+                    access_token = session.discord_oauth_data.access_token
+                    # ログインユーザが所属しているサーバを取得
+                    user_in_guild_get:List[Dict] = await aio_get_request(
+                        url=f'{DISCORD_BASE_URL}/users/@me/guilds',
+                        headers={
+                            'Authorization': f'Bearer {access_token}'
+                        }
+                    )
+                else:
+                    user_in_guild_get = list()
             else:
                 user_in_guild_get:List[Dict] = [
                     {
