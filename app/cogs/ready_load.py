@@ -94,7 +94,7 @@ class ReadyLoad(commands.Cog):
             allow_methods=["*"],
             allow_headers=["*"],
             allow_credentials=True,
-            expose_headers=["Cookie"]
+            #expose_headers=["Cookie"]
         )
 
         # session使用
@@ -105,14 +105,7 @@ class ReadyLoad(commands.Cog):
             https_only=True,
         )
 
-        self.app.add_middleware(
-            CSRFMiddleware,
-            secret=os.environ.get('MIDDLE_KEY'),
-            cookie_samesite='none',
-            cookie_secure=True,
-            cookie_httponly=True,
-            sensitive_cookies='csrftoken',
-        )
+
 
         # 各パス
         self.app.include_router(router=Index(bot=self.bot).router)
