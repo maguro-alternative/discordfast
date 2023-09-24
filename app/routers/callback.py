@@ -173,7 +173,7 @@ class CallBack(commands.Cog):
 
             request.session.pop("state")
             request.session.pop("nonce")
-            request.session.pop('guild_id')
+            #request.session.pop('guild_id')
 
             # idトークンが正しくない場合
             if line_id_token.get('error_description') != None:
@@ -196,6 +196,7 @@ class CallBack(commands.Cog):
         ):
             request.session['state'] = state
             request.session['react'] = True
+            print(request.session)
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_nonce/{nonce}')
@@ -205,6 +206,7 @@ class CallBack(commands.Cog):
         ):
             request.session['nonce'] = nonce
             request.session['react'] = True
+            print(request.session)
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_guild_id/{guild_id}')
@@ -214,4 +216,5 @@ class CallBack(commands.Cog):
         ):
             request.session['guild_id'] = guild_id
             request.session['react'] = True
+            print(request.session)
             return {'message':'ok'}

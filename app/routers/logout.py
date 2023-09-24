@@ -51,6 +51,8 @@ class Logout(commands.Cog):
                 request.session.pop("line_user")
             if request.session.get("line_oauth_data") != None:
                 request.session.pop("line_oauth_data")
+            if request.session.get('guild_id'):
+                request.session.pop('guild_id')
 
             if request.session.get('react'):
                 request.session.pop("react")
