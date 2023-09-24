@@ -59,6 +59,7 @@ class CallBack(commands.Cog):
 
             print(request.session.get("state") , state)
             print(request.session)
+            print(request.headers)
             # stateが一緒しない場合、400で終了
             if request.session.get("state") != state:
                 request.session.pop("state")
