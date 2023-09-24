@@ -113,11 +113,16 @@ class Index(commands.Cog):
                             }
                         )
                     else:
+                        guild_id = request.session.get('guild_id')
+                        if guild_id == None:
+                            guild_id = str()
+                        else:
+                            guild_id = str(guild_id)
                         json_content = {
                             "id":session.line_user.sub,
                             "username":session.line_user.name,
                             "avatar":session.line_user.picture,
-                            "guildId":str(request.session.get('guild_id',default=''))
+                            "guildId":guild_id
                         }
                         return JSONResponse(
                             status_code=200,
