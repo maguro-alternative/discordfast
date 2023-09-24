@@ -80,7 +80,6 @@ class ReadyLoad(commands.Cog):
         self.callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
         origins = [
             "http://localhost:3000",
-            "http://192.168.1.6:3000",
             os.environ.get('REACT_URL')
         ]
         # new テンプレート関連の設定 (jinja2)
@@ -102,7 +101,7 @@ class ReadyLoad(commands.Cog):
             SessionMiddleware,
             secret_key=os.environ.get('MIDDLE_KEY'),
             same_site='none',
-            https_only=True,
+            #https_only=True,
         )
 
         self.app.add_middleware(
@@ -110,7 +109,7 @@ class ReadyLoad(commands.Cog):
             secret=os.environ.get('MIDDLE_KEY'),
             cookie_samesite='none',
             cookie_secure=True,
-            #cookie_httponly=True,
+            cookie_httponly=True,
             sensitive_cookies='csrftoken',
         )
 
