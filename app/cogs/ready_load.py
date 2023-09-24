@@ -101,7 +101,7 @@ class ReadyLoad(commands.Cog):
             SessionMiddleware,
             secret_key=os.environ.get('MIDDLE_KEY'),
             same_site='none',
-            #https_only=True,
+            https_only=True,
         )
 
         self.app.add_middleware(
