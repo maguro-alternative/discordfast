@@ -173,7 +173,7 @@ class CallBack(commands.Cog):
 
             request.session.pop("state")
             request.session.pop("nonce")
-            request.session.pop('guild_id')
+            #request.session.pop('guild_id')
 
             # idトークンが正しくない場合
             if line_id_token.get('error_description') != None:

@@ -233,6 +233,8 @@ class Task_Loop(commands.Cog):
                             )
                             print(limit.seconds)
         except Exception as e:
+            if webhook_url == None:
+                webhook_url = os.environ.get('WEBHOOK')
             async with aiohttp.ClientSession() as sessions:
                 async with sessions.post(
                     url=webhook_url,

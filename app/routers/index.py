@@ -67,7 +67,7 @@ class Index(commands.Cog):
             session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
-                if session.discord_oauth_data:
+                if session.discord_oauth_data != None:
                     access_token = session.discord_oauth_data.access_token
                     if not await discord_oauth_check(access_token=access_token):
                         request.session.pop('discord_oauth_data')
@@ -101,7 +101,7 @@ class Index(commands.Cog):
             session = FastAPISession(**request.session)
             # デバッグモード
             if DEBUG_MODE == False:
-                if session.line_oauth_data:
+                if session.line_oauth_data != None:
                     access_token = session.line_oauth_data.access_token
                     if not await line_oauth_check(access_token=access_token):
                         request.session.pop('line_oauth_data')
@@ -113,10 +113,16 @@ class Index(commands.Cog):
                             }
                         )
                     else:
+                        guild_id = request.session.get('guild_id')
+                        if guild_id == None:
+                            guild_id = str()
+                        else:
+                            guild_id = str(guild_id)
                         json_content = {
                             "id":session.line_user.sub,
                             "username":session.line_user.name,
-                            "avatar":session.line_user.picture
+                            "avatar":session.line_user.picture,
+                            "guildId":guild_id
                         }
                         return JSONResponse(
                             status_code=200,

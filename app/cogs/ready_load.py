@@ -7,11 +7,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from starlette.middleware.sessions import SessionMiddleware
-#from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette_csrf import CSRFMiddleware
 
 #from fastapi.middleware import SessionMiddleware
-from fastapi.middleware.cors import CORSMiddleware
+#from fastapi.middleware.cors import CORSMiddleware
 
 import asyncio
 import uvicorn
@@ -79,8 +79,7 @@ class ReadyLoad(commands.Cog):
         )
         self.callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
         origins = [
-            "http://localhost:3000",
-            "http://192.168.1.6:3000",
+            #"http://localhost:3000",
             os.environ.get('REACT_URL')
         ]
         # new テンプレート関連の設定 (jinja2)
@@ -92,9 +91,9 @@ class ReadyLoad(commands.Cog):
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
-            allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            allow_credentials=True,
         )
 
         # session使用
