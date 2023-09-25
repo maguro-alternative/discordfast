@@ -151,21 +151,24 @@ class GuildSetView(commands.Cog):
                         where_clause={}
                     )
 
-                    if "does not exist" not in task_info[0]:
-                        task_list = [
-                            {
-                                'taskNumber'    :task.get('task_number'),
-                                'taskTitle'     :task.get('task_title'),
-                                'timeLimit'     :str(task.get('time_limit')),
-                                'taskChannel'   :int(task.get('task_channel')),
-                                'alertLevel'    :task.get('alert_level'),
-                                'alertRole'     :int(task.get('alert_role')),
-                                'alertUser'     :int(task.get('alert_user'))
-                            }
-                            for task in task_info
-                        ]
-                    else:
+                    if len(task_info) == 0:
                         task_list = []
+                    elif len(task_info) >= 1:
+                        if "does not exist" not in task_info[0]:
+                            task_list = [
+                                {
+                                    'taskNumber'    :task.get('task_number'),
+                                    'taskTitle'     :task.get('task_title'),
+                                    'timeLimit'     :str(task.get('time_limit')),
+                                    'taskChannel'   :int(task.get('task_channel')),
+                                    'alertLevel'    :task.get('alert_level'),
+                                    'alertRole'     :int(task.get('alert_role')),
+                                    'alertUser'     :int(task.get('alert_user'))
+                                }
+                                for task in task_info
+                            ]
+                        else:
+                            task_list = []
 
                     json_content = {
                         'guildIconUrl'  :guild_icon_url,
