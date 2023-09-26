@@ -151,6 +151,9 @@ class PostgresDB:
                 return await self.conn.fetch(sql, *where_clause_values)
             except asyncpg.exceptions.UndefinedTableError:
                 return [f"{table_name} does not exist"]
+            except asyncpg.exceptions._base.InterfaceError:
+                self.conn = None
+                raise asyncpg.exceptions._base.InterfaceError
 
     async def insert_row(
         self,
@@ -179,6 +182,9 @@ class PostgresDB:
             return True
         except asyncpg.exceptions.UniqueViolationError:
             return False
+        except asyncpg.exceptions._base.InterfaceError:
+            self.conn = None
+            raise asyncpg.exceptions._base.InterfaceError
 
     async def batch_insert_row(
         self,
