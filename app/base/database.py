@@ -152,8 +152,7 @@ class PostgresDB:
             except asyncpg.exceptions.UndefinedTableError:
                 return [f"{table_name} does not exist"]
             except asyncpg.exceptions._base.InterfaceError:
-                self.conn = None
-                raise asyncpg.exceptions._base.InterfaceError
+                await self.connect()
 
     async def insert_row(
         self,
@@ -183,8 +182,7 @@ class PostgresDB:
         except asyncpg.exceptions.UniqueViolationError:
             return False
         except asyncpg.exceptions._base.InterfaceError:
-            self.conn = None
-            raise asyncpg.exceptions._base.InterfaceError
+            await self.connect()
 
     async def batch_insert_row(
         self,
