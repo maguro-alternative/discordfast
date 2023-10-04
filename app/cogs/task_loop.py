@@ -236,16 +236,16 @@ class Task_Loop(commands.Cog):
             if bool('webhook_url' in locals()):
                 if webhook_url == None:
                     webhook_url = os.environ.get('WEBHOOK')
-                async with aiohttp.ClientSession() as sessions:
-                    async with sessions.post(
-                        url=webhook_url,
-                        data={
-                            'content':f"エラーが発生しました。\n```{e}\n{traceback.format_exc()}```"
-                        }
-                    ) as re:
-                        print(e)
             else:
-                print(e)
+                webhook_url = os.environ.get('WEBHOOK')
+            async with aiohttp.ClientSession() as sessions:
+                async with sessions.post(
+                    url=webhook_url,
+                    data={
+                        'content':f"エラーが発生しました。\n```{e}\n{traceback.format_exc()}```"
+                    }
+                ) as re:
+                    print(e)
 
 def setup(bot:DBot):
     return bot.add_cog(Task_Loop(bot))
