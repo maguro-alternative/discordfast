@@ -530,7 +530,7 @@ class LineBotAPI:
                 url=f"{LINE_BOT_URL}/profile/{user_id}",
                 token=self.line_bot_token,
             )
-        return await LineProfile(**r)
+        return LineProfile(**r)
 
     # LINEから画像データを取得し、Gyazoにアップロード
     async def image_upload(self, message_id: int) -> ImageFiles:
