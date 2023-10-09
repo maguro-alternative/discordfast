@@ -152,10 +152,22 @@ class mst_line(commands.Cog):
 
         # 送付ファイルがあった場合
         if message.attachments:
+            videolist = list()
+            voicelist = list()
+
+            # Bot側の送信上限を計算
+            group_user_count = await line_bot_api.group_user_count()
+            message_push_count = await line_bot_api.totalpush()
+            message_push_limit = await line_bot_api.pushlimit()
+
+            push_limit = message_push_limit.value - message_push_count.totalUsage
+            # ファイルを送信できる場合
+            if push_limit >= group_user_count.count:
+                videolist, message.attachments = await video_checker(message.attachments)
+                voicelist, message.attachments = await voice_checker(message.attachments,message)
+
             # 画像か動画であるかをチェック
             imagelist, message.attachments = await image_checker(message.attachments)
-            videolist, message.attachments = await video_checker(message.attachments)
-            voicelist, message.attachments = await voice_checker(message.attachments,message)
 
             messagetext += "が、"
 
@@ -299,7 +311,7 @@ async def image_checker(
     image_urls = []
     for attachment in attachments[:]:
         # 画像があった場合、urlを画像のリストに追加し、送付ファイルのリストから削除
-        if attachment.url.endswith(image):
+        if attachment.url.find(image) > 0:
             image_urls.append(attachment.url)
             attachments.remove(attachment)
 
@@ -323,7 +335,7 @@ async def video_checker(
     video_urls = []
     for attachment in attachments[:]:
         # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
-        if attachment.url.endswith(video):
+        if attachment.url.find(video) > 0:
             video_urls.append(attachment.url)
             attachments.remove(attachment)
 
@@ -350,12 +362,12 @@ async def voice_checker(
     loop = asyncio.get_event_loop()
     for attachment in attachments[:]:
         # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
-        if attachment.url.endswith(voice):
+        if attachment.url.find(voice) > 0:
             # 音声ファイルをダウンロードする
             await attachment.save(attachment.filename)
 
             # m4aの場合はそのまま格納
-            if attachment.url.endswith('.m4a'):
+            if attachment.url.find('.m4a') > 0:
                 voice_url = attachment.url
                 attachments.remove(attachment)
             else:
