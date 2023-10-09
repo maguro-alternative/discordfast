@@ -124,8 +124,6 @@ class LineBotWebhook(commands.Cog):
                     channel_id = default_channel_id
                     break
 
-
-
             # ハッシュ値が一致しなかった場合エラーを返す
             if decode_signature != x_line_signature:
                 raise Exception
@@ -178,16 +176,21 @@ class LineBotWebhook(commands.Cog):
             # 画像が送信された場合
             if event.message.type == 'image':
                 # バイナリデータを取得しGyazoに送信
-                gyazo_json = await line_bot_api.image_upload(event.message.id)
-                # Gyazoのurlを返す
-                message = f"https://i.gyazo.com/{gyazo_json.image_id}.{gyazo_json.type}"
+                fileobj = await line_bot_api.image_upload(event.message.id)
+                await discord_find_message.send_discord_file(
+                    channel_id=channel_id,
+                    message=f'{profile_name.displayName}',
+                    fileobj=fileobj
+                )
+                # レスポンス200を返し終了
+                return HTMLResponse(content="OK")
 
             # 動画が送信された場合
             if event.message.type == 'video':
                 # 動画をYouTubeにアップロードし、urlを返す
                 youtube_id = await line_bot_api.movie_upload(
                     message_id=event.message.id,
-                    display_name=profile_name.display_name
+                    display_name=profile_name.displayName
                 )
                 message = f"https://youtu.be/{youtube_id}"
 
@@ -197,7 +200,7 @@ class LineBotWebhook(commands.Cog):
                 fileobj = await line_bot_api.voice_get(message_id=event.message.id)
                 await discord_find_message.send_discord_file(
                     channel_id=channel_id,
-                    message=f'{profile_name.display_name}',
+                    message=f'{profile_name.displayName}',
                     fileobj=fileobj,
                     content_type='audio/mp4'
                 )
@@ -206,7 +209,7 @@ class LineBotWebhook(commands.Cog):
 
 
             # LINEの名前 「メッセージ」の形式で送信
-            message = f'{profile_name.display_name} \n「 {message} 」'
+            message = f'{profile_name.displayName} \n「 {message} 」'
             await discord_find_message.send_discord(channel_id=channel_id, message=message)
 
             # レスポンス200を返し終了
