@@ -498,7 +498,7 @@ class LineBotAPI:
             メッセージの上限目安(基本1000,23年6月以降は200)
         """
         r = await line_get_request(
-            url="{LINE_BOT_URL}/message/quota",
+            url=f"{LINE_BOT_URL}/message/quota",
             token=self.line_bot_token
         )
         v = LineBotQuota(**r)
