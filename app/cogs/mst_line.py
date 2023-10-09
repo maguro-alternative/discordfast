@@ -307,13 +307,14 @@ async def image_checker(
         image_urls:     画像かスタンプのurlリスト
         attachments:    画像を抜き出したDiscordの送付ファイル
     """
-    image = (".jpg", ".png", ".JPG", ".PNG", ".jpeg", ".gif", ".GIF")
+    images = (".jpg", ".png", ".JPG", ".PNG", ".jpeg", ".gif", ".GIF")
     image_urls = []
     for attachment in attachments[:]:
         # 画像があった場合、urlを画像のリストに追加し、送付ファイルのリストから削除
-        if attachment.url.find(image) > 0:
-            image_urls.append(attachment.url)
-            attachments.remove(attachment)
+        for image in images:
+            if attachment.url.find(image) > 0:
+                image_urls.append(attachment.url)
+                attachments.remove(attachment)
 
     return image_urls, attachments
 
@@ -331,13 +332,14 @@ async def video_checker(
         video_urls:     動画のurlリスト
         attachments:    動画を抜き出したDiscordの送付ファイル
     """
-    video = (".mp4", ".MP4", ".MOV", ".mov", ".mpg", ".avi", ".wmv")
+    videos = (".mp4", ".MP4", ".MOV", ".mov", ".mpg", ".avi", ".wmv")
     video_urls = []
     for attachment in attachments[:]:
         # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
-        if attachment.url.find(video) > 0:
-            video_urls.append(attachment.url)
-            attachments.remove(attachment)
+        for video in videos:
+            if attachment.url.find(video) > 0:
+                video_urls.append(attachment.url)
+                attachments.remove(attachment)
 
     return video_urls, attachments
 
@@ -357,67 +359,68 @@ async def voice_checker(
         video_urls:     音声のurlリスト
         attachments:    音声を抜き出したDiscordの送付ファイル
     """
-    voice = (".wav",".mp3",".flac",".aif",".m4a",".oga",".ogg")
+    voices = (".wav",".mp3",".flac",".aif",".m4a",".oga",".ogg")
     VoiceFiles = []
     loop = asyncio.get_event_loop()
     for attachment in attachments[:]:
         # 動画があった場合、urlを動画のリストに追加し、送付ファイルのリストから削除
-        if attachment.url.find(voice) > 0:
-            # 音声ファイルをダウンロードする
-            await attachment.save(attachment.filename)
+        for voice in voices:
+            if attachment.url.find(voice) > 0:
+                # 音声ファイルをダウンロードする
+                await attachment.save(attachment.filename)
 
-            # m4aの場合はそのまま格納
-            if attachment.url.find('.m4a') > 0:
-                voice_url = attachment.url
-                attachments.remove(attachment)
-            else:
-                # ffmpegを使用して音声ファイルをm4aに変換する
-                output_filename = f"{os.path.splitext(attachment.filename)[0]}.m4a"
-                await loop.run_in_executor(
+                # m4aの場合はそのまま格納
+                if attachment.url.find('.m4a') > 0:
+                    voice_url = attachment.url
+                    attachments.remove(attachment)
+                else:
+                    # ffmpegを使用して音声ファイルをm4aに変換する
+                    output_filename = f"{os.path.splitext(attachment.filename)[0]}.m4a"
+                    await loop.run_in_executor(
+                        None,
+                        partial(
+                            subprocess.run,['ffmpeg', '-i', attachment.filename, output_filename],
+                            check=True
+                        )
+                    )
+
+                    # aiofilesで非同期でファイルを開く
+                    async with aiofiles.open(output_filename, 'rb') as f:
+                        m4a_data = await f.read()
+                        # Discordにファイルを送信する
+                        m4a_file = discord.File(
+                            fp=io.BytesIO(m4a_data),
+                            filename=output_filename
+                        )
+                        m4a_file_message = await message.channel.send(f"m4aファイルに変換します。: {attachment.filename} -> {output_filename}", file=m4a_file)
+
+                    voice_url = m4a_file_message.attachments[0].url
+                    # 変換したoggファイルのurl
+                    attachments.remove(attachment)
+
+                # m4aファイルの秒数を計算
+                cmd = f"ffprobe -hide_banner {output_filename}.m4a -show_entries format=duration"
+                process = await loop.run_in_executor(
                     None,
                     partial(
-                        subprocess.run,['ffmpeg', '-i', attachment.filename, output_filename],
+                        subprocess.run,cmd.split(),
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
                         check=True
                     )
                 )
+                stdout_result = process.stdout.decode()
+                match = re.search(r'(\d+\.\d+)', stdout_result)
+                sound_second = float(match.group(1))
 
-                # aiofilesで非同期でファイルを開く
-                async with aiofiles.open(output_filename, 'rb') as f:
-                    m4a_data = await f.read()
-                    # Discordにファイルを送信する
-                    m4a_file = discord.File(
-                        fp=io.BytesIO(m4a_data),
-                        filename=output_filename
-                    )
-                    m4a_file_message = await message.channel.send(f"m4aファイルに変換します。: {attachment.filename} -> {output_filename}", file=m4a_file)
+                VoiceFiles.append(VoiceFile(
+                    url=voice_url,
+                    second=sound_second
+                ))
 
-                voice_url = m4a_file_message.attachments[0].url
-                # 変換したoggファイルのurl
-                attachments.remove(attachment)
-
-            # m4aファイルの秒数を計算
-            cmd = f"ffprobe -hide_banner {output_filename}.m4a -show_entries format=duration"
-            process = await loop.run_in_executor(
-                None,
-                partial(
-                    subprocess.run,cmd.split(),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    check=True
-                )
-            )
-            stdout_result = process.stdout.decode()
-            match = re.search(r'(\d+\.\d+)', stdout_result)
-            sound_second = float(match.group(1))
-
-            VoiceFiles.append(VoiceFile(
-                url=voice_url,
-                second=sound_second
-            ))
-
-            # 変換したファイルを削除する
-            os.remove(output_filename)
-            os.remove(attachment.filename)
+                # 変換したファイルを削除する
+                os.remove(output_filename)
+                os.remove(attachment.filename)
 
     return VoiceFiles, attachments
 
