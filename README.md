@@ -378,6 +378,15 @@ PostgreSQLを使用しています。
 ・LINEとのメッセージ共有の設定を保存するテーブル
 ```
 
+|カラム名|型|説明|
+|---|---|---|
+|channel_id|NUMERIC PRIMARY KEY|DiscordチャンネルのID|
+|guild_id|NUMERIC|サーバーのID|
+|line_ng_channel|BOOLEAN|LINEとのメッセージ共有を無効にするかどうか|
+|ng_message_type|VARCHAR(50)|LINEとのメッセージ共有を無効にするメッセージの種類(ピン止め)|
+|message_bot|BOOLEAN|LINEとのメッセージ共有をBotが行うかどうか|
+|ng_users|NUMERIC[]|LINEとのメッセージ共有を無効にするユーザーのID|
+
 </details>
 
 <details>
@@ -387,14 +396,37 @@ PostgreSQLを使用しています。
 ・ボイスチャンネルの入退室通知の設定を保存するテーブル
 ```
 
+|カラム名|型|説明|
+|---|---|---|
+|vc_id|NUMERIC PRIMARY KEY|DiscordのボイスチャンネルのID|
+|guild_id|NUMERIC|サーバーのID|
+|send_signal|BOOLEAN|入退室通知を送信するかどうか|
+|send_channel_id|NUMERIC|入退室通知を送信するチャンネルのID|
+|join_bot|BOOLEAN|Botの入退室を扱うかどうか|
+|everyone_mention|BOOLEAN|入退室通知に@everyoneをつけるかどうか|
+|mention_role_id|NUMERIC[]|入退室通知につけるロールのID|
+
 </details>
 
 <details>
 	<summary>line_bot</summary>
 
 ```bash
-・LINEとのメッセージ共有の設定を保存するテーブル
+・LINEのトークンや認証情報の設定を保存するテーブル
+トークン類は暗号化して保存する
 ```
+
+|カラム名|型|説明|
+|---|---|---|
+|guild_id|NUMERIC PRIMARY KEY|サーバーのID|
+|line_notify_token|BYTEA|LINE Notifyのトークン|
+|line_bot_token|BYTEA|LINE Botのトークン|
+|line_bot_secret|BYTEA|LINE Botのシークレット|
+|line_group_id|BYTEA|LINEグループのID|
+|line_client_id|BYTEA|LINEのクライアントID(LINEログイン時に使用)|
+|line_client_secret|BYTEA|LINEのクライアントシークレット(LINEログイン時に使用)|
+|default_channel_id|NUMERIC|LINEとのメッセージ共有のデフォルトのDiscordチャンネルID|
+|debug_mode|BOOLEAN|有効にするとLINEグループ側でメッセージを送るとそのグループのidが表示される|
 
 </details>
 
@@ -413,5 +445,22 @@ PostgreSQLを使用しています。
 ```bash
 ・WebHookの設定を保存するテーブル
 ```
+
+|カラム名|型|説明|
+|---|---|---|
+|uuid|UUID PRIMARY KEY|投稿する内容を識別するUUID|
+|guild_id|NUMERIC|サーバーのID|
+|webhook_id|NUMERIC|WebHookのID|
+|subscription_type|VARCHAR(50)|通知するサービスの種類(YouTubeかniconico)|
+|subscription_id|VARCHAR(50)|通知するサービスのID(YouTubeの場合はチャンネルID、niconicoの場合はユーザーID)|
+|mention_roles|NUMERIC[]|通知につけるロールのID|
+|mention_members|NUMERIC[]|通知につけるユーザーのID|
+|ng_or_word|VARCHAR(50)[]|いずれかが含まれていれば通知を無効にするワード|
+|ng_and_word|VARCHAR(50)[]|すべて含まれていれば通知を無効にするワード|
+|search_or_word|VARCHAR(50)[]|いずれかが含まれていれば通知を有効にするワード|
+|search_and_word|VARCHAR(50)[]|すべて含まれていれば通知を有効にするワード|
+|mention_or_word|VARCHAR(50)[]|いずれかが含まれていれば通知にロールやユーザーをつけるワード|
+|mention_and_word|VARCHAR(50)[]|すべて含まれていれば通知にロールやユーザーをつけるワード|
+|create_at|VARCHAR(50)|最終投稿日時|
 
 </details>
