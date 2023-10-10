@@ -93,8 +93,7 @@ class CallBack(commands.Cog):
                 }
             )
 
-            if request.session.get('react'):
-                request.session.pop('react')
+            if request.session.get('discord_react'):
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
             else:
                 # ホームページにリダイレクトする
@@ -183,7 +182,7 @@ class CallBack(commands.Cog):
             request.session['line_oauth_data'] = line_access_token
             request.session['line_user'] = line_id_token
 
-            if request.session.get('react'):
+            if request.session.get('line_react'):
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/group/{guild_id}')
             else:
                 # ホームページにリダイレクトする
@@ -195,7 +194,7 @@ class CallBack(commands.Cog):
             request:Request
         ):
             request.session['state'] = state
-            request.session['react'] = True
+            request.session['discord_react'] = True
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_nonce/{nonce}')
@@ -204,7 +203,7 @@ class CallBack(commands.Cog):
             request:Request
         ):
             request.session['nonce'] = nonce
-            request.session['react'] = True
+            request.session['line_react'] = True
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_guild_id/{guild_id}')
@@ -213,5 +212,5 @@ class CallBack(commands.Cog):
             request:Request
         ):
             request.session['guild_id'] = guild_id
-            request.session['react'] = True
+            request.session['line_react'] = True
             return {'message':'ok'}

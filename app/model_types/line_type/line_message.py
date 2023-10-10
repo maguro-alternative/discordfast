@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from model_types.gyazo_type import GyazoJson
     from model_types.youtube_upload import YouTubeUpload
     from model_types.file_type import ImageFiles,AudioFiles
     from model_types.line_type.line_type import (
@@ -27,7 +26,6 @@ try:
     )
     from model_types.line_type.line_oauth import LineProfile
 except ModuleNotFoundError:
-    from app.model_types.gyazo_type import GyazoJson
     from app.model_types.youtube_upload import YouTubeUpload
     from app.model_types.file_type import ImageFiles,AudioFiles
     from app.model_types.line_type.line_type import (
@@ -532,18 +530,18 @@ class LineBotAPI:
             )
         return LineProfile(**r)
 
-    # LINEから画像データを取得し、Gyazoにアップロード
+    # LINEから画像データを取得
     async def image_upload(self, message_id: int) -> ImageFiles:
         """
-        LINEから画像データを取得し、Gyazoにアップロードする
+        LINEから画像データを取得し、discordにアップロードする
 
         param
         message_id:int
             LINEのメッセージのid
 
         return
-        gayzo:GyazoJson
-            Gyazoの画像のオブジェクト
+        ImageFiles
+            画像のオブジェクト
         """
         # 画像のバイナリデータを取得
         async with aiohttp.ClientSession() as session:
@@ -559,42 +557,6 @@ class LineBotAPI:
                     byte=image_bytes,
                     filename='line_image'
                 )
-
-    # LINEから画像データを取得し、Gyazoにアップロード
-    async def image_upload_gyazo(self, message_id: int) -> GyazoJson:
-        """
-        LINEから画像データを取得し、Gyazoにアップロードする
-
-        param
-        message_id:int
-            LINEのメッセージのid
-
-        return
-        gayzo:GyazoJson
-            Gyazoの画像のオブジェクト
-        """
-        # 画像のバイナリデータを取得
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                    url=f'{LINE_CONTENT_URL}/message/{message_id}/content',
-                    headers={
-                        'Authorization': 'Bearer ' + self.line_bot_token
-                    }
-            ) as bytes:
-                image_bytes = await bytes.read()
-
-                # Gyazoにアップロードする
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(
-                        url='https://upload.gyazo.com/api/upload',
-                        headers={
-                            'Authorization': f'Bearer {os.environ["GYAZO_TOKEN"]}'
-                        },
-                        data={
-                            'imagedata': image_bytes
-                        }
-                    ) as gyazo_image:
-                        return await GyazoJson.new_from_json_dict(await gyazo_image.json())
 
     # LINEから受け取った動画を保存し、YouTubeに限定公開でアップロード
     async def movie_upload(
