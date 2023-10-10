@@ -140,18 +140,6 @@ class AdminSuccess(commands.Cog):
                 }
             )
 
-            # 更新後のテーブルを取得
-            table_fetch = await DB.select_rows(
-                table_name=TABLE,
-                columns=[],
-                where_clause={}
-            )
-
-            #await DB.disconnect()
-
-            # pickleファイルに書き込み
-            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
-
             return templates.TemplateResponse(
                 'api/adminsuccess.html',
                 {

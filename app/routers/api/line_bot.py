@@ -73,9 +73,6 @@ class LineBotWebhook(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            # LINE Botのトークンなどを取り出す
-            #line_bot_fetch:List[dict] = await pickle_read(filename='line_bot')
-
             line_bot_fetch:List[dict] = await DB.select_rows(
                 table_name='line_bot',
                 columns=[],

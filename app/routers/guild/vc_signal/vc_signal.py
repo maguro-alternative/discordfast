@@ -11,13 +11,11 @@ from typing import List,Dict,Any
 
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     return_permission,
     discord_oauth_check,
     get_profile,
     sort_discord_vc_channel,
-    sort_channels,
-    decrypt_password
+    sort_channels
 )
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData
@@ -129,14 +127,6 @@ class VcSignalView(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            # キャッシュ読み取り
-            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename='guild_set_permissions')
-            guild_table = [
-                #g
-                #for g in guild_table_fetch
-                #if int(g.get('guild_id')) == guild_id
-            ]
-
             guild_table:List[Dict[str,Any]] = await DB.select_rows(
                 table_name='guild_set_permissions',
                 columns=[],
@@ -172,9 +162,6 @@ class VcSignalView(commands.Cog):
                 ):
                 user_permission = 'admin'
 
-            # キャッシュ読み取り
-            #table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE)
-
             table_fetch:List[Dict[str,Any]] = await DB.select_rows(
                 table_name=TABLE,
                 columns=[],
@@ -182,9 +169,6 @@ class VcSignalView(commands.Cog):
                     'guild_id':guild_id
                 }
             )
-
-            # データベースへ接続
-            #await db.connect()
 
             vc_set = []
 
@@ -267,8 +251,6 @@ class VcSignalView(commands.Cog):
                             'channel_id':chan_id
                         }
                     )
-
-            #await db.disconnect()
 
             return templates.TemplateResponse(
                 "guild/vc_signal/vc_signal.html",

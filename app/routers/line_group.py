@@ -7,12 +7,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Optional
+from typing import List,Dict
 
-from base.database import PostgresDB
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     sort_discord_channel,
     sort_channels,
     decrypt_password

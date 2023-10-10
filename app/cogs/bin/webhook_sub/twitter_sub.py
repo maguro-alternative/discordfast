@@ -14,14 +14,6 @@ except ModuleNotFoundError:
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
-from typing import Dict,List
-
-from base.aio_req import (
-    pickle_read,
-    pickle_write
-)
-
 async def twitter_subsc(
     webhook:WebhookSet,
     webhook_url:str,

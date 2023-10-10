@@ -125,20 +125,6 @@ class VcSignalSuccess(commands.Cog):
                 table_colum=VC_COLUMNS
             )
 
-            # 更新後のテーブルを取得
-            table_fetch = await DB.select_rows(
-                table_name=TABLE,
-                columns=[],
-                where_clause={}
-            )
-
-            #await DB.disconnect()
-
-            #print(table_fetch)
-
-            # pickleファイルに書き込み
-            #await pickle_write(filename=TABLE,table_fetch=table_fetch)
-
             return templates.TemplateResponse(
                 'api/vcsignalsuccess.html',
                 {

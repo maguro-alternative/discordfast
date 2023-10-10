@@ -8,11 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from typing import List,Dict,Any,Optional
+from typing import List,Dict,Any
 
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     return_permission,
     discord_oauth_check,
     get_profile,

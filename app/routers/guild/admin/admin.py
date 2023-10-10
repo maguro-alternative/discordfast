@@ -9,11 +9,9 @@ load_dotenv()
 import os
 from base.aio_req import (
     aio_get_request,
-    pickle_read,
     get_profile,
     return_permission,
-    discord_oauth_check,
-    decrypt_password
+    discord_oauth_check
 )
 from typing import List,Dict,Any
 from model_types.discord_type.discord_user_session import DiscordOAuthData
@@ -92,14 +90,6 @@ class AdminView(commands.Cog):
                     if guild.id == guild_id
                 ][0]
             )
-
-            # キャッシュ読み取り
-            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE_NAME)
-            guild_table = [
-                #g
-                #for g in guild_table_fetch
-                #if int(g.get('guild_id')) == guild_id
-            ]
 
             if DB.conn == None:
                 await DB.connect()
