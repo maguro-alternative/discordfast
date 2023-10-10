@@ -37,8 +37,8 @@ class Logout(commands.Cog):
             if request.session.get("discord_oauth_data") != None:
                 request.session.pop("discord_oauth_data")
 
-            if request.session.get('react'):
-                request.session.pop("react")
+            if request.session.get('discord_react'):
+                request.session.pop("discord_react")
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
             else:
                 # ホームページにリダイレクトする
@@ -54,8 +54,8 @@ class Logout(commands.Cog):
             if request.session.get('guild_id'):
                 request.session.pop('guild_id')
 
-            if request.session.get('react'):
-                request.session.pop("react")
+            if request.session.get('line_react'):
+                request.session.pop("line_react")
                 return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
             else:
                 # ホームページにリダイレクトする

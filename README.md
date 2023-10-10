@@ -5,8 +5,8 @@ Discordの多機能Botです。
 - ボイスチャンネルの入退室通知
 - Web版VOICEVOXによる読み上げ機能
 - カラオケ(動作不安定)
-- ChatGPTへの質問(現在使用不可)
-- Twitter,niconico,YouTubeの通知
+- ~~ChatGPTへの質問~~(現在使用不可)
+- ~~Twitter~~,niconico,YouTubeの通知
 - PostgreSQLを使用したLINEと入退室の管理
 
 # ボイスチャンネルの入退室通知
@@ -79,12 +79,12 @@ railway側でLINEとDiscordBotをホストできるようにしています。
 
 ## 使用するサービス  
 以下のAPI、サービスを使用します。  
-|[![gyazo](img/gyazoicon.png)](https://gyazo.com/api/docs)|[![line](img/linedev.ico)](https://developers.line.biz/console/?status=success)|[![discord](img/discon.png)](https://discord.com/developers/docs/resources/webhook)|[![youtube](img/YouTube-logo-full_color-128x128.png)](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[![voicevox](img/175614.png)](https://voicevox.su-shiki.com/su-shikiapis/)|[![chatgpt](img/chatgtp.png)](https://beta.openai.com/account/api-keys)|[![linenotify](img/linenotify.png)](https://notify-bot.line.me/my/services/new)|[![twitterdev](img/twitterdev.jpg)](https://developer.twitter.com/ja)|
-|---|---|---|---|---|---|---|---|
-|[GyazoAPI](https://gyazo.com/api/docs)|[LINE Developers](https://developers.line.biz/console/?status=success)|[Discord Webhook](https://discord.com/developers/docs/resources/webhook)|[YouTube Date API](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[Web版Voicevox](https://voicevox.su-shiki.com/su-shikiapis/)|[OpenAI](https://beta.openai.com/account/api-keys)|[LINE Notify](https://notify-bot.line.me/my/services/new)|[Twitter OAuth1](https://developer.twitter.com/ja)|
-|[参考(アーカイブ)](https://web.archive.org/web/20170724151212/http://yoshiyuki-hirano.hatenablog.jp/entry/2015/09/18/153155)|[参考](https://qiita.com/taka777n/items/c601421b871fd2b6a55f)|[参考](https://qiita.com/iroha71/items/b2a473898d6c9b4b4ae7)|[参考](https://qiita.com/koki_develop/items/4cd7de3898dae2c33f20)|  
+|[![line](img/linedev.ico)](https://developers.line.biz/console/?status=success)|[![discord](img/discon.png)](https://discord.com/developers/docs/resources/webhook)|[![youtube](img/YouTube-logo-full_color-128x128.png)](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[![voicevox](img/175614.png)](https://voicevox.su-shiki.com/su-shikiapis/)|[![linenotify](img/linenotify.png)](https://notify-bot.line.me/my/services/new)|
+|---|---|---|---|---|
+|[LINE Developers](https://developers.line.biz/console/?status=success)|[Discord Webhook](https://discord.com/developers/docs/resources/webhook)|[YouTube Date API](https://developers.google.com/youtube/v3/getting-started?hl=ja)|[Web版Voicevox](https://voicevox.su-shiki.com/su-shikiapis/)|[LINE Notify](https://notify-bot.line.me/my/services/new)|
+|[参考](https://qiita.com/taka777n/items/c601421b871fd2b6a55f)|[参考](https://qiita.com/iroha71/items/b2a473898d6c9b4b4ae7)|[参考](https://qiita.com/koki_develop/items/4cd7de3898dae2c33f20)|  
 
-LINEは画像や動画のファイルがバイナリデータとして渡され、一定時間で削除されてしまうのでGyazoとYouTubeにアップロードしてDiscordに送ります。  
+LINEは画像や動画のファイルがバイナリデータとして渡され、一定時間で削除されてしまうので動画はYouTubeにアップロードしてDiscordに送ります。  
 YouTube APIは参考リンクをもとに、試しに動画をアップロードしておいてください。そうすると2つのjsonファイルが生成されるので控えておいてください。  
 ``` 控えておくjson
 client_secret{clientのid}.json
@@ -96,54 +96,78 @@ upload_video.py-oauth2.json
 DiscordBotのトークン以外にも、登録するものが大量にあります。
 すべて```.env.sample```に記載されています。
 
-- PORT=8080
+<details>
+	<summary>PORT=8080</summary>
+
 ```bash
 ・ポート番号。railwayでfastapiを立ち上げるのに必須（と公式で推奨されている）。
 デフォルトで8080
 ```
 
-- GYAZO_TOKEN 
-```bash
-・画像保存サービス「GYAZO」のAPIトークン。
-LINEからDiscordへ画像を送信する際に使用。
-```
+</details>
 
-- DISCORD_CALLBACK_URL
+<details>
+	<summary>DISCORD_CALLBACK_URL</summary>
+
 ```bash
 ・Discordログインの認証時に遷移するURL。
 Developサイトにも同様に登録しておくこと。
 ```
 
-- DISCORD_CLIENT_ID
+</details>
+
+<details>
+	<summary>DISCORD_CLIENT_ID</summary>
+
 ```bash
 DiscordアプリのID。
 BotのユーザIDと同じ。
 ```
 
-- DISCORD_CLIENT_SECRET
+</details>
+
+<details>
+	<summary>DISCORD_CLIENT_SECRET</summary>
+
 ```bash
 Discordのシークレットキー
 認証時に使用する。Developサイトから発行すること。
 ```
 
-- DISCORD_SCOPE
+</details>
+
+<details>
+	<summary>DISCORD_SCOPE</summary>
+
 ```bash
 Discordアプリに許可する権限一覧。
 .env.sampleの権限通りにすること。
 ```
 
-- DISCORD_BOT_TOKEN 
+</details>
+
+<details>
+	<summary>DISCORD_BOT_TOKEN</summary>
+
 ```bash
 ・DiscordBotのトークン。
 ```
 
-- USER_LIMIT
+</details>
+
+<details>
+	<summary>USER_LIMIT</summary>
+
 ```bash
 ・DiscordAPIを叩く際に取得するユーザーの上限。
 値は何でもいいが大きいと処理が重くなる。
 ```
 
-- YouTube Data API  
+</details>
+
+<details>
+	<summary>YouTube Data API</summary>
+
 jsonの中身が機密情報の塊なので、一気に説明する。  
 登録する環境変数は以下の通り7つ。
 ```bash
@@ -158,82 +182,97 @@ YouTube Data APIで生成された2つのjsonを以下に示す。
 os.environ[]となっている部分が、環境変数に該当する部分になる。
 
 client_secret.json
-``` client_secret.json
+```json:client_secret.json
 {
-  "installed":
-  	        {
-  	            "client_id":os.environ["YOUTUBE_CLIENT_ID"],
-  	            "project_id":os.environ["YOUTUBE_PROJECT_ID"],
-  	            "auth_uri":"https://accounts.google.com/o/oauth2/auth",
-  	            "token_uri":"https://oauth2.googleapis.com/token",
-  	            "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
-  				"client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
-  				"redirect_uris":["http://localhost"]
-  			}
+"installed":
+			{
+				"client_id":os.environ["YOUTUBE_CLIENT_ID"],
+				"project_id":os.environ["YOUTUBE_PROJECT_ID"],
+				"auth_uri":"https://accounts.google.com/o/oauth2/auth",
+				"token_uri":"https://oauth2.googleapis.com/token",
+				"auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
+				"client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
+				"redirect_uris":["http://localhost"]
+			}
 }
 ```
 upload_video.py-oauth2.json
-``` upload_video.py-oauth2.json
+```json:upload_video.py-oauth2.json
 {
-	    "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
-	    "client_id":os.environ["YOUTUBE_CLIENT_ID"],
-	    "client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
-	    "refresh_token":os.environ["YOUTUBE_REFRESH_TOKEN"],
-	    "token_expiry": os.environ["YOUTUBE_TOKEN_EXPIRY"], 
-	    "token_uri": "https://oauth2.googleapis.com/token",
-	    "user_agent": None,
-	    "revoke_uri": "https://oauth2.googleapis.com/revoke", 
-	    "id_token": None, 
-	    "id_token_jwt": None, 
-	    "token_response": {
-	        "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
-	        "expires_in": 3599, 
-	        "scope": "https://www.googleapis.com/auth/youtube.upload", 
-	        "token_type": "Bearer"
-	    },
-	    "scopes": ["https://www.googleapis.com/auth/youtube.upload"], 
-	    "token_info_uri": "https://oauth2.googleapis.com/tokeninfo", 
-	    "invalid": False, 
-	    "_class": "OAuth2Credentials", 
-	    "_module": "oauth2client.client"
+		"access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
+		"client_id":os.environ["YOUTUBE_CLIENT_ID"],
+		"client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
+		"refresh_token":os.environ["YOUTUBE_REFRESH_TOKEN"],
+		"token_expiry": os.environ["YOUTUBE_TOKEN_EXPIRY"], 
+		"token_uri": "https://oauth2.googleapis.com/token",
+		"user_agent": None,
+		"revoke_uri": "https://oauth2.googleapis.com/revoke", 
+		"id_token": None, 
+		"id_token_jwt": None, 
+		"token_response": {
+			"access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
+			"expires_in": 3599, 
+			"scope": "https://www.googleapis.com/auth/youtube.upload", 
+			"token_type": "Bearer"
+		},
+		"scopes": ["https://www.googleapis.com/auth/youtube.upload"], 
+		"token_info_uri": "https://oauth2.googleapis.com/tokeninfo", 
+		"invalid": False, 
+		"_class": "OAuth2Credentials", 
+		"_module": "oauth2client.client"
 }
 ```
-- TWITTER_BEARER_TOKEN
-```
-・TwitterのBearerトークン。
-```
 
-- VOICEVOX_KEY
+</details>
+
+<details>
+	<summary>VOICEVOX_KEY</summary>
+
 ```bash
 ・Web版VOICEVOXのAPIキー。
 ```
 
-- CHATGPT
-```bash
-・ChatGPTのAPIキー。
-```
+</details>
 
-- PGDATABASE
+<details>
+	<summary>PGDATABASE</summary>
+
 ```bash
 ・PostgreSQLのデータベース名
 ```
 
-- PGHOST
+</details>
+
+<details>
+	<summary>PGHOST</summary>
+
 ```bash
 ・データベースのホスト名
 ```
 
-- PGPASSWORD
+</details>
+
+<details>
+	<summary>PGPASSWORD</summary>
+
 ```bash
 ・データベースのパスワード
 ```
 
-- PGPORT
+</details>
+
+<details>
+	<summary>PGPORT</summary>
+
 ```bash
 ・データベースのポート番号
 ```
 
-- PGUSER
+</details>
+
+<details>
+	<summary>PGUSER</summary>
+
 ```bash
 ・データベースのユーザー名
 ```
@@ -243,14 +282,136 @@ postgresのuriに当てはめると以下のようになる
 postgresql://{PGHOST}:{PGPORT}/{PGDATABASE}?user={PGUSER}&password={PGPASSWORD}
 ```
 
-- ENCRYPTED_KEY
+</details>
+
+<details>
+	<summary>ENCRYPTED_KEY</summary>
+
 ```bash
 ・lineのトークン類を暗号化するための暗号鍵
 pythonのライブラリ、cryptographyで生成できる
 ```
 
-- MIDDLE_KEY
+</details>
+
+<details>
+	<summary>MIDDLE_KEY</summary>
+
 ```bash
 ・セッション保存の際に使用する秘密鍵
 文字列(str)であれば何でもいい
 ```
+
+</details>
+
+<details>
+<summary>REACT_URL</summary>
+
+```bash
+・Reactを利用する場合のURL
+```
+
+</details>
+
+<details>
+	<summary>WEBHOOK</summary>
+
+```bash
+・DiscordのWebhook
+エラーが出た際に通知するために使用する
+```
+
+</details>
+
+<details>
+	-<summary>LINE_CALLBACK_URL</summary>
+
+```bash
+・LINEログインの認証時に遷移するURL。
+Developサイトにも同様に登録しておくこと。
+```
+
+</details>
+
+# データベースについて
+PostgreSQLを使用しています。  
+起動時にテーブルを作成するので、接続先のみ用意しておいてください。  
+データベースのテーブルは以下の通りです。
+```bash
+・guild_set_permissions
+・guilds_line_channel_{サーバーid}
+・guilds_vc_signal_{サーバーid}
+・line_bot
+・task_{サーバーid}
+・webhook_{サーバーid}
+```
+
+<details>
+	<summary>guild_set_permissions</summary>
+
+```bash
+・サーバーの権限設定を保存するテーブル
+```
+|カラム名|型|説明|
+|---|---|---|
+|guild_id|NUMERIC PRIMARY KEY|サーバーのID|
+|line_permission|NUMERIC|lineへの送信設定を編集できる権限を表すコード|
+|line_user_id_permission|NUMERIC[]|lineへの送信設定を編集できるユーザーを表すコード|
+|line_role_id_permission|NUMERIC[]|lineへの送信設定を編集できるロールを表すコード|
+|line_bot_permission|NUMERIC|line botのトークンや認証情報などを編集できる権限を表すコード|
+|line_bot_user_id_permission|NUMERIC[]|line botのトークンや認証情報を編集できるユーザーを表すコード|
+|line_bot_role_id_permission|NUMERIC[]|line botのトークンや認証情報を編集できるロールを表すコード|
+|vc_signal_permission|NUMERIC|ボイスチャンネルの入退室通知の設定を編集できる権限を表すコード|
+|vc_signal_user_id_permission|NUMERIC[]|ボイスチャンネルの入退室通知の設定を編集できるユーザーを表すコード|
+|vc_signal_role_id_permission|NUMERIC[]|ボイスチャンネルの入退室通知の設定を編集できるロールを表すコード|
+|webhook_permission|NUMERIC|WebHookの設定を編集できる権限を表すコード|
+|webhook_user_id_permission|NUMERIC[]|WebHookの設定を編集できるユーザーを表すコード|
+|webhook_role_id_permission|NUMERIC[]|WebHookの設定を編集できるロールを表すコード|
+
+
+</details>
+
+<details>
+	<summary>guilds_line_channel_{サーバーid}</summary>
+
+```bash
+・LINEとのメッセージ共有の設定を保存するテーブル
+```
+
+</details>
+
+<details>
+	<summary>guilds_vc_signal_{サーバーid}</summary>
+
+```bash
+・ボイスチャンネルの入退室通知の設定を保存するテーブル
+```
+
+</details>
+
+<details>
+	<summary>line_bot</summary>
+
+```bash
+・LINEとのメッセージ共有の設定を保存するテーブル
+```
+
+</details>
+
+<details>
+	<summary>task_{サーバーid}</summary>
+
+```bash
+・カラオケの設定を保存するテーブル
+```
+
+</details>
+
+<details>
+	<summary>webhook_{サーバーid}</summary>
+
+```bash
+・WebHookの設定を保存するテーブル
+```
+
+</details>

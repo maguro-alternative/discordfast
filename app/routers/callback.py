@@ -195,7 +195,7 @@ class CallBack(commands.Cog):
             request:Request
         ):
             request.session['state'] = state
-            request.session['react'] = True
+            request.session['discord_react'] = True
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_nonce/{nonce}')
@@ -204,7 +204,7 @@ class CallBack(commands.Cog):
             request:Request
         ):
             request.session['nonce'] = nonce
-            request.session['react'] = True
+            request.session['line_react'] = True
             return {'message':'ok'}
 
         @self.router.get('/oauth_save_guild_id/{guild_id}')
@@ -213,5 +213,5 @@ class CallBack(commands.Cog):
             request:Request
         ):
             request.session['guild_id'] = guild_id
-            request.session['react'] = True
+            request.session['line_react'] = True
             return {'message':'ok'}
