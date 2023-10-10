@@ -13,8 +13,6 @@ from discord import ChannelType
 from typing import List,Any,Dict,Optional,Tuple,Union
 
 import os
-import io
-import pickle
 
 from itertools import groupby,chain
 from cryptography.fernet import Fernet
@@ -54,56 +52,6 @@ async def aio_post_request(url: str, headers: dict, data: dict) -> Dict:
             data = data
         ) as resp:
             return await resp.json()
-
-async def pickle_read(filename:str) -> Any:
-    """
-    pickleファイルの読み込み
-
-    param:
-    filename:str
-        pickleファイルの名前
-
-    return:
-        pickleファイルの中身
-    """
-    # 読み取り
-    async with aiofiles.open(
-        file=f'{filename}.pickle',
-        mode='rb'
-    ) as f:
-        pickled_bytes = await f.read()
-        with io.BytesIO() as f:
-            f.write(pickled_bytes)
-            f.seek(0)
-            fetch = pickle.load(f)
-            return fetch
-
-async def pickle_write(
-    filename:str,
-    table_fetch:List[Dict]
-) -> None:
-    """
-    pickleファイルの書き込み
-
-    param:
-    filename    :str
-        pickleファイルの名前
-
-    table_fetch :List[Dict]
-        SQLから取り出したデータ
-    """
-    # 取り出して書き込み
-    dict_row = [
-        dict(zip(record.keys(), record.values()))
-        for record in table_fetch
-    ]
-    # 書き込み
-    async with aiofiles.open(
-        file=f'{filename}.pickle',
-        mode='wb'
-    ) as f:
-        await f.write(pickle.dumps(obj=dict_row))
-
 
 async def search_guild(
     bot_in_guild_get:List[dict],
@@ -187,7 +135,6 @@ async def return_permission(
     await role_permission.get_permissions(permissions=permission_code)
 
     return user_permission | role_permission
-
 
 async def discord_oauth_check(
     access_token:str

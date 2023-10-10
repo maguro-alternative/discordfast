@@ -193,6 +193,14 @@ class CallBack(commands.Cog):
             state:str,
             request:Request
         ):
+            """
+            stateをセッションに保存する
+            DiscordやLINEの認証の際に使用する
+
+            param:
+            state:str
+                保存するstate
+            """
             request.session['state'] = state
             request.session['discord_react'] = True
             return {'message':'ok'}
@@ -202,6 +210,14 @@ class CallBack(commands.Cog):
             nonce:str,
             request:Request
         ):
+            """
+            nonceをセッションに保存する
+            LINEの認証の際に使用する
+
+            param:
+            nonce:str
+                保存するnonce
+            """
             request.session['nonce'] = nonce
             request.session['line_react'] = True
             return {'message':'ok'}
@@ -211,6 +227,14 @@ class CallBack(commands.Cog):
             guild_id:str,
             request:Request
         ):
+            """
+            guild_idをセッションに保存する
+            LINEの認証の際に使用する
+
+            param:
+            guild_id:str
+                保存するguild_id
+            """
             request.session['guild_id'] = guild_id
             request.session['line_react'] = True
             return {'message':'ok'}
