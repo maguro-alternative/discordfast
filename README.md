@@ -434,8 +434,18 @@ PostgreSQLを使用しています。
 	<summary>task_{サーバーid}</summary>
 
 ```bash
-・カラオケの設定を保存するテーブル
+・各サーバのタスクを保存するテーブル
 ```
+
+|カラム名|型|説明|
+|---|---|---|
+|task_number|BIGSERIAL PRIMARY KEY|タスクの番号|
+|task_title|VARCHAR(50)|タスクのタイトル|
+|time_limit|VARCHAR(50)|タスクの期限|
+|task_channel|NUMERIC|タスクのチャンネルID|
+|alert_level|SMALLINT|タスクの通知レベル(1~5)|
+|alert_role|NUMERIC|タスクの通知につけるロールのID|
+|alert_user|NUMERIC|タスクの通知につけるユーザーのID|
 
 </details>
 
