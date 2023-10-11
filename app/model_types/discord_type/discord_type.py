@@ -262,7 +262,7 @@ class Threads(BaseModel):
     rate_limit_per_user :int
     bitrate             :int
     user_limit          :int
-    rtc_region          :str
+    rtc_region          :Optional[str]
     owner_id            :int
     thread_metadata     :ThreadMetadata
     message_count       :int

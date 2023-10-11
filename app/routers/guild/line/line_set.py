@@ -349,6 +349,8 @@ class LineSetView(commands.Cog):
                         for t in arc_threads.get('threads')
                     ]
 
+                    print(arc_threads)
+
                     archived_threads = [
                         {
                             'id'    :str(thread.id),
