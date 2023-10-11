@@ -3,15 +3,10 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 from typing import List,Dict
 
 from base.aio_req import (
     aio_get_request,
-    search_guild,
     discord_oauth_check
 )
 from model_types.discord_type.discord_user_session import DiscordOAuthData,MatchGuild
@@ -137,3 +132,54 @@ class GuildsView(commands.Cog):
             #MatchGuild(**join_guilds[0])
 
             return JSONResponse(content=join_guilds)
+
+async def search_guild(
+    bot_in_guild_get:List[dict],
+    user_in_guild_get:List[dict]
+) -> List:
+    """
+    Botとログインしたユーザーが所属しているサーバーを調べ、同じものを返す
+
+    param:
+    bot_in_guild_get    :List[dict]
+        Botが所属しているサーバー一覧
+
+    user_in_guild_get   :List[dict]
+        ユーザーが所属しているサーバー一覧
+
+    return:
+    List
+        所属が同じサーバー一覧
+    """
+
+    bot_guild_id = []
+    user_guild_id = []
+    match_guild = []
+
+    bot_guild_id = [
+        bot_guild.get('id')
+        for bot_guild in bot_in_guild_get
+    ]
+
+    user_guild_id = [
+        user_guild.get('id')
+        for user_guild in user_in_guild_get
+    ]
+
+    # for探索短縮のため、総数が少ない方をforinする
+    if len(bot_guild_id) < len(user_guild_id):
+        match_guild = [
+            guild
+            for guild_id,guild in zip(bot_guild_id,bot_in_guild_get)
+            if guild_id in user_guild_id
+        ]
+
+    else:
+        match_guild = [
+            guild
+            for guild_id,guild in zip(user_guild_id,user_in_guild_get)
+            if guild_id in bot_guild_id
+        ]
+
+
+    return match_guild

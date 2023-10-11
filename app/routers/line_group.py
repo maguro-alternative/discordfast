@@ -3,10 +3,6 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 from typing import List,Dict
 
 from base.aio_req import (
