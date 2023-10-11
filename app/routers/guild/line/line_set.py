@@ -344,12 +344,12 @@ class LineSetView(commands.Cog):
                         }
                     )
 
+                    print(arc_threads)
+
                     arc_threads = [
                         Threads(**t)
                         for t in arc_threads.get('threads')
                     ]
-
-                    print(arc_threads)
 
                     archived_threads = [
                         {
