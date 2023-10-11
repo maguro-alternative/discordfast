@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException,Header
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -15,6 +15,7 @@ from base.aio_req import (
 from model_types.session_type import FastAPISession
 from model_types.line_type.line_oauth import LineTokenVerify,LineProfile
 from model_types.table_type import LineBotColunm
+from model_types.discord_type.discord_type import Threads
 from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
@@ -272,6 +273,29 @@ class LineGroup(commands.Cog):
                         }
                         for thread in guild.threads
                     ]
+
+                    # アーカイブスレッドを取得
+                    arc_threads = await aio_get_request(
+                        url=f'{DISCORD_BASE_URL}/channels/{guild_id}/threads/archived/public',
+                        headers={
+                            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                        }
+                    )
+
+                    arc_threads = [
+                        Threads(**t)
+                        for t in arc_threads.get('threads')
+                    ]
+
+                    archived_threads = [
+                        {
+                            'id'    :str(thread.id),
+                            'name'  :thread.name
+                        }
+                        for thread in arc_threads
+                    ]
+
+                    threads.extend(archived_threads)
 
                     channels_json.update({
                         'categorys'         :category_list,

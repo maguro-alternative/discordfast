@@ -17,7 +17,7 @@ from base.aio_req import (
 
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData
-from model_types.discord_type.discord_type import DiscordUser
+from model_types.discord_type.discord_type import DiscordUser,Threads
 
 from model_types.session_type import FastAPISession
 
@@ -335,6 +335,29 @@ class LineSetView(commands.Cog):
                         }
                         for thread in guild.threads
                     ]
+
+                    # アーカイブスレッドを取得
+                    arc_threads = await aio_get_request(
+                        url=f'{DISCORD_BASE_URL}/channels/{guild_id}/threads/archived/public',
+                        headers={
+                            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                        }
+                    )
+
+                    arc_threads = [
+                        Threads(**t)
+                        for t in arc_threads.get('threads')
+                    ]
+
+                    archived_threads = [
+                        {
+                            'id'    :str(thread.id),
+                            'name'  :thread.name
+                        }
+                        for thread in arc_threads
+                    ]
+
+                    threads.extend(archived_threads)
 
                     # フロント側に送るjsonを作成(linebotの情報は先頭3桁のみ)
                     channels_json.update({

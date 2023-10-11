@@ -15,7 +15,7 @@ from base.aio_req import (
 )
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData
-from model_types.discord_type.discord_type import DiscordUser
+from model_types.discord_type.discord_type import DiscordUser,Threads
 
 from model_types.session_type import FastAPISession
 
@@ -525,6 +525,42 @@ class LinePostView(commands.Cog):
                         }
                         for thread,i in zip(guild.threads,index_list)
                     ]
+
+                    # アーカイブスレッドを取得
+                    arc_threads = await aio_get_request(
+                        url=f'{DISCORD_BASE_URL}/channels/{guild_id}/threads/archived/public',
+                        headers={
+                            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                        }
+                    )
+
+                    arc_threads = [
+                        Threads(**t)
+                        for t in arc_threads.get('threads')
+                    ]
+
+                    # アーカイブスレッドの配列番号一覧を格納
+                    index_list = [
+                        list(map(
+                            lambda x:int(x.channel_id),
+                            db_channels
+                        )).index(thread.id)
+                        for thread in arc_threads
+                    ]
+
+                    acrhive_threads = [
+                        {
+                            'id'            :str(thread.id),
+                            'name'          :thread.name,
+                            'lineNgChannel' :db_channels[i].line_ng_channel,
+                            'ngMessageType' :db_channels[i].ng_message_type,
+                            'messageBot'    :db_channels[i].message_bot,
+                            'ngUsers'       :db_channels[i].ng_users
+                        }
+                        for thread,i in zip(arc_threads,index_list)
+                    ]
+
+                    threads.extend(acrhive_threads)
 
                     # サーバー内のメンバー一覧
                     guild_users = [
