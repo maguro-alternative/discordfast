@@ -18,6 +18,7 @@ from model_types.discord_type.discord_user_session import DiscordOAuthData,Match
 from model_types.discord_type.discord_type import DiscordUser
 
 from model_types.session_type import FastAPISession
+from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
 try:
@@ -25,13 +26,13 @@ try:
 except ModuleNotFoundError:
     from app.core.start import DBot
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -99,19 +100,7 @@ class GuildsView(commands.Cog):
             """
             session = FastAPISession(**request.session)
             # デバッグモード
-            if DEBUG_MODE == False:
-                if session.discord_oauth_data:
-                    access_token = session.discord_oauth_data.access_token
-                    # ログインユーザが所属しているサーバを取得
-                    user_in_guild_get:List[Dict] = await aio_get_request(
-                        url=f'{DISCORD_BASE_URL}/users/@me/guilds',
-                        headers={
-                            'Authorization': f'Bearer {access_token}'
-                        }
-                    )
-                else:
-                    user_in_guild_get = list()
-            else:
+            if DEBUG_MODE:
                 user_in_guild_get:List[Dict] = [
                     {
                         'id'                :bot_guild.id,
@@ -123,6 +112,18 @@ class GuildsView(commands.Cog):
                     }
                     for bot_guild in self.bot.guilds
                 ]
+            else:
+                if session.discord_oauth_data:
+                    access_token = session.discord_oauth_data.access_token
+                    # ログインユーザが所属しているサーバを取得
+                    user_in_guild_get:List[Dict] = await aio_get_request(
+                        url=f'{DISCORD_BASE_URL}/users/@me/guilds',
+                        headers={
+                            'Authorization': f'Bearer {access_token}'
+                        }
+                    )
+                else:
+                    user_in_guild_get = list()
             user_guild_id = [
                 bot_guild.id
                 for bot_guild in self.bot.guilds

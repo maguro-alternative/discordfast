@@ -2,20 +2,14 @@ from base.aio_req import (
     return_permission,
     discord_oauth_check
 )
-from starlette.requests import Request
 from discord import Guild
-
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-from typing import Dict,List
 
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
+from model_types.environ_conf import EnvConf
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-DISCORD_BASE_URL = "https://discord.com/api"
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
 async def user_checker(
     oauth_session:DiscordOAuthData,

@@ -1,16 +1,12 @@
 from base.aio_req import (
     aio_get_request
 )
+from model_types.environ_conf import EnvConf
 
-from dotenv import load_dotenv
-load_dotenv()
+from typing import List,Dict,Any
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
-
-import os
-from typing import List,Dict,Any,Tuple
-DISCORD_BASE_URL = "https://discord.com/api"
-
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 async def get_discord_channel(
     guild_id:int,

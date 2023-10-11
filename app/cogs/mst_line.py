@@ -18,16 +18,17 @@ from base.aio_req import decrypt_password
 try:
     from model_types.line_type.line_message import LineBotAPI,VoiceFile
     from model_types.table_type import GuildLineChannel,LineBotColunm
+    from model_types.environ_conf import EnvConf
     from core.start import DBot
     from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.model_types.line_type.line_message import LineBotAPI,VoiceFile
     from app.model_types.table_type import GuildLineChannel,LineBotColunm
+    from app.model_types.environ_conf import EnvConf
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
-
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 class mst_line(commands.Cog):
     def __init__(self, bot : DBot):

@@ -1,14 +1,8 @@
 from discord import Guild
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from typing import List
-import os
 
 from base.database import PostgresDB
-
-
 from core.pickes_save import (
     line_columns,
     vc_columns,
@@ -16,14 +10,15 @@ from core.pickes_save import (
     guild_permissions_columns,
     line_bot_columns
 )
-DISCORD_BASE_URL = "https://discord.com/api"
+from model_types.environ_conf import EnvConf
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-USER = os.getenv('PGUSER')
-PASSWORD = os.getenv('PGPASSWORD')
-DATABASE = os.getenv('PGDATABASE')
-HOST = os.getenv('PGHOST')
+USER = EnvConf.PGUSER
+PASSWORD = EnvConf.PGPASSWORD
+DATABASE = EnvConf.PGDATABASE
+HOST = EnvConf.PGHOST
 DB = PostgresDB(
     user=USER,
     password=PASSWORD,

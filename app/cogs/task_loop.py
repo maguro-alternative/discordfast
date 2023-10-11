@@ -10,6 +10,7 @@ try:
     from app.cogs.bin.webhook_sub.youtube_sub import youtube_subsc
     from app.model_types.discord_type.message_creater import ReqestDiscord
     from app.model_types.table_type import WebhookSet
+    from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from core.start import DBot
     from core.db_pickle import DB
@@ -18,18 +19,14 @@ except ModuleNotFoundError:
     from cogs.bin.webhook_sub.youtube_sub import youtube_subsc
     from model_types.discord_type.message_creater import ReqestDiscord
     from model_types.table_type import WebhookSet
+    from model_types.environ_conf import EnvConf
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 from typing import Dict,List
 from datetime import datetime
 import traceback
 
-DISCORD_BASE_URL = "https://discord.com/api"
-
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 TASK_COLUMN = {
     'task_number':'BIGSERIAL PRIMARY KEY',
@@ -235,9 +232,9 @@ class Task_Loop(commands.Cog):
         except Exception as e:
             if bool('webhook_url' in locals()):
                 if webhook_url == None:
-                    webhook_url = os.environ.get('WEBHOOK')
+                    webhook_url = EnvConf.WEBHOOK
             else:
-                webhook_url = os.environ.get('WEBHOOK')
+                webhook_url = EnvConf.WEBHOOK
             async with aiohttp.ClientSession() as sessions:
                 async with sessions.post(
                     url=webhook_url,

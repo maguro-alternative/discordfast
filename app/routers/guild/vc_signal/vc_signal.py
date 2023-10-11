@@ -1,12 +1,8 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 from typing import List,Dict,Any
 
 from base.aio_req import (
@@ -24,6 +20,7 @@ from model_types.discord_type.discord_type import DiscordUser
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildVcChannel,GuildSetPermission
+from model_types.environ_conf import EnvConf
 
 from discord import Guild
 from discord.ext import commands
@@ -35,13 +32,13 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -288,7 +285,9 @@ class VcSignalView(commands.Cog):
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
                     # デバッグモード
-                    if DEBUG_MODE == False:
+                    if DEBUG_MODE:
+                        chenge_permission = False
+                    else:
                         # サーバの権限を取得
                         permission = await return_permission(
                             user_id=discord_user.id,
@@ -301,8 +300,6 @@ class VcSignalView(commands.Cog):
                             permission=permission,
                             guild=guild
                         )
-                    else:
-                        chenge_permission = False
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_vc_signal_{guild.id}'
 

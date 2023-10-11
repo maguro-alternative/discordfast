@@ -9,9 +9,11 @@ from pydub import AudioSegment
 try:
     from app.cogs.bin.rank import WavKaraoke
     from app.core.start import DBot
+    from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from cogs.bin.rank import WavKaraoke
     from core.start import DBot
+    from model_types.environ_conf import EnvConf
 
 # カラオケ機能
 class karaoke(commands.Cog):
@@ -101,7 +103,7 @@ class karaoke(commands.Cog):
         await ctx.respond("録音終了! /rank_Scoring で採点します")
         await ctx.voice_client.disconnect()
 
-        game_name = os.environ.get('GAME_NAME')
+        game_name = EnvConf.GAME_NAME
         if game_name == None:
             game_name = 'senran kagura'
 

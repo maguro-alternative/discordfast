@@ -5,13 +5,13 @@ from discord import Option
 import aiofiles
 
 import aiohttp
-import os
-
 import asyncio
 try:
     from app.core.start import DBot
+    from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from core.start import DBot
+    from model_types.environ_conf import EnvConf
 
 Speaker = [ '四国めたん', '四国めたんあまあま', '四国めたんツンツン', '四国めたんセクシー',
             'ずんだもん', 'ずんだもんあまあま', 'ずんだもんツンツン', 'ずんだもんセクシー','ずんだもんささやき',
@@ -77,7 +77,7 @@ class voicevox(commands.Cog):
 
         # 3がずんだもんの数字
         id = 3
-        key = os.environ["VOICEVOX_KEY"]
+        key = EnvConf.VOICEVOX_KEY
 
         # ずんだもん以外が指定された場合、idを変更
         if speaker != "ずんだもん":

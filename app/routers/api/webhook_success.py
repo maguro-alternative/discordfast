@@ -6,7 +6,6 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
 import re
 import uuid
 from datetime import datetime,timezone
@@ -22,6 +21,7 @@ from model_types.discord_type.discord_type import DiscordUser
 from model_types.table_type import GuildSetPermission,WebhookSet
 from model_types.post_json_type import WebhookSuccessJson
 from model_types.session_type import FastAPISession
+from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
 try:
@@ -31,13 +31,13 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-DISCORD_BASE_URL = "https://discord.com/api"
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -139,8 +139,6 @@ class WebhookSuccess(commands.Cog):
                     'subscription_id': form.get(f"{FORM_NAMES[2]}{webhook_num}")
                 }
 
-                #print(row)
-
                 # 入力漏れがあった場合
                 if (len(form.get(f"{FORM_NAMES[1]}{webhook_num}")) == 0 or
                     len(form.get(f"{FORM_NAMES[2]}{webhook_num}")) == 0):
@@ -192,7 +190,6 @@ class WebhookSuccess(commands.Cog):
                     table_name=TABLE,
                     row_values=create_webhook_list
                 )
-            #print(create_webhook_list)
 
             # 更新
             for webhook_num in change_webhook_number:
@@ -375,9 +372,6 @@ class WebhookSuccess(commands.Cog):
                                         'uuid':webhook.uuid
                                     }
                                 )
-                            else:
-                                from pprint import pprint
-                                pprint(row_value)
 
                         # 削除
                         elif webhook.delete_flag:
@@ -401,8 +395,5 @@ class WebhookSuccess(commands.Cog):
                                     table_name=TABLE,
                                     row_values=row_value
                                 )
-                            else:
-                                from pprint import pprint
-                                pprint(row_value)
 
                     return JSONResponse(content={'message':'success!!'})

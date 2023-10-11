@@ -1,16 +1,9 @@
 from core.start import DBot
 import discord
-import os
 
-from dotenv import load_dotenv
-load_dotenv()
+from model_types.environ_conf import EnvConf
 
-#from server_router import keep_alive
-
-# サーバー立ち上げ
-#keep_alive()
-
-Token = os.environ['DISCORD_BOT_TOKEN']
+Token = EnvConf.DISCORD_BOT_TOKEN
 
 # Bot立ち上げ
 DBot(

@@ -19,6 +19,7 @@ from base.aio_req import (
 from model_types.session_type import FastAPISession
 from model_types.line_type.line_oauth import LineTokenVerify,LineProfile
 from model_types.table_type import LineBotColunm
+from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
 try:
@@ -28,16 +29,16 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
-LINE_BOT_URL = 'https://api.line.me/v2/bot'
+LINE_OAUTH_BASE_URL = EnvConf.LINE_OAUTH_BASE_URL
+LINE_BOT_URL = EnvConf.LINE_BOT_URL
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -164,7 +165,14 @@ class LineGroup(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
             # デバッグモード
-            if DEBUG_MODE == False:
+            if DEBUG_MODE:
+                line_user = {
+                    'scope'     :'profile%20openid%20email',
+                    'client_id' :'0',
+                    'expires_in':100
+                }
+            else:
+                line_user = LineTokenVerify(**line_user)
                 # アクセストークンの復号化
                 access_token:str = session.line_oauth_data.access_token
                 user_sub:str = session.line_user.sub
@@ -178,13 +186,6 @@ class LineGroup(commands.Cog):
                 # トークンが無効
                 if line_user.error != None:
                     return JSONResponse(content={'message':'access token Unauthorized'})
-            else:
-                line_user = {
-                    'scope'     :'profile%20openid%20email',
-                    'client_id' :'0',
-                    'expires_in':100
-                }
-                line_user = LineTokenVerify(**line_user)
 
             TABLE = 'line_bot'
 
@@ -208,7 +209,14 @@ class LineGroup(commands.Cog):
                     default_channel_id = line_bot_table.default_channel_id
 
                     # デバッグモード
-                    if DEBUG_MODE == False:
+                    if DEBUG_MODE:
+                        r = {
+                            'displayName'   :'test',
+                            'userId'        :'aaa',
+                            'pictureUrl'    :'png'
+                        }
+                        line_group_profile = LineProfile(**r)
+                    else:
                         # グループIDが有効かどうか判断
                         r = await aio_get_request(
                             url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{user_sub}",
@@ -220,13 +228,6 @@ class LineGroup(commands.Cog):
                         # グループIDが無効の場合、友達から判断
                         if line_group_profile.message != None:
                             raise HTTPException(status_code=400, detail="認証失敗")
-                    else:
-                        r = {
-                            'displayName'   :'test',
-                            'userId'        :'aaa',
-                            'pictureUrl'    :'png'
-                        }
-                        line_group_profile = LineProfile(**r)
 
                     # カテゴリーごとにチャンネルをソート
                     category_dict,category_index = await sort_channels(channels=guild.channels)

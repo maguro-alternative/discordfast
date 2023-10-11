@@ -3,10 +3,6 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 import re
 
 from base.aio_req import return_permission,get_profile
@@ -14,7 +10,7 @@ from base.aio_req import return_permission,get_profile
 from routers.api.chack.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
-
+from model_types.environ_conf import EnvConf
 
 from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import LinePostSuccessJson
@@ -30,11 +26,11 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -274,8 +270,5 @@ class LinePostSuccess(commands.Cog):
                                     'channel_id':post_channel.channel_id
                                 }
                             )
-                        else:
-                            import pprint
-                            pprint.pprint(row_value)
 
                     return JSONResponse(content={'message':'success!!'})

@@ -1,14 +1,10 @@
 from fastapi import APIRouter,Request,Header
 from fastapi.responses import HTMLResponse
 from starlette.requests import Request
-from cryptography.fernet import Fernet
 
 import base64
 import hashlib
 import hmac
-
-from dotenv import load_dotenv
-load_dotenv()
 
 try:
     from model_types.line_type.line_event import Line_Responses
@@ -22,8 +18,7 @@ except ModuleNotFoundError:
     from app.model_types.table_type import LineBotColunm
 # ./venv/Scripts/activate.bat
 
-import os
-from typing import List,Tuple,Union
+from typing import List
 
 from base.aio_req import decrypt_password
 
@@ -35,10 +30,10 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
+from model_types.environ_conf import EnvConf
 
-TOKEN = os.environ['DISCORD_BOT_TOKEN']
-
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+TOKEN = EnvConf.DISCORD_BOT_TOKEN
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 class LineBotWebhook(commands.Cog):
     def __init__(self, bot: DBot):
@@ -108,7 +103,7 @@ class LineBotWebhook(commands.Cog):
                     # Discordサーバーのインスタンスを作成
                     discord_find_message = ReqestDiscord(
                         guild_id=guild_id,
-                        limit=int(os.environ.get("USER_LIMIT",default=100)),
+                        limit=int(EnvConf.USER_LIMIT),
                         token=TOKEN
                     )
                     # LINEのインスタンスを作成

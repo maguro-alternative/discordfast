@@ -1,5 +1,4 @@
 import aiohttp
-import aiofiles
 
 from discord.channel import (
     VoiceChannel,
@@ -10,9 +9,7 @@ from discord.channel import (
 from discord import Guild
 from discord import ChannelType
 
-from typing import List,Any,Dict,Optional,Tuple,Union
-
-import os
+from typing import List,Dict,Optional,Tuple,Union
 
 from itertools import groupby,chain
 from cryptography.fernet import Fernet
@@ -20,12 +17,12 @@ from cryptography.fernet import Fernet
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_type import DiscordUser
 
-DISCORD_BASE_URL = "https://discord.com/api"
-LINE_BASE_URL = "https://api.line.me"
+from model_types.environ_conf import EnvConf
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+LINE_BASE_URL = EnvConf.LINE_BASE_URL
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 GuildChannel = Union[
     VoiceChannel,

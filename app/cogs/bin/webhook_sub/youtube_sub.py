@@ -1,15 +1,11 @@
 import aiohttp
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-
 from datetime import datetime,timezone
 import feedparser
 
 from model_types.table_type import WebhookSet
 from model_types.youtube_api_type import YouTubeChannelInfo
+from model_types.environ_conf import EnvConf
 from core.db_pickle import DB
 
 async def youtube_subsc(
@@ -28,7 +24,7 @@ async def youtube_subsc(
     table_name
         webhookの情報が登録されているテーブル名
     """
-    youtube_api_key = os.environ.get('YOUTUBE_API_KEY')
+    youtube_api_key = EnvConf.YOUTUBE_API_KEY
     channel_url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&id={webhook.subscription_id}&key={youtube_api_key}"
     new_videos_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={webhook.subscription_id}&order=date&type=video&key={youtube_api_key}&maxResults=5"
 
