@@ -493,28 +493,35 @@ class VcSignalView(commands.Cog):
                         for thread in guild.threads
                     ]
 
-                    # アーカイブスレッドを取得
-                    arc_threads = await aio_get_request(
-                        url=f'{DISCORD_BASE_URL}/channels/{guild_id}/threads/archived/public',
-                        headers={
-                            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-                        }
-                    )
-
-                    arc_threads = [
-                        Threads(**t)
-                        for t in arc_threads.get('threads')
+                    forum_channels = [
+                        f
+                        for f in guild.channels
+                        if f.type == ChannelType.forum
                     ]
 
-                    archived_threads = [
-                        {
-                            'id'    :str(thread.id),
-                            'name'  :thread.name,
-                        }
-                        for thread in arc_threads
-                    ]
+                    for forum_channel in forum_channels:
+                        # アーカイブスレッドを取得
+                        arc_threads = await aio_get_request(
+                            url=f'{DISCORD_BASE_URL}/channels/{forum_channel.id}/threads/archived/public',
+                            headers={
+                                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                            }
+                        )
 
-                    threads.extend(archived_threads)
+                        arc_threads = [
+                            Threads(**t)
+                            for t in arc_threads.get('threads')
+                        ]
+
+                        archived_threads = [
+                            {
+                                'id'    :str(thread.id),
+                                'name'  :thread.name,
+                            }
+                            for thread in arc_threads
+                        ]
+
+                        threads.extend(archived_threads)
 
                     # サーバー内のメンバー一覧
                     guild_users = [

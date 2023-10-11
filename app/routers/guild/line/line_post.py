@@ -28,7 +28,7 @@ from discord.channel import (
     TextChannel,
     CategoryChannel
 )
-from discord import Guild
+from discord import Guild,ChannelType
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -526,41 +526,48 @@ class LinePostView(commands.Cog):
                         for thread,i in zip(guild.threads,index_list)
                     ]
 
-                    # アーカイブスレッドを取得
-                    arc_threads = await aio_get_request(
-                        url=f'{DISCORD_BASE_URL}/channels/{guild_id}/threads/archived/public',
-                        headers={
-                            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-                        }
-                    )
-
-                    arc_threads = [
-                        Threads(**t)
-                        for t in arc_threads.get('threads')
+                    forum_channels = [
+                        f
+                        for f in guild.channels
+                        if f.type == ChannelType.forum
                     ]
 
-                    # アーカイブスレッドの配列番号一覧を格納
-                    index_list = [
-                        list(map(
-                            lambda x:int(x.channel_id),
-                            db_channels
-                        )).index(thread.id)
-                        for thread in arc_threads
-                    ]
+                    for forum_channel in forum_channels:
+                        # アーカイブスレッドを取得
+                        arc_threads = await aio_get_request(
+                            url=f'{DISCORD_BASE_URL}/channels/{forum_channel.id}/threads/archived/public',
+                            headers={
+                                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                            }
+                        )
 
-                    acrhive_threads = [
-                        {
-                            'id'            :str(thread.id),
-                            'name'          :thread.name,
-                            'lineNgChannel' :db_channels[i].line_ng_channel,
-                            'ngMessageType' :db_channels[i].ng_message_type,
-                            'messageBot'    :db_channels[i].message_bot,
-                            'ngUsers'       :db_channels[i].ng_users
-                        }
-                        for thread,i in zip(arc_threads,index_list)
-                    ]
+                        arc_threads = [
+                            Threads(**t)
+                            for t in arc_threads.get('threads')
+                        ]
 
-                    threads.extend(acrhive_threads)
+                        # アーカイブスレッドの配列番号一覧を格納
+                        index_list = [
+                            list(map(
+                                lambda x:int(x.channel_id),
+                                db_channels
+                            )).index(thread.id)
+                            for thread in arc_threads
+                        ]
+
+                        acrhive_threads = [
+                            {
+                                'id'            :str(thread.id),
+                                'name'          :thread.name,
+                                'lineNgChannel' :db_channels[i].line_ng_channel,
+                                'ngMessageType' :db_channels[i].ng_message_type,
+                                'messageBot'    :db_channels[i].message_bot,
+                                'ngUsers'       :db_channels[i].ng_users
+                            }
+                            for thread,i in zip(arc_threads,index_list)
+                        ]
+
+                        threads.extend(acrhive_threads)
 
                     # サーバー内のメンバー一覧
                     guild_users = [

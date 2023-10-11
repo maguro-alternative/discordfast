@@ -24,7 +24,7 @@ from model_types.session_type import FastAPISession
 from model_types.table_type import LineBotColunm,GuildSetPermission
 from model_types.environ_conf import EnvConf
 
-from discord import Guild
+from discord import Guild,ChannelType
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -336,30 +336,35 @@ class LineSetView(commands.Cog):
                         for thread in guild.threads
                     ]
 
-                    # アーカイブスレッドを取得
-                    arc_threads = await aio_get_request(
-                        url=f'{DISCORD_BASE_URL}/channels/{guild_id}/threads/archived/public',
-                        headers={
-                            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
-                        }
-                    )
-
-                    print(arc_threads)
-
-                    arc_threads = [
-                        Threads(**t)
-                        for t in arc_threads.get('threads')
+                    forum_channels = [
+                        f
+                        for f in guild.channels
+                        if f.type == ChannelType.forum
                     ]
 
-                    archived_threads = [
-                        {
-                            'id'    :str(thread.id),
-                            'name'  :thread.name
-                        }
-                        for thread in arc_threads
-                    ]
+                    for forum_channel in forum_channels:
+                        # アーカイブスレッドを取得
+                        arc_threads = await aio_get_request(
+                            url=f'{DISCORD_BASE_URL}/channels/{forum_channel.id}/threads/archived/public',
+                            headers={
+                                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                            }
+                        )
 
-                    threads.extend(archived_threads)
+                        arc_threads = [
+                            Threads(**t)
+                            for t in arc_threads.get('threads')
+                        ]
+
+                        archived_threads = [
+                            {
+                                'id'    :str(thread.id),
+                                'name'  :thread.name
+                            }
+                            for thread in arc_threads
+                        ]
+
+                        threads.extend(archived_threads)
 
                     # フロント側に送るjsonを作成(linebotの情報は先頭3桁のみ)
                     channels_json.update({
