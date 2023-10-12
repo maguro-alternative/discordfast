@@ -1,7 +1,5 @@
-from base.aio_req import (
-    return_permission,
-    discord_oauth_check
-)
+from pkg.permission import return_permission
+from pkg.oauth_check import discord_oauth_check
 from discord import Guild
 
 from model_types.discord_type.discord_user_session import DiscordOAuthData

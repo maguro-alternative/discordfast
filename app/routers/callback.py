@@ -5,11 +5,11 @@ from fastapi.templating import Jinja2Templates
 
 from typing import Dict,List
 
-from base.aio_req import (
+from pkg.aio_req import (
     aio_get_request,
-    aio_post_request,
-    decrypt_password
+    aio_post_request
 )
+from pkg.crypt import decrypt_password
 
 from discord.ext import commands
 try:

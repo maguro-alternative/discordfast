@@ -1,4 +1,5 @@
-import aiohttp
+from typing import List,Union,Tuple,Dict
+from itertools import groupby,chain
 
 from discord.channel import (
     VoiceChannel,
@@ -6,23 +7,7 @@ from discord.channel import (
     TextChannel,
     CategoryChannel
 )
-from discord import Guild
 from discord import ChannelType
-
-from typing import List,Dict,Optional,Tuple,Union
-
-from itertools import groupby,chain
-from cryptography.fernet import Fernet
-
-from model_types.discord_type.guild_permission import Permission
-from model_types.discord_type.discord_type import DiscordUser
-
-from model_types.environ_conf import EnvConf
-
-DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
-LINE_BASE_URL = EnvConf.LINE_BASE_URL
-DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
-ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 GuildChannel = Union[
     VoiceChannel,
@@ -30,135 +15,6 @@ GuildChannel = Union[
     TextChannel,
     CategoryChannel
 ]
-
-# getリクエストを行う
-async def aio_get_request(url: str, headers: dict) -> Dict:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            url = url,
-            headers = headers
-        ) as resp:
-            return await resp.json()
-
-# postリクエストを行う
-async def aio_post_request(url: str, headers: dict, data: dict) -> Dict:
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            url = url,
-            headers = headers,
-            data = data
-        ) as resp:
-            return await resp.json()
-
-
-async def return_permission(
-    user_id:int,
-    guild:Guild
-) -> Permission:
-    """
-    指定されたユーザの権限を返す(ロールの権限も含む)
-
-    guild_id        :int
-        サーバのid
-    user_id         :int
-        ユーザのid
-    access_token    :str
-        ユーザのアクセストークン
-    """
-    user_permission = Permission()
-    role_permission = Permission()
-    permission_code = 0
-    user = [
-        member
-        for member in guild.members
-        if member.id == user_id
-    ]
-
-    # 権限コードをor計算で足し合わせる
-    for role in user[0].roles:
-        permission_code |= role.permissions.value
-
-    await user_permission.get_permissions(permissions=user[0].guild_permissions.value)
-    await role_permission.get_permissions(permissions=permission_code)
-
-    return user_permission | role_permission
-
-async def discord_oauth_check(
-    access_token:str
-) -> bool:
-    """
-    OAuth2のトークンが有効か判断する
-
-    param:
-    access_token:str
-        OAuth2のトークン
-
-    return:
-    bool
-        トークンが有効な場合、True
-        無効の場合、Falseが返される
-    """
-    oauth_data:dict = await aio_get_request(
-        url=f'{DISCORD_BASE_URL}/users/@me',
-        headers={
-            'Authorization': f'Bearer {access_token}'
-        }
-    )
-    if oauth_data.get('message') == '401: Unauthorized':
-        return False
-    else:
-        return True
-
-async def line_oauth_check(
-    access_token:str
-) -> bool:
-    """
-    OAuth2のトークンが有効か判断する
-
-    param:
-    access_token:str
-        OAuth2のトークン
-
-    return:
-    bool
-        トークンが有効な場合、True
-        無効の場合、Falseが返される
-    """
-    oauth_data:dict = await aio_get_request(
-        url=f'{LINE_BASE_URL}/oauth2/v2.1/verify?access_token={access_token}',
-        headers={}
-    )
-    if oauth_data.get('error_description') == 'access token expired':
-        return False
-    else:
-        return True
-
-async def get_profile(
-    access_token:str
-) -> Optional[DiscordUser]:
-    """
-    OAuth2のトークンが有効か判断する
-
-    param:
-    access_token:str
-        OAuth2のトークン
-
-    return:
-    bool
-        トークンが有効な場合、True
-        無効の場合、Falseが返される
-    """
-    oauth_data:dict = await aio_get_request(
-        url=f'{DISCORD_BASE_URL}/users/@me',
-        headers={
-            'Authorization': f'Bearer {access_token}'
-        }
-    )
-    if oauth_data.get('message') == '401: Unauthorized':
-        return None
-    else:
-        user = DiscordUser(**oauth_data)
-        return user
 
 async def sort_discord_channel(
     all_channel:List
@@ -302,40 +158,3 @@ async def sort_channels(
     })
 
     return category_dict,category_index
-
-# 復号化関数
-async def decrypt_password(encrypted_password:bytes) -> str:
-    """
-    byte列の文字の復号化
-
-    Args:
-        encrypted_password (bytes): 復号化する文字列
-
-    Returns:
-        str: 復号化した文字
-    """
-    cipher_suite = Fernet(ENCRYPTED_KEY)
-    try:
-        decrypted_password = cipher_suite.decrypt(encrypted_password)
-        return decrypted_password.decode('utf-8')
-    # トークンが無効の場合
-    except:
-        return ''
-
-# 暗号化関数
-async def encrypt_password(password:str) -> bytes:
-    """
-    文字の暗号化
-
-    Args:
-        password (str): 暗号化する文字列
-
-    Returns:
-        bytes: 暗号化した文字列
-    """
-    cipher_suite = Fernet(ENCRYPTED_KEY)
-    try:
-        encrypted_password = cipher_suite.encrypt(password.encode('utf-8'))
-        return encrypted_password
-    except:
-        return b''

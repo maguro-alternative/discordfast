@@ -20,7 +20,7 @@ except ModuleNotFoundError:
 
 from typing import List
 
-from base.aio_req import decrypt_password
+from pkg.crypt import decrypt_password
 
 from discord.ext import commands
 try:

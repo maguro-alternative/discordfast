@@ -1,11 +1,9 @@
 from fastapi import APIRouter
-from fastapi.responses import RedirectResponse,HTMLResponse
+from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from base.aio_req import (
-    discord_oauth_check
-)
+from pkg.oauth_check import discord_oauth_check
 
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser

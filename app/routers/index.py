@@ -6,11 +6,8 @@ from fastapi.templating import Jinja2Templates
 import os
 from typing import Dict
 
-from base.aio_req import (
-    aio_get_request,
-    discord_oauth_check,
-    line_oauth_check
-)
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import discord_oauth_check,line_oauth_check
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
 

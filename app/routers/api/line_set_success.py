@@ -3,9 +3,11 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from base.aio_req import return_permission,get_profile,encrypt_password
+from pkg.permission import return_permission
+from pkg.oauth_check import discord_get_profile
+from pkg.crypt import encrypt_password
 
-from routers.api.chack.post_user_check import user_checker
+from pkg.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
 from model_types.environ_conf import EnvConf
@@ -113,7 +115,7 @@ class LineSetSuccess(commands.Cog):
                 # アクセストークンの復号化
                 access_token:str = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
-                discord_user = await get_profile(access_token=access_token)
+                discord_user = await discord_get_profile(access_token=access_token)
 
                 # トークンが無効
                 if discord_user == None:

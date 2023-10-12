@@ -3,10 +3,8 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from base.aio_req import (
-    aio_get_request,
-    decrypt_password
-)
+from pkg.aio_req import aio_get_request
+from pkg.crypt import decrypt_password
 
 import urllib.parse
 

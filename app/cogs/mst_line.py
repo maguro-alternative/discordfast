@@ -11,10 +11,7 @@ import io
 import asyncio
 import aiofiles
 
-from dotenv import load_dotenv
-load_dotenv()
-
-from base.aio_req import decrypt_password
+from pkg.crypt import decrypt_password
 try:
     from model_types.line_type.line_message import LineBotAPI,VoiceFile
     from model_types.table_type import GuildLineChannel,LineBotColunm

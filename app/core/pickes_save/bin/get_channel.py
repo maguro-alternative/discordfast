@@ -1,6 +1,4 @@
-from base.aio_req import (
-    aio_get_request
-)
+from pkg.aio_req import aio_get_request
 from model_types.environ_conf import EnvConf
 
 from typing import List,Dict,Any

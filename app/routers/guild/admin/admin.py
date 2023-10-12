@@ -1,14 +1,11 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,HTMLResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from base.aio_req import (
-    aio_get_request,
-    get_profile,
-    return_permission,
-    discord_oauth_check
-)
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import discord_oauth_check,discord_get_profile
+from pkg.permission import return_permission
 from typing import List,Dict,Any
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
@@ -135,7 +132,7 @@ class AdminView(commands.Cog):
                 # アクセストークンの復号化
                 access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
-                discord_user = await get_profile(access_token=access_token)
+                discord_user = await discord_get_profile(access_token=access_token)
 
                 # トークンが無効
                 if discord_user == None:
