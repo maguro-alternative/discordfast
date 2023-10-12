@@ -99,7 +99,7 @@ async def vc_pickle_table_create(
 
             guild_vc = await get_discord_channel(
                 guild_id=guild.id,
-                channel_type=VC_TYPE,
+                get_channel_type=VC_TYPE,
             )
 
             db_vc_ids = [int(row.vc_id) for row in vc_table]
