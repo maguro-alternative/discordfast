@@ -133,11 +133,12 @@ async def vc_pickle_table_create(
                     })
                     row_list.append(row_value)
 
-                # まとめて作成(バッジ)
-                await db.batch_insert_row(
-                    table_name=table_name,
-                    row_values=row_list
-                )
+                if len(row_list) > 0:
+                    # まとめて作成(バッジ)
+                    await db.batch_insert_row(
+                        table_name=table_name,
+                        row_values=row_list
+                    )
 
     # テーブルがあって、中身が空の場合
     if len(table_fetch) == 0:
