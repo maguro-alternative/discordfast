@@ -128,7 +128,7 @@ async def line_pickle_table_create(
                     })
                     await db.insert_row(
                         table_name=table_name,
-                        row_value=row_value
+                        row_values=row_value
                     )
 
     # テーブルがあって、中身が空の場合
