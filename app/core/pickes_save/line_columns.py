@@ -120,20 +120,15 @@ async def line_pickle_table_create(
                             "channel_id":del_channel_id
                         }
                     )
-                row_list = list()
                 for channel_id in insert_channel_ids:
                     row_value = LINE_NEW_COLUMNS
                     row_value.update({
                         "channel_id":channel_id,
                         "guild_id":guild.id,
                     })
-                    row_list.append(row_value)
-
-                if len(row_list) > 0:
-                    # まとめて作成(バッジ)
-                    await db.batch_insert_row(
+                    await db.insert_row(
                         table_name=table_name,
-                        row_values=row_list
+                        row_value=row_value
                     )
 
     # テーブルがあって、中身が空の場合
