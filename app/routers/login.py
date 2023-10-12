@@ -1,23 +1,18 @@
-from fastapi import APIRouter,Request,Header
+from fastapi import APIRouter,Request
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-from base.aio_req import (
-    aio_get_request,
-    decrypt_password
-)
+from pkg.aio_req import aio_get_request
+from pkg.crypt import decrypt_password
 
 import urllib.parse
 
-import os
 import secrets
 from typing import Dict,List
 from model_types.table_type import LineBotColunm
 from model_types.line_type.line_type import LineBotInfo
+from model_types.environ_conf import EnvConf
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -29,14 +24,14 @@ except ModuleNotFoundError:
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
-DISCORD_BASE_URL = "https://discord.com/api"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
 LINE_REDIRECT_URL = "https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id={}&redirect_uri={}&state={}&scope=profile%20openid%20email&nonce={}"
-LINE_BASE_URL = "https://api.line.me"
+LINE_BASE_URL = EnvConf.LINE_BASE_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 class Login(commands.Cog):
     def __init__(self, bot: DBot):
@@ -169,7 +164,7 @@ class Login(commands.Cog):
                 line_clinet_id:str = await decrypt_password(encrypted_password=line.line_client_id)
 
                 # LINEのcallbackurlをエンコードする
-                redirect_uri = os.environ.get('LINE_CALLBACK_URL')
+                redirect_uri = EnvConf.LINE_CALLBACK_URL
                 redirect_encode_uri:str = urllib.parse.quote(redirect_uri)
                 # LINEBotの情報を取得
                 bot_profile_tmp:Dict = await aio_get_request(
@@ -228,7 +223,7 @@ class Login(commands.Cog):
             client_id:str = await decrypt_password(encrypted_password=guild_set_line_bot.line_client_id)
 
             # LINEのcallbackurlをエンコードする
-            redirect_uri = os.environ.get('LINE_CALLBACK_URL')
+            redirect_uri = EnvConf.LINE_CALLBACK_URL
             redirect_encode_uri = urllib.parse.quote(redirect_uri)
 
             try:
@@ -246,9 +241,3 @@ class Login(commands.Cog):
                     'request': request,
                 }
             )
-
-
-        @self.router.post("/register")
-        async def register_post(request: Request):
-            # ホームページにリダイレクトする
-            return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)

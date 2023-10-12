@@ -1,20 +1,11 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,HTMLResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-from base.aio_req import (
-    aio_get_request,
-    pickle_read,
-    get_profile,
-    return_permission,
-    discord_oauth_check,
-    decrypt_password
-)
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import discord_oauth_check,discord_get_profile
+from pkg.permission import return_permission
 from typing import List,Dict,Any
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
@@ -22,6 +13,8 @@ from model_types.discord_type.discord_type import DiscordUser
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildSetPermission
+
+from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
 try:
@@ -31,13 +24,13 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -65,7 +58,7 @@ class AdminView(commands.Cog):
             TABLE_NAME = 'guild_set_permissions'
 
             # 取得上限を定める
-            limit = os.environ.get('USER_LIMIT',default=100)
+            limit = EnvConf.USER_LIMIT
 
             # サーバの情報を取得
             guild = await aio_get_request(
@@ -92,14 +85,6 @@ class AdminView(commands.Cog):
                     if guild.id == guild_id
                 ][0]
             )
-
-            # キャッシュ読み取り
-            #guild_table_fetch:List[Dict[str,Any]] = await pickle_read(filename=TABLE_NAME)
-            guild_table = [
-                #g
-                #for g in guild_table_fetch
-                #if int(g.get('guild_id')) == guild_id
-            ]
 
             if DB.conn == None:
                 await DB.connect()
@@ -147,7 +132,7 @@ class AdminView(commands.Cog):
                 # アクセストークンの復号化
                 access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
-                discord_user = await get_profile(access_token=access_token)
+                discord_user = await discord_get_profile(access_token=access_token)
 
                 # トークンが無効
                 if discord_user == None:
@@ -157,16 +142,16 @@ class AdminView(commands.Cog):
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
                     # デバッグモード
-                    if DEBUG_MODE == False:
+                    if DEBUG_MODE:
+                        from model_types.discord_type.guild_permission import Permission
+                        permission = Permission()
+                        permission.administrator = True
+                    else:
                         # サーバの権限を取得
                         permission = await return_permission(
                             user_id=discord_user.id,
                             guild=guild
                         )
-                    else:
-                        from model_types.discord_type.guild_permission import Permission
-                        permission = Permission()
-                        permission.administrator = True
                     guild_members = [
                         {
                             'userId'            :str(member.id),

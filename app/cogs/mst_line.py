@@ -11,23 +11,21 @@ import io
 import asyncio
 import aiofiles
 
-from dotenv import load_dotenv
-load_dotenv()
-
-from base.aio_req import decrypt_password
+from pkg.crypt import decrypt_password
 try:
     from model_types.line_type.line_message import LineBotAPI,VoiceFile
     from model_types.table_type import GuildLineChannel,LineBotColunm
+    from model_types.environ_conf import EnvConf
     from core.start import DBot
     from core.db_pickle import DB
 except ModuleNotFoundError:
     from app.model_types.line_type.line_message import LineBotAPI,VoiceFile
     from app.model_types.table_type import GuildLineChannel,LineBotColunm
+    from app.model_types.environ_conf import EnvConf
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
-
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 class mst_line(commands.Cog):
     def __init__(self, bot : DBot):
@@ -132,23 +130,14 @@ class mst_line(commands.Cog):
         # ユーザーネームの空白文字を削除
         user_name = re.sub("[\u3000 \t]", "",message.author.name)
 
-        # テキストメッセージ
-        messagetext = f"{message.channel.name}にて、{user_name}"
-
-        if message.type == discord.MessageType.new_member:
-            messagetext = f"{user_name}が参加しました。"
-
-        if message.type == discord.MessageType.premium_guild_subscription:
-            messagetext = f"{user_name}がサーバーブーストしました。"
-
-        if message.type == discord.MessageType.premium_guild_tier_1:
-            messagetext = f"{user_name}がサーバーブーストし、レベル1になりました！！！！！！！！"
-
-        if message.type == discord.MessageType.premium_guild_tier_2:
-            messagetext = f"{user_name}がサーバーブーストし、レベル2になりました！！！！！！！！！"
-
-        if message.type == discord.MessageType.premium_guild_tier_3:
-            messagetext = f"{user_name}がサーバーブーストし、レベル3になりました！！！！！！！！！！！"
+        messageTexts = {
+            discord.MessageType.new_member: f"{user_name}が参加しました。",
+            discord.MessageType.premium_guild_subscription: f"{user_name}がサーバーブーストしました。",
+            discord.MessageType.premium_guild_tier_1: f"{user_name}がサーバーブーストし、レベル1になりました！！！！！！！！",
+            discord.MessageType.premium_guild_tier_2: f"{user_name}がサーバーブーストし、レベル2になりました！！！！！！！！！",
+            discord.MessageType.premium_guild_tier_3: f"{user_name}がサーバーブーストし、レベル3になりました！！！！！！！！！！！"
+        }
+        messagetext = messageTexts.get(message.type, f"{message.channel.name}にて、{user_name}")
 
         # 送付ファイルがあった場合
         if message.attachments:

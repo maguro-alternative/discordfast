@@ -3,19 +3,11 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
+from typing import List
 
-import os
-
-from typing import List,Dict
-
-from base.aio_req import (
-    aio_get_request,
-    decrypt_password,
-    line_oauth_check
-)
-
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import line_oauth_check
+from pkg.crypt import decrypt_password
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -32,18 +24,20 @@ from model_types.post_json_type import LineGroupSuccessJson
 from model_types.line_type.line_oauth import LineTokenVerify,LineProfile
 from model_types.session_type import FastAPISession
 
-LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
-LINE_BOT_URL = 'https://api.line.me/v2/bot'
+from model_types.environ_conf import EnvConf
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+LINE_OAUTH_BASE_URL = EnvConf.LINE_OAUTH_BASE_URL
+LINE_BOT_URL = EnvConf.LINE_BOT_URL
+
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 class LineGroupSuccess(commands.Cog):
     def __init__(self, bot: DBot):
@@ -105,7 +99,7 @@ class LineGroupSuccess(commands.Cog):
             discord_bot_api = ReqestDiscord(
                 guild_id=int(form.get('guild_id')),
                 limit=100,
-                token=os.environ["DISCORD_BOT_TOKEN"]
+                token=EnvConf.DISCORD_BOT_TOKEN
             )
 
             # LINEのユーザ名
@@ -116,7 +110,7 @@ class LineGroupSuccess(commands.Cog):
             )
 
             # 変更URL
-            url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/group/{form.get("guild_id")}'
+            url = (EnvConf.LINE_CALLBACK_URL.replace('/line-callback/','')) + f'/group/{form.get("guild_id")}'
 
             change_text = f"{user_name}によりDiscordへの送信先が「{default_channel_info.name}」に変更されました。"
             change_text += f"\n変更はこちらから\n{url}"
@@ -150,7 +144,14 @@ class LineGroupSuccess(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
             # デバッグモード
-            if DEBUG_MODE == False:
+            if DEBUG_MODE:
+                line_user = {
+                    'scope'     :'profile%20openid%20email',
+                    'client_id' :'0',
+                    'expires_in':100
+                }
+            else:
+                line_user = LineTokenVerify(**line_user)
                 # アクセストークンの復号化
                 access_token:str = session.line_oauth_data.access_token
                 # LINEのユーザ情報を取得
@@ -163,13 +164,6 @@ class LineGroupSuccess(commands.Cog):
                 # トークンが無効
                 if line_user.error != None:
                     return JSONResponse(content={'message':'access token Unauthorized'})
-            else:
-                line_user = {
-                    'scope'     :'profile%20openid%20email',
-                    'client_id' :'0',
-                    'expires_in':100
-                }
-                line_user = LineTokenVerify(**line_user)
 
             TABLE = "line_bot"
 
@@ -190,7 +184,14 @@ class LineGroupSuccess(commands.Cog):
                     line_bot_token:str = await decrypt_password(encrypted_password=bytes(line_bot_table.line_bot_token))
                     line_notify_token:str = await decrypt_password(encrypted_password=bytes(line_bot_table.line_notify_token))
                     # デバッグモード
-                    if DEBUG_MODE == False:
+                    if DEBUG_MODE:
+                        r = {
+                            'displayName'   :'test',
+                            'userId'        :'aaa',
+                            'pictureUrl'    :'png'
+                        }
+                        line_group_profile = LineProfile(**r)
+                    else:
                         # グループIDが有効かどうか判断
                         r = await aio_get_request(
                             url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{session.line_user.sub}",
@@ -202,13 +203,6 @@ class LineGroupSuccess(commands.Cog):
                         # グループIDが無効の場合、友達から判断
                         if line_group_profile.message != None:
                             raise HTTPException(status_code=400, detail="認証失敗")
-                    else:
-                        r = {
-                            'displayName'   :'test',
-                            'userId'        :'aaa',
-                            'pictureUrl'    :'png'
-                        }
-                        line_group_profile = LineProfile(**r)
 
                     row_value = {
                         'default_channel_id':line_bot_table.default_channel_id
@@ -223,16 +217,10 @@ class LineGroupSuccess(commands.Cog):
                                 'guild_id':guild.id
                             }
                         )
-                    else:
-                        import pprint
-                        pprint.pprint(row_value)
 
                     if line_group_json.change_alert:
                         # 変更URL
-                        #url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/group/'
-
                         change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel_or_thread(line_group_json.default_channel_id).name}」に変更されました。"
-                        #change_text += f"\n変更はこちらから\n{url}"
 
                         # LINEのインスタンスを作成
                         line_bot_api = LineBotAPI(

@@ -6,8 +6,7 @@ import traceback
 import requests,json
 
 
-from dotenv import load_dotenv
-load_dotenv()
+from model_types.environ_conf import EnvConf
 
 from core.db_pickle import db_pickle_save
 
@@ -36,24 +35,23 @@ class DBot(discord.AutoShardedBot):
             print("Discord Tokenが不正です")
         except KeyboardInterrupt:
             print("終了します")
-            #self.loop.run_until_complete(self.close())
         except discord.HTTPException as e:
             traceback.print_exc()
-            if e.status == 429 and os.environ.get("WEBHOOK") != None:
+            if e.status == 429 and EnvConf.WEBHOOK != None:
                 main_content = {'content': 'DiscordBot 429エラー\n直ちにDockerファイルを再起動してください。'}
                 headers      = {'Content-Type': 'application/json'}
 
-                response     = requests.post(
-                    url=os.environ.get("WEBHOOK"),
+                requests.post(
+                    url=EnvConf.WEBHOOK,
                     data=json.dumps(main_content),
                     headers=headers
                 )
 
         except Exception as e:
             traceback.print_exc()
-            if os.environ.get("WEBHOOK") != None:
-                if os.environ.get("ADMIN_ID") != None:
-                    admin_id = os.environ.get("ADMIN_ID")
+            if EnvConf.WEBHOOK != None:
+                if EnvConf.ADMIN_ID != None:
+                    admin_id = EnvConf.ADMIN_ID
                     text = f"<@{int(admin_id)}> {e}"
                 else:
                     text = str(e)
@@ -63,8 +61,8 @@ class DBot(discord.AutoShardedBot):
                 headers = {
                     'Content-Type': 'application/json'
                 }
-                response = requests.post(
-                    url=os.environ.get("WEBHOOK"),
+                requests.post(
+                    url=EnvConf.WEBHOOK,
                     data=json.dumps(main_content),
                     headers=headers
                 )

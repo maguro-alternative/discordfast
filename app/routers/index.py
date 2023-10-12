@@ -6,11 +6,8 @@ from fastapi.templating import Jinja2Templates
 import os
 from typing import Dict
 
-from base.aio_req import (
-    aio_get_request,
-    discord_oauth_check,
-    line_oauth_check
-)
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import discord_oauth_check,line_oauth_check
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
 
@@ -19,17 +16,19 @@ from model_types.session_type import FastAPISession
 from discord.ext import commands
 try:
     from core.start import DBot
+    from model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from app.core.start import DBot
+    from app.model_types.environ_conf import EnvConf
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-DISCORD_BASE_URL = "https://discord.com/api"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 class Index(commands.Cog):
     def __init__(self, bot: DBot):
         self.bot = bot

@@ -2,7 +2,6 @@ import http.client  # httplibはPython3はhttp.clientへ移行
 import httplib2
 import os
 import random
-import time
 import io
 import json
 
@@ -18,6 +17,7 @@ from oauth2client.client import flow_from_clientsecrets,Credentials,OAuth2WebSer
 from oauth2client.file import Storage
 from oauth2client.tools import run_flow
 
+from model_types.environ_conf import EnvConf
 
 # HTTPトランスポートライブラリに再試行を行わないよう明示的に伝える。
 # リトライのロジックは本プログラムで処理するため。
@@ -53,7 +53,7 @@ https://developers.google.com/youtube/v3/guides/authentication
 client_secrets.jsonのファイルフォーマットに関する詳しい情報は, こちらを参照してください:
 https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 """
-CLIENT_SECRETS_FILE = f"client_secret_{os.environ['YOUTUBE_CLIENT_ID']}.json"
+CLIENT_SECRETS_FILE = f"client_secret_{EnvConf.YOUTUBE_CLIENT_ID}.json"
 OAUTH2_FILE = "upload_video.py-oauth2.json"
 
 # この変数はCLIENT_SECRETS_FILEが見つからない場合に表示されるメッセージを定義します。
@@ -63,7 +63,7 @@ WARNING: Please configure OAuth 2.0
 To make this sample run you will need to populate the client_secrets.json file
 found at:
 
-   {os.path.abspath(
+    {os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
             CLIENT_SECRETS_FILE
@@ -140,15 +140,15 @@ class YouTubeUpload():
         cli = {
             "installed":
                 {
-                    "client_id":os.environ["YOUTUBE_CLIENT_ID"],
-                    "project_id":os.environ["YOUTUBE_PROJECT_ID"],
+                    "client_id":EnvConf.YOUTUBE_CLIENT_ID,
+                    "project_id":EnvConf.YOUTUBE_PROJECT_ID,
                     "auth_uri":"https://accounts.google.com/o/oauth2/auth",
                     "token_uri":"https://oauth2.googleapis.com/token",
                     "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
-			        "client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
-			        "redirect_uris":["http://localhost"]
-		        }
-	    }
+                    "client_secret":EnvConf.YOUTUBE_CLIENT_SECRET,
+                    "redirect_uris":["http://localhost"]
+                }
+        }
         async with aiofiles.open(CLIENT_SECRETS_FILE,"w") as f:
             json_data = json.dumps(cli)
             await f.write(json_data)
@@ -156,26 +156,26 @@ class YouTubeUpload():
 
     async def create_oauth(self) -> None:
         oau = {
-            "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
-            "client_id":os.environ["YOUTUBE_CLIENT_ID"],
-            "client_secret":os.environ["YOUTUBE_CLIENT_SECRET"],
-            "refresh_token":os.environ["YOUTUBE_REFRESH_TOKEN"],
-            "token_expiry": os.environ["YOUTUBE_TOKEN_EXPIRY"], 
+            "access_token":EnvConf.YOUTUBE_ACCESS_TOKEN,
+            "client_id":EnvConf.YOUTUBE_CLIENT_ID,
+            "client_secret":EnvConf.YOUTUBE_CLIENT_SECRET,
+            "refresh_token":EnvConf.YOUTUBE_REFRESH_TOKEN,
+            "token_expiry": EnvConf.YOUTUBE_TOKEN_EXPIRY,
             "token_uri": "https://oauth2.googleapis.com/token",
             "user_agent": None,
-            "revoke_uri": "https://oauth2.googleapis.com/revoke", 
-            "id_token": None, 
-            "id_token_jwt": None, 
+            "revoke_uri": "https://oauth2.googleapis.com/revoke",
+            "id_token": None,
+            "id_token_jwt": None,
             "token_response": {
-                "access_token":os.environ["YOUTUBE_ACCESS_TOKEN"],
-                "expires_in": 3599, 
-                "scope": "https://www.googleapis.com/auth/youtube.upload", 
+                "access_token":EnvConf.YOUTUBE_ACCESS_TOKEN,
+                "expires_in": 3599,
+                "scope": "https://www.googleapis.com/auth/youtube.upload",
                 "token_type": "Bearer"
             },
-            "scopes": ["https://www.googleapis.com/auth/youtube.upload"], 
-            "token_info_uri": "https://oauth2.googleapis.com/tokeninfo", 
-            "invalid": False, 
-            "_class": "OAuth2Credentials", 
+            "scopes": ["https://www.googleapis.com/auth/youtube.upload"],
+            "token_info_uri": "https://oauth2.googleapis.com/tokeninfo",
+            "invalid": False,
+            "_class": "OAuth2Credentials",
             "_module": "oauth2client.client"
         }
         async with aiofiles.open(OAUTH2_FILE,"w") as f:
@@ -187,7 +187,7 @@ class YouTubeUpload():
     async def get_authenticated_service(self) -> Resource:
         """
         認証フロー?を作成しYouTubeAPIのリソースを作成
-        
+
         return
         youtube:Resource
         動的生成されたYouTubeAPIのオブジェクト
@@ -220,61 +220,6 @@ class YouTubeUpload():
             http=credentials.authorize(httplib2.Http())
         )
 
-    # 使用していません。本Botは下記のbyte_uploadを使用しバイナリデータから直接YouTubeにアップロードします。
-    async def initialize_upload(self,youtube:Resource) -> None:
-        """
-        動画ファイルからYouTubeにアップロードする。
-
-        param
-        youtube:Resource
-        動的生成されたYouTubeAPIのオブジェクト
-
-
-        """
-        # タグ(カンマ区切り)があった場合、格納
-        tags:list = None
-        if self.tag:
-            tags = self.tag.split(",")
-
-        # アップロード用のbody作成
-        body = dict(
-            snippet=dict(
-                title=self.title,
-                description=self.description,
-                tags=tags,
-                categoryId=self.category_id
-            ),
-            status=dict(
-                privacyStatus=self.privacy_status
-            )
-        )
-
-
-        """
-        chunksizeパラメータは、一度にアップロードされるデータの各チャンクのサイズをバイト単位で指定します。
-        より少ないチャンクでより高速なアップロードを行うため、信頼性の高い接続のために高い値を設定します。
-        信頼性の低い接続での回復を良くするためには、低い値を設定してください。
-        以下のコードで「chunksize」を -1 に設定すると、
-        1 回の HTTP リクエストでファイル全体がアップロードされることを意味します。
-        (これは通常ベストプラクティスですが、2.6より古いPythonを使用している場合、
-        またはApp Engine上で動作している場合は、チャンクサイズを以下のように設定する必要があります。
-        1024 * 1024 (1MB).
-        """
-
-        # API の videos.insert メソッドを呼び出して、動画の作成とアップロードを行います。
-        insert_request:HttpRequest = youtube.videos().insert(
-            part=",".join(body.keys()),
-            body=body,
-            media_body=MediaFileUpload(
-                filename=self.file_path, 
-                chunksize=-1, 
-                resumable=True
-            )
-        )
-
-        await self.resumable_upload(insert_request)
-
-
     async def byte_upload(
         self,
         video_bytes:io.BytesIO,
@@ -298,7 +243,7 @@ class YouTubeUpload():
         tags:list = None
         if self.tag:
             tags = self.tag.split(",")
-        
+
         # 動画バイナリからアップロード用のデータを生成
         media = MediaIoBaseUpload(
             fd=video_bytes,
@@ -344,7 +289,6 @@ class YouTubeUpload():
 
         return:
         youtube_id      :str
-        
         """
         response:dict = None
         error:str = None

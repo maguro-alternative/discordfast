@@ -3,27 +3,21 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 from typing import List,Dict,Any,Union
 
-from base.aio_req import (
-    aio_get_request,
-    return_permission,
-    discord_oauth_check,
-    get_profile,
-    sort_discord_channel,
-    sort_channels
-)
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import discord_oauth_check,discord_get_profile
+from pkg.permission import return_permission
+from pkg.sort_channel import sort_discord_channel,sort_channels
+
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData
-from model_types.discord_type.discord_type import DiscordUser
+from model_types.discord_type.discord_type import DiscordUser,Threads
 
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import GuildLineChannel,GuildSetPermission
+from model_types.environ_conf import EnvConf
 
 from discord.channel import (
     VoiceChannel,
@@ -31,7 +25,7 @@ from discord.channel import (
     TextChannel,
     CategoryChannel
 )
-from discord import Guild
+from discord import Guild,ChannelType
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -40,13 +34,13 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 GuildChannel = Union[
     VoiceChannel,
@@ -90,7 +84,7 @@ class LinePostView(commands.Cog):
                 }
             )
 
-            limit = os.environ.get('USER_LIMIT',default=100)
+            limit = EnvConf.USER_LIMIT
 
             # サーバのメンバー一覧を取得
             guild_members = await aio_get_request(
@@ -345,7 +339,7 @@ class LinePostView(commands.Cog):
                 # アクセストークンの復号化
                 access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
-                discord_user = await get_profile(access_token=access_token)
+                discord_user = await discord_get_profile(access_token=access_token)
 
                 # トークンが無効
                 if discord_user == None:
@@ -354,7 +348,9 @@ class LinePostView(commands.Cog):
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
                     # デバッグモード
-                    if DEBUG_MODE == False:
+                    if DEBUG_MODE:
+                        chenge_permission = False
+                    else:
                         # サーバの権限を取得
                         permission = await return_permission(
                             user_id=discord_user.id,
@@ -367,8 +363,6 @@ class LinePostView(commands.Cog):
                             permission=permission,
                             guild=guild
                         )
-                    else:
-                        chenge_permission = False
 
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_line_channel_{guild.id}'
@@ -528,6 +522,49 @@ class LinePostView(commands.Cog):
                         }
                         for thread,i in zip(guild.threads,index_list)
                     ]
+
+                    forum_channels = [
+                        f
+                        for f in guild.channels
+                        if f.type == ChannelType.forum
+                    ]
+
+                    for forum_channel in forum_channels:
+                        # アーカイブスレッドを取得
+                        arc_threads = await aio_get_request(
+                            url=f'{DISCORD_BASE_URL}/channels/{forum_channel.id}/threads/archived/public',
+                            headers={
+                                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                            }
+                        )
+
+                        arc_threads = [
+                            Threads(**t)
+                            for t in arc_threads.get('threads')
+                        ]
+
+                        # アーカイブスレッドの配列番号一覧を格納
+                        index_list = [
+                            list(map(
+                                lambda x:int(x.channel_id),
+                                db_channels
+                            )).index(thread.id)
+                            for thread in arc_threads
+                        ]
+
+                        acrhive_threads = [
+                            {
+                                'id'            :str(thread.id),
+                                'name'          :thread.name,
+                                'lineNgChannel' :db_channels[i].line_ng_channel,
+                                'ngMessageType' :db_channels[i].ng_message_type,
+                                'messageBot'    :db_channels[i].message_bot,
+                                'ngUsers'       :db_channels[i].ng_users
+                            }
+                            for thread,i in zip(arc_threads,index_list)
+                        ]
+
+                        threads.extend(acrhive_threads)
 
                     # サーバー内のメンバー一覧
                     guild_users = [

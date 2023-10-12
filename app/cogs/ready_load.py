@@ -13,9 +13,6 @@ from starlette_csrf import CSRFMiddleware
 import asyncio
 import uvicorn
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from routers.index import Index
 from routers.login import Login
 from routers.callback import CallBack
@@ -46,11 +43,13 @@ from routers.api import (
 try:
     from core.start import DBot
     from core.db_pickle import DB
+    from model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
+    from app.model_types.environ_conf import EnvConf
 
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 class ReadyLoad(commands.Cog):
     def __init__(self, bot : DBot):
@@ -74,10 +73,9 @@ class ReadyLoad(commands.Cog):
             description='OAuth2を利用してユーザー情報を取得するトークンを発行します。',
             version='0.9 beta'
         )
-        self.callback_url = os.environ.get('DISCORD_CALLBACK_URL').replace('/callback/','')
+        self.callback_url = EnvConf.DISCORD_CALLBACK_URL.replace('/callback/','')
         origins = [
-            #"http://localhost:3000",
-            os.environ.get('REACT_URL')
+            EnvConf.REACT_URL,
         ]
         # new テンプレート関連の設定 (jinja2)
         self.templates = Jinja2Templates(directory="templates")
@@ -96,14 +94,14 @@ class ReadyLoad(commands.Cog):
         # session使用
         self.app.add_middleware(
             SessionMiddleware,
-            secret_key=os.environ.get('MIDDLE_KEY'),
+            secret_key=EnvConf.MIDDLE_KEY,
             same_site='none',
             https_only=True,
         )
 
         self.app.add_middleware(
             CSRFMiddleware,
-            secret=os.environ.get('MIDDLE_KEY'),
+            secret=EnvConf.MIDDLE_KEY,
             cookie_samesite='none',
             cookie_secure=True,
             cookie_httponly=True,
@@ -145,7 +143,7 @@ class ReadyLoad(commands.Cog):
         # フォーム送信テスト用
         self.app.include_router(test_success.router)
 
-        if os.environ.get("PORTS") != None:
+        if EnvConf.PORTS != None:
             hostname = "localhost"
             portnumber = int(os.getenv("PORTS", default=5000))
         else:
@@ -160,7 +158,7 @@ class ReadyLoad(commands.Cog):
         )
         server = uvicorn.Server(config)
 
-        game_name = os.environ.get('GAME_NAME')
+        game_name = EnvConf.GAME_NAME
         if game_name == None:
             game_name = 'senran kagura'
         await self.bot.change_presence(
@@ -170,7 +168,7 @@ class ReadyLoad(commands.Cog):
         print('起動しました')
 
         # 終了時
-        if os.environ.get("PORTS") != None:
+        if EnvConf.PORTS != None:
             await server.serve()
             print("exit")
             await server.shutdown()

@@ -1,35 +1,25 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
+from typing import List,Dict,Any
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-from typing import List,Dict,Any,Optional
-
-from base.aio_req import (
-    aio_get_request,
-    pickle_read,
-    return_permission,
-    discord_oauth_check,
-    get_profile,
-    sort_channels,
-    sort_discord_channel,
-    decrypt_password
-)
-
+from pkg.aio_req import aio_get_request
+from pkg.oauth_check import discord_oauth_check,discord_get_profile
+from pkg.permission import return_permission
+from pkg.sort_channel import sort_channels,sort_discord_channel
+from pkg.crypt import decrypt_password
 from model_types.discord_type.guild_permission import Permission
 from model_types.discord_type.discord_user_session import DiscordOAuthData
-from model_types.discord_type.discord_type import DiscordUser
+from model_types.discord_type.discord_type import DiscordUser,Threads
 
 from model_types.session_type import FastAPISession
 
 from model_types.table_type import LineBotColunm,GuildSetPermission
+from model_types.environ_conf import EnvConf
 
-from discord import Guild
+from discord import Guild,ChannelType
 from discord.ext import commands
 try:
     from core.start import DBot
@@ -38,14 +28,14 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 # デバッグモード
-DEBUG_MODE = bool(os.environ.get('DEBUG_MODE',default=False))
+DEBUG_MODE = EnvConf.DEBUG_MODE
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -249,7 +239,7 @@ class LineSetView(commands.Cog):
                 # アクセストークンの復号化
                 access_token = session.discord_oauth_data.access_token
                 # Discordのユーザ情報を取得
-                discord_user = await get_profile(access_token=access_token)
+                discord_user = await discord_get_profile(access_token=access_token)
 
                 # トークンが無効
                 if discord_user == None:
@@ -258,7 +248,9 @@ class LineSetView(commands.Cog):
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
                     # デバッグモード
-                    if DEBUG_MODE == False:
+                    if DEBUG_MODE:
+                        chenge_permission = False
+                    else:
                         # サーバの権限を取得
                         permission = await return_permission(
                             user_id=discord_user.id,
@@ -271,8 +263,6 @@ class LineSetView(commands.Cog):
                             permission=permission,
                             guild=guild
                         )
-                    else:
-                        chenge_permission = False
                     # 使用するデータベースのテーブル名
                     TABLE = f'line_bot'
 
@@ -340,6 +330,36 @@ class LineSetView(commands.Cog):
                         }
                         for thread in guild.threads
                     ]
+
+                    forum_channels = [
+                        f
+                        for f in guild.channels
+                        if f.type == ChannelType.forum
+                    ]
+
+                    for forum_channel in forum_channels:
+                        # アーカイブスレッドを取得
+                        arc_threads = await aio_get_request(
+                            url=f'{DISCORD_BASE_URL}/channels/{forum_channel.id}/threads/archived/public',
+                            headers={
+                                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                            }
+                        )
+
+                        arc_threads = [
+                            Threads(**t)
+                            for t in arc_threads.get('threads')
+                        ]
+
+                        archived_threads = [
+                            {
+                                'id'    :str(thread.id),
+                                'name'  :thread.name
+                            }
+                            for thread in arc_threads
+                        ]
+
+                        threads.extend(archived_threads)
 
                     # フロント側に送るjsonを作成(linebotの情報は先頭3桁のみ)
                     channels_json.update({

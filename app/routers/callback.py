@@ -3,17 +3,13 @@ from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 from typing import Dict,List
 
-from base.aio_req import (
+from pkg.aio_req import (
     aio_get_request,
-    aio_post_request,
-    decrypt_password
+    aio_post_request
 )
+from pkg.crypt import decrypt_password
 
 from discord.ext import commands
 try:
@@ -21,19 +17,21 @@ try:
     from core.db_pickle import DB
     from model_types.table_type import LineBotColunm
     from model_types.line_type.line_oauth import LineOAuthData
+    from model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_pickle import DB
     from app.model_types.table_type import LineBotColunm
     from app.model_types.line_type.line_oauth import LineOAuthData
+    from app.model_types.environ_conf import EnvConf
 
-DISCORD_BASE_URL = "https://discord.com/api"
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-LINE_REDIRECT_URI = os.environ.get('LINE_CALLBACK_URL')
-LINE_OAUTH_BASE_URL = "https://api.line.me/oauth2/v2.1"
+LINE_REDIRECT_URI = EnvConf.LINE_CALLBACK_URL
+LINE_OAUTH_BASE_URL = EnvConf.LINE_OAUTH_BASE_URL
 
-ENCRYPTED_KEY = os.environ["ENCRYPTED_KEY"]
+ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
@@ -69,11 +67,11 @@ class CallBack(commands.Cog):
             authorization_code = code
 
             request_postdata = {
-                'client_id'     : os.environ.get('DISCORD_CLIENT_ID'),
-                'client_secret' : os.environ.get('DISCORD_CLIENT_SECRET'),
+                'client_id'     : EnvConf.DISCORD_CLIENT_ID,
+                'client_secret' : EnvConf.DISCORD_CLIENT_SECRET,
                 'grant_type'    : 'authorization_code',
                 'code'          : authorization_code,
-                'redirect_uri'  : os.environ.get('DISCORD_CALLBACK_URL')
+                'redirect_uri'  : EnvConf.DISCORD_CALLBACK_URL,
             }
 
             responce_json = await aio_post_request(
@@ -94,7 +92,7 @@ class CallBack(commands.Cog):
             )
 
             if request.session.get('discord_react'):
-                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/guilds')
+                return RedirectResponse(url=f'{EnvConf.REACT_URL}/guilds')
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url="/guilds")
@@ -183,7 +181,7 @@ class CallBack(commands.Cog):
             request.session['line_user'] = line_id_token
 
             if request.session.get('line_react'):
-                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}/group/{guild_id}')
+                return RedirectResponse(url=f'{EnvConf.REACT_URL}/group/{guild_id}')
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url=f"/group/{guild_id}")
@@ -193,6 +191,14 @@ class CallBack(commands.Cog):
             state:str,
             request:Request
         ):
+            """
+            stateをセッションに保存する
+            DiscordやLINEの認証の際に使用する
+
+            param:
+            state:str
+                保存するstate
+            """
             request.session['state'] = state
             request.session['discord_react'] = True
             return {'message':'ok'}
@@ -202,6 +208,14 @@ class CallBack(commands.Cog):
             nonce:str,
             request:Request
         ):
+            """
+            nonceをセッションに保存する
+            LINEの認証の際に使用する
+
+            param:
+            nonce:str
+                保存するnonce
+            """
             request.session['nonce'] = nonce
             request.session['line_react'] = True
             return {'message':'ok'}
@@ -211,6 +225,14 @@ class CallBack(commands.Cog):
             guild_id:str,
             request:Request
         ):
+            """
+            guild_idをセッションに保存する
+            LINEの認証の際に使用する
+
+            param:
+            guild_id:str
+                保存するguild_id
+            """
             request.session['guild_id'] = guild_id
             request.session['line_react'] = True
             return {'message':'ok'}

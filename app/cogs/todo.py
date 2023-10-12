@@ -1,29 +1,22 @@
-from discord.ext import commands,tasks
+from discord.ext import commands
 from discord import Option
 import discord
 
-import asyncio
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
     from app.core.db_pickle import DB
+    from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from core.start import DBot
     from core.db_pickle import DB
+    from model_types.environ_conf import EnvConf
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-
-from datetime import datetime,timezone
+from datetime import datetime
 from typing import Dict,List
 
-from model_types.discord_type.message_creater import ReqestDiscord
-
-DISCORD_BASE_URL = "https://discord.com/api"
-
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 TASK_COLUMN = {
     'task_number':'BIGSERIAL PRIMARY KEY',
@@ -131,7 +124,7 @@ class Todo(commands.Cog):
 
             task_number = table_fetch[-1]['task_number']
             # 変更URL
-            url = (os.environ.get('LINE_CALLBACK_URL').replace('/line-callback/','')) + f'/guild/{ctx.guild_id}'
+            url = (EnvConf.LINE_CALLBACK_URL.replace('/line-callback/','')) + f'/guild/{ctx.guild_id}'
 
             await ctx.respond(f"番号は**{task_number}**です。\n一覧はこちら:{url}")
 

@@ -1,4 +1,4 @@
-from base.aio_req import (
+from pkg.aio_req import (
     aio_get_request
 )
 

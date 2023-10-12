@@ -3,24 +3,20 @@ from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
-
 from discord.ext import commands
 try:
     from core.start import DBot
 except ModuleNotFoundError:
     from app.core.start import DBot
 
+from model_types.environ_conf import EnvConf
+
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.environ.get('DISCORD_CLIENT_ID')}&scope={os.environ.get('DISCORD_SCOPE')}&redirect_uri={os.environ.get('DISCORD_CALLBACK_URL')}&prompt=consent"
 
-DISCORD_BASE_URL = "https://discord.com/api"
-
+DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
+DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
 class Logout(commands.Cog):
     def __init__(self, bot: DBot):
@@ -39,7 +35,7 @@ class Logout(commands.Cog):
 
             if request.session.get('discord_react'):
                 request.session.pop("discord_react")
-                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
+                return RedirectResponse(url=f'{EnvConf.REACT_URL}')
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url="/")
@@ -56,7 +52,7 @@ class Logout(commands.Cog):
 
             if request.session.get('line_react'):
                 request.session.pop("line_react")
-                return RedirectResponse(url=f'{os.environ.get("REACT_URL")}')
+                return RedirectResponse(url=f'{EnvConf.REACT_URL}')
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url="/")
