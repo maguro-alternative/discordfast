@@ -97,7 +97,7 @@ async def line_pickle_table_create(
 
             # チャンネルの取得
             channels = await get_discord_channel(
-                guild=guild,
+                guild_id=guild.id,
                 channel_type=LINE_TYPE
             )
             threads = await get_discord_thread(guild=guild)
