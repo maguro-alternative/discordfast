@@ -156,7 +156,6 @@ async def vc_pickle_table_create(
                 columns=VC_COLUMNS
             )
 
-        row_list = list()
         system_channel_id = 0
 
         # システムチャンネルがある場合代入
@@ -171,10 +170,7 @@ async def vc_pickle_table_create(
                     "guild_id"          :guild.id,
                     'send_channel_id'   :system_channel_id
                 })
-                row_list.append(row_value)
-
-        # まとめて作成(バッジ)
-        await db.batch_insert_row(
-            table_name=table_name,
-            row_values=row_list
-        )
+                await db.insert_row(
+                    table_name=table_name,
+                    row_values=row_value
+                )
