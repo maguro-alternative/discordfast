@@ -2,6 +2,9 @@ from discord import Guild
 
 from base.database import PostgresDB
 
+from model_types.table_type import GuildLineChannel
+
+from core.pickes_save.bin.get_channel import get_discord_channel, get_discord_thread
 from core.pickes_save.bin.check_table import check_table_type
 
 LINE_TABLE = 'guilds_line_channel_'
@@ -87,6 +90,50 @@ async def line_pickle_table_create(
                     row_values=table_fetch
                 )
 
+            channel_table = [
+                GuildLineChannel(**row)
+                for row in table_fetch
+            ]
+
+            # チャンネルの取得
+            channels = await get_discord_channel(
+                guild=guild,
+                channel_type=LINE_TYPE
+            )
+            threads = await get_discord_thread(guild=guild)
+
+            table_ids = [int(row.channel_id) for row in channel_table]
+
+            # チャンネルのIDのリスト
+            channel_ids = [channel.id for channel in channels]
+            thread_ids = [thread.id for thread in threads]
+
+            channel_ids.extend(thread_ids)
+
+            if set(table_ids) != set(channel_ids):
+                delete_channel_ids = list(set(table_ids) - set(channel_ids))
+                insert_channel_ids = list(set(channel_ids) - set(table_ids))
+                for del_channel_id in delete_channel_ids:
+                    await db.delete_row(
+                        table_name=table_name,
+                        where_clause={
+                            "channel_id":del_channel_id
+                        }
+                    )
+                row_list = list()
+                for channel_id in insert_channel_ids:
+                    row_value = LINE_NEW_COLUMNS
+                    row_value.update({
+                        "channel_id":channel_id,
+                        "guild_id":guild.id,
+                    })
+                    row_list.append(row_value)
+                # まとめて作成(バッジ)
+                await db.batch_insert_row(
+                    table_name=table_name,
+                    row_values=row_list
+                )
+
     # テーブルがあって、中身が空の場合
     if len(table_fetch) == 0:
         # データベース側のカラムの型を入手
@@ -103,12 +150,21 @@ async def line_pickle_table_create(
                 columns=LINE_COLUMNS
             )
 
+        threads = await get_discord_thread(guild=guild)
         row_list = list()
 
         for channel in guild.channels:
             row_value = LINE_NEW_COLUMNS
             row_value.update({
                 "channel_id":channel.id,
+                "guild_id":guild.id,
+            })
+            row_list.append(row_value)
+
+        for thread in threads:
+            row_value = LINE_NEW_COLUMNS
+            row_value.update({
+                "channel_id":thread.id,
                 "guild_id":guild.id,
             })
             row_list.append(row_value)

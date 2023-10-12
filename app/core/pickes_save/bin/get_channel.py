@@ -1,3 +1,7 @@
+from discord import Guild
+from discord.channel import ChannelType
+from model_types.discord_type.discord_type import Threads,DiscordChannel
+
 from pkg.aio_req import aio_get_request
 from model_types.environ_conf import EnvConf
 
@@ -9,7 +13,7 @@ DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 async def get_discord_channel(
     guild_id:int,
     get_channel_type:List[int]
-) -> List[Dict[str,Any]]:
+) -> List[DiscordChannel]:
     """
     Discordサーバ内のチャンネルを取得します。
 
@@ -64,15 +68,66 @@ async def get_discord_channel(
     # 空の場合、すべてのチャンネルを格納
     if len(get_channel_type) == 0:
         all_channel_filter = [
-            channel
+            DiscordChannel(**channel)
             for channel in all_channel
         ]
     else:
         # 該当するチャンネルだけ格納
         all_channel_filter = [
-            channel
+            DiscordChannel(**channel)
             for channel in all_channel
             if channel['type'] in get_channel_type
         ]
 
     return all_channel_filter
+
+async def get_discord_thread(
+    guild:Guild,
+) -> List[Threads]:
+    """
+    Discordサーバ内のスレッドを取得します。
+
+    param:
+    guild               :Guild
+    Discordのサーバclass
+
+    return:
+    all_thread          :List[Dict[Threads]
+    スレッド一覧
+    """
+    # サーバのチャンネル一覧を取得
+    all_thread = await aio_get_request(
+        url=f'{DISCORD_BASE_URL}/guilds/{guild.id}/threads/active',
+        headers={
+            'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+        }
+    )
+
+    all_thread = [
+        Threads(**t)
+        for t in all_thread.get('threads')
+    ]
+
+    forum_channels = [
+        f
+        for f in guild.channels
+        if f.type == ChannelType.forum
+    ]
+
+    for forum_channel in forum_channels:
+        # アーカイブスレッドを取得
+        arc_threads = await aio_get_request(
+            url=f'{DISCORD_BASE_URL}/channels/{forum_channel.id}/threads/archived/public',
+            headers={
+                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+            }
+        )
+
+        arc_threads = [
+            Threads(**t)
+            for t in arc_threads.get('threads')
+        ]
+
+        all_thread.extend(arc_threads)
+
+    return all_thread

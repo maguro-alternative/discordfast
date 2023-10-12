@@ -2,6 +2,8 @@ from discord import Guild,ChannelType
 
 from base.database import PostgresDB
 
+from model_types.table_type import GuildVcChannel
+
 from core.pickes_save.bin.get_channel import get_discord_channel
 from core.pickes_save.bin.check_table import check_table_type
 
@@ -88,6 +90,53 @@ async def vc_pickle_table_create(
                 await db.batch_insert_row(
                     table_name=table_name,
                     row_values=table_fetch
+                )
+
+            vc_table = [
+                GuildVcChannel(**row)
+                for row in table_fetch
+            ]
+
+            guild_vc = await get_discord_channel(
+                guild_id=guild.id,
+                channel_type=VC_TYPE,
+            )
+
+            db_vc_ids = [int(row.vc_id) for row in vc_table]
+            guild_vc_ids = [int(channel.id) for channel in guild_vc]
+
+            if set(db_vc_ids) != set(guild_vc_ids):
+                # データベースにあるが、サーバーにないチャンネルを削除
+                delete_vc_ids = list(set(db_vc_ids) - set(guild_vc_ids))
+                for vc_id in delete_vc_ids:
+                    await db.delete_row(
+                        table_name=table_name,
+                        where_clause={
+                            'vc_id':vc_id
+                        }
+                    )
+                # サーバーにあるが、データベースにないチャンネルを追加
+                add_vc_ids = list(set(guild_vc_ids) - set(db_vc_ids))
+                row_list = list()
+                system_channel_id = 0
+
+                # システムチャンネルがある場合代入
+                if hasattr(guild.system_channel,'id'):
+                    system_channel_id = guild.system_channel.id
+
+                for channel_id in add_vc_ids:
+                    row_value = VC_NEW_COLUMNS
+                    row_value.update({
+                        "vc_id"             :channel_id,
+                        "guild_id"          :guild.id,
+                        'send_channel_id'   :system_channel_id
+                    })
+                    row_list.append(row_value)
+
+                # まとめて作成(バッジ)
+                await db.batch_insert_row(
+                    table_name=table_name,
+                    row_values=row_list
                 )
 
     # テーブルがあって、中身が空の場合
