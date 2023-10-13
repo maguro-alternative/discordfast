@@ -5,12 +5,12 @@ try:
     # Botのみ起動の場合
     from app.cogs.bin import activity
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
     from app.model_types.table_type import GuildVcChannel
 except ModuleNotFoundError:
     from cogs.bin import activity
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
     from model_types.table_type import GuildVcChannel
 
 from dotenv import load_dotenv

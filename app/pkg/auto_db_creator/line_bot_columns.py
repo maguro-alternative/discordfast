@@ -2,9 +2,9 @@ from typing import List,Dict
 
 from discord import Guild
 
-from base.database import PostgresDB
+from pkg.db.database import PostgresDB
 
-from core.pickes_save.bin.check_table import check_table_type
+from pkg.auto_db_creator.bin.check_table import check_table_type
 
 LINE_BOT_TABLE = 'line_bot'
 LINE_BOT_COLUMNS = {

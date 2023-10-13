@@ -4,7 +4,7 @@ import aiohttp
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
     from app.cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from app.cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from app.cogs.bin.webhook_sub.youtube_sub import youtube_subsc
@@ -13,7 +13,7 @@ try:
     from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
     from cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from cogs.bin.webhook_sub.youtube_sub import youtube_subsc

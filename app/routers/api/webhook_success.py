@@ -13,7 +13,7 @@ from datetime import datetime,timezone
 from pkg.permission import return_permission
 from pkg.oauth_check import discord_get_profile
 
-from core.pickes_save.webhook_columns import WEBHOOK_COLUMNS
+from pkg.auto_db_creator.webhook_columns import WEBHOOK_COLUMNS
 
 from pkg.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData
@@ -27,10 +27,10 @@ from model_types.environ_conf import EnvConf
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 

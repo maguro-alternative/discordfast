@@ -6,7 +6,7 @@ import feedparser
 from model_types.table_type import WebhookSet
 from model_types.youtube_api_type import YouTubeChannelInfo
 from model_types.environ_conf import EnvConf
-from core.db_pickle import DB
+from core.db_create import DB
 
 async def youtube_subsc(
     webhook:WebhookSet,

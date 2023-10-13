@@ -5,11 +5,11 @@ import discord
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
     from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
     from model_types.environ_conf import EnvConf
 
 from datetime import datetime

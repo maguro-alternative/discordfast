@@ -9,7 +9,7 @@ load_dotenv()
 from datetime import datetime,timezone
 
 from model_types.table_type import WebhookSet
-from core.db_pickle import DB
+from core.db_create import DB
 
 async def niconico_subsc(
     webhook:WebhookSet,

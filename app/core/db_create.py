@@ -2,8 +2,8 @@ from discord import Guild
 
 from typing import List
 
-from base.database import PostgresDB
-from core.pickes_save import (
+from pkg.db.database import PostgresDB
+from pkg.auto_db_creator import (
     line_columns,
     vc_columns,
     webhook_columns,
@@ -26,7 +26,7 @@ DB = PostgresDB(
     host=HOST
 )
 
-async def db_pickle_save(guilds:List[Guild]) -> None:
+async def db_auto_creator(guilds:List[Guild]) -> None:
     """
     データベースのテーブルの中身をキャッシュデータとしてローカルに保存します。
 

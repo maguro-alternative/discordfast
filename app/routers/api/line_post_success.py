@@ -17,15 +17,15 @@ from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import LinePostSuccessJson
 from model_types.session_type import FastAPISession
 
-from core.pickes_save.line_columns import LINE_COLUMNS
+from pkg.auto_db_creator.line_columns import LINE_COLUMNS
 
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL

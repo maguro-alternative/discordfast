@@ -1,9 +1,9 @@
 from discord import Guild
 
-from base.database import PostgresDB
+from pkg.db.database import PostgresDB
 
 from typing import List,Dict
-from core.pickes_save.bin.check_table import check_table_type
+from pkg.auto_db_creator.bin.check_table import check_table_type
 
 GUILD_SET_TABLE = 'guild_set_permissions'
 GUILD_SET_COLUMNS = {

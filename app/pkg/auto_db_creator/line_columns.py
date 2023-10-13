@@ -1,11 +1,11 @@
 from discord import Guild
 
-from base.database import PostgresDB
+from pkg.db.database import PostgresDB
 
 from model_types.table_type import GuildLineChannel
 
-from core.pickes_save.bin.get_channel import get_discord_channel, get_discord_thread
-from core.pickes_save.bin.check_table import check_table_type
+from pkg.auto_db_creator.bin.get_channel import get_discord_channel, get_discord_thread
+from pkg.auto_db_creator.bin.check_table import check_table_type
 
 LINE_TABLE = 'guilds_line_channel_'
 LINE_COLUMNS = {
