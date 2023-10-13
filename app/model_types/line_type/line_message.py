@@ -1,18 +1,13 @@
 import json
-import requests
 from requests import Response
 
 import datetime
 
-import os
 import io
 import asyncio
 
 import aiohttp
 from typing import List,Dict
-
-from dotenv import load_dotenv
-load_dotenv()
 
 try:
     from model_types.youtube_upload import YouTubeUpload

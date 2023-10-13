@@ -3,9 +3,6 @@ import io
 
 import aiohttp
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from typing import List,Tuple,Dict
 
 from model_types.discord_type.discord_type import (

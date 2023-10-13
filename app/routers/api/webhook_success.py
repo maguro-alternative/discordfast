@@ -3,9 +3,6 @@ from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from dotenv import load_dotenv
-load_dotenv()
-
 import re
 import uuid
 from datetime import datetime,timezone

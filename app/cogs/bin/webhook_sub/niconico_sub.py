@@ -3,9 +3,6 @@ import aiohttp
 import feedparser
 from bs4 import BeautifulSoup
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from datetime import datetime,timezone
 
 from model_types.table_type import WebhookSet

@@ -13,9 +13,6 @@ except ModuleNotFoundError:
     from core.db_create import DB
     from model_types.table_type import GuildVcChannel
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from typing import List
 
 # ボイスチャンネルの入退室を通知
