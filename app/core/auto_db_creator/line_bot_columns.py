@@ -1,48 +1,41 @@
+from typing import List,Dict
+
 from discord import Guild
 
 from pkg.db.database import PostgresDB
 
-from typing import List,Dict
-from pkg.auto_db_creator.bin.check_table import check_table_type
+from core.auto_db_creator.bin.check_table import check_table_type
 
-GUILD_SET_TABLE = 'guild_set_permissions'
-GUILD_SET_COLUMNS = {
-    'guild_id'                      : 'NUMERIC PRIMARY KEY',
-    'line_permission'               : 'NUMERIC',
-    'line_user_id_permission'       : 'NUMERIC[]',
-    'line_role_id_permission'       : 'NUMERIC[]',
-    'line_bot_permission'           : 'NUMERIC',
-    'line_bot_user_id_permission'   : 'NUMERIC[]',
-    'line_bot_role_id_permission'   : 'NUMERIC[]',
-    'vc_permission'                 : 'NUMERIC',
-    'vc_user_id_permission'         : 'NUMERIC[]',
-    'vc_role_id_permission'         : 'NUMERIC[]',
-    'webhook_permission'            : 'NUMERIC',
-    'webhook_user_id_permission'    : 'NUMERIC[]',
-    'webhook_role_id_permission'    : 'NUMERIC[]'
+LINE_BOT_TABLE = 'line_bot'
+LINE_BOT_COLUMNS = {
+    'guild_id'          : 'NUMERIC PRIMARY KEY',
+    'line_notify_token' : 'BYTEA',
+    'line_bot_token'    : 'BYTEA',
+    'line_bot_secret'   : 'BYTEA',
+    'line_group_id'     : 'BYTEA',
+    'line_client_id'    : 'BYTEA',
+    'line_client_secret': 'BYTEA',
+    'default_channel_id': 'NUMERIC',
+    'debug_mode'        : 'BOOLEAN'
 }
-GUILD_SET_NEW_COLUMNS = {
-    'guild_id'                      : 0,
-    'line_permission'               : 8,
-    'line_user_id_permission'       : [],
-    'line_role_id_permission'       : [],
-    'line_bot_permission'           : 8,
-    'line_bot_user_id_permission'   : [],
-    'line_bot_role_id_permission'   : [],
-    'vc_permission'                 : 8,
-    'vc_user_id_permission'         : [],
-    'vc_role_id_permission'         : [],
-    'webhook_permission'            : 8,
-    'webhook_user_id_permission'    : [],
-    'webhook_role_id_permission'    : []
+LINE_BOT_NEW_COLUMNS = {
+    'guild_id'          : 0,
+    'line_notify_token' : b'',
+    'line_bot_token'    : b'',
+    'line_bot_secret'   : b'',
+    'line_group_id'     : b'',
+    'line_client_id'    : b'',
+    'line_client_secret': b'',
+    'default_channel_id': 0,
+    'debug_mode'        : False
 }
 
-async def guild_permissions_table_create(
+async def line_bot_table_create(
     db:PostgresDB,
     guild:Guild
 ) -> None:
     """
-    サーバーの権限を示すテーブルの作成、更新
+    LINEからDiscordへの送信設定を示すテーブルの作成、更新
 
     param:
     db:PostgresDB
@@ -50,10 +43,13 @@ async def guild_permissions_table_create(
     guild:Guild
         Discordのサーバーインスタンス
     """
+
+    # テーブル名を代入
+    table_name:str = LINE_BOT_TABLE
+
     if db.conn == None:
         await db.connect()
-    # guildのテーブル
-    table_name = f"{GUILD_SET_TABLE}"
+
     table_fetch = await db.select_rows(
         table_name=table_name,
         columns=[],
@@ -67,7 +63,7 @@ async def guild_permissions_table_create(
         if 'does not exist' in table_fetch:
             await db.create_table(
                 table_name=table_name,
-                columns=GUILD_SET_COLUMNS
+                columns=LINE_BOT_COLUMNS
             )
             # 中身を空にする
             table_fetch = list()
@@ -78,13 +74,13 @@ async def guild_permissions_table_create(
 
             # テーブル内のカラムの型配列
             unchanged,table_fetch = await check_table_type(
-                columns=GUILD_SET_COLUMNS,
+                columns=LINE_BOT_COLUMNS,
                 table_columns=table_columns_type,
-                new_columns=GUILD_SET_NEW_COLUMNS,
+                new_columns=LINE_BOT_NEW_COLUMNS,
                 table_fetch=table_fetch
             )
             # テーブル内のカラム名配列
-            guild_colums = [key for key in GUILD_SET_COLUMNS.keys()]
+            guild_colums = [key for key in LINE_BOT_COLUMNS.keys()]
             table_colums = [key for key in table_columns_type.keys()]
 
             # テーブルの要素名か型が変更されていた場合、テーブルを削除し作成
@@ -106,7 +102,7 @@ async def guild_permissions_table_create(
         table_columns_type = await db.get_columns_type(table_name=table_name)
 
         # テーブル内のカラム名配列
-        guild_colums = [key for key in GUILD_SET_COLUMNS.keys()]
+        guild_colums = [key for key in LINE_BOT_COLUMNS.keys()]
         table_colums = [key for key in table_columns_type.keys()]
         # テーブルの要素名が変更されていた場合、テーブルを削除し作成
         if table_colums != guild_colums:
@@ -115,7 +111,8 @@ async def guild_permissions_table_create(
                 table_name=table_name,
                 table_columns_type=table_columns_type
             )
-        guild_new_colum = GUILD_SET_NEW_COLUMNS
+
+        guild_new_colum = LINE_BOT_NEW_COLUMNS
         guild_new_colum.update({
             'guild_id':guild.id
         })
@@ -153,15 +150,15 @@ async def table_row_inheritance(
     )
     # テーブル内のカラムの型配列
     unchanged,table_fetch = await check_table_type(
-        columns=GUILD_SET_COLUMNS,
+        columns=LINE_BOT_COLUMNS,
         table_columns=table_columns_type,
-        new_columns=GUILD_SET_NEW_COLUMNS,
+        new_columns=LINE_BOT_NEW_COLUMNS,
         table_fetch=table_fetch
     )
     await db.drop_table(table_name=table_name)
     await db.create_table(
         table_name=table_name,
-        columns=GUILD_SET_COLUMNS
+        columns=LINE_BOT_COLUMNS
     )
 
     return table_fetch

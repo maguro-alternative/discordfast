@@ -4,8 +4,8 @@ from pkg.db.database import PostgresDB
 
 from model_types.table_type import GuildVcChannel
 
-from pkg.auto_db_creator.bin.get_channel import get_discord_channel
-from pkg.auto_db_creator.bin.check_table import check_table_type
+from core.auto_db_creator.bin.get_channel import get_discord_channel
+from core.auto_db_creator.bin.check_table import check_table_type
 VC_TABLE = 'guilds_vc_signal_'
 VC_COLUMNS = {
     'vc_id'             : 'NUMERIC PRIMARY KEY',

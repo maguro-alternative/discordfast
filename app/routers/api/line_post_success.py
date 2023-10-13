@@ -17,7 +17,7 @@ from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import LinePostSuccessJson
 from model_types.session_type import FastAPISession
 
-from pkg.auto_db_creator.line_columns import LINE_COLUMNS
+from core.auto_db_creator.line_columns import LINE_COLUMNS
 
 from discord.ext import commands
 try:

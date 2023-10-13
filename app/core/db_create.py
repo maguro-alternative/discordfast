@@ -3,7 +3,7 @@ from discord import Guild
 from typing import List
 
 from pkg.db.database import PostgresDB
-from pkg.auto_db_creator import (
+from core.auto_db_creator import (
     line_columns,
     vc_columns,
     webhook_columns,

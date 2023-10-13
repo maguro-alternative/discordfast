@@ -9,12 +9,12 @@ class DataBaseNotConnect(Warning):...
 
 class PostgresDB:
     def __init__(
-            self,
-            user:str,
-            password:str,
-            database:str,
-            host:str,
-            max_connections: int = 1
+        self,
+        user:str,
+        password:str,
+        database:str,
+        host:str,
+        max_connections: int = 1
     ):
         """
         PostgreSQLのクラス

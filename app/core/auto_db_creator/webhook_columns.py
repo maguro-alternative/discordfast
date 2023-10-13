@@ -4,7 +4,7 @@ from pkg.db.database import PostgresDB
 
 from typing import List,Dict
 
-from pkg.auto_db_creator.bin.check_table import check_table_type
+from core.auto_db_creator.bin.check_table import check_table_type
 
 WEBHOOK_TABLE = 'webhook_'
 WEBHOOK_COLUMNS = {

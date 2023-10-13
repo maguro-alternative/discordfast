@@ -10,7 +10,7 @@ from datetime import datetime,timezone
 from pkg.permission import return_permission
 from pkg.oauth_check import discord_get_profile
 
-from pkg.auto_db_creator.webhook_columns import WEBHOOK_COLUMNS
+from core.auto_db_creator.webhook_columns import WEBHOOK_COLUMNS
 
 from pkg.post_user_check import user_checker
 from model_types.discord_type.discord_user_session import DiscordOAuthData

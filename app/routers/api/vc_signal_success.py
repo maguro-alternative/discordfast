@@ -14,7 +14,7 @@ from model_types.post_json_type import VcSignalSuccessJson
 from model_types.session_type import FastAPISession
 from model_types.environ_conf import EnvConf
 
-from pkg.auto_db_creator.vc_columns import VC_COLUMNS
+from core.auto_db_creator.vc_columns import VC_COLUMNS
 
 from discord.ext import commands
 try:
