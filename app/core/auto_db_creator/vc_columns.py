@@ -55,7 +55,7 @@ async def vc_pickle_table_create(
 
     if len(table_fetch) > 0:
         # テーブルがない場合作成
-        if 'does not exist' in table_fetch:
+        if 'does not exist' in table_fetch[0]:
             await db.create_table(
                 table_name=table_name,
                 columns=VC_COLUMNS

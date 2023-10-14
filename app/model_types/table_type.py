@@ -44,12 +44,12 @@ class WebhookSet(BaseModel):
         Wed Jun 14 00:01:27 +0000 2023
     """
     uuid                :Union[UUID,str]
-    guild_id            :str
-    webhook_id          :str
-    subscription_type   :str
-    subscription_id     :str
-    mention_roles       :List[str]
-    mention_members     :List[str]
+    guild_id            :int
+    webhook_id          :int
+    subscription_type   :int
+    subscription_id     :int
+    mention_roles       :List[int]
+    mention_members     :List[int]
     ng_or_word          :List[str]
     ng_and_word         :List[str]
     search_or_word      :List[str]
@@ -88,13 +88,13 @@ class GuildVcChannel(BaseModel):
     mention_role_id :List[int]
         入退室があった場合に通知するロールのid
     """
-    vc_id           :str
-    guild_id        :str
+    vc_id           :int
+    guild_id        :int
     send_signal     :bool
-    send_channel_id :str
+    send_channel_id :int
     join_bot        :bool
     everyone_mention:bool
-    mention_role_id :List[str]
+    mention_role_id :List[int]
 
 class GuildLineChannel(BaseModel):
     """
@@ -115,12 +115,12 @@ class GuildLineChannel(BaseModel):
     ng_users        :List[int]
         LINE側に送信しないDiscordユーザのid
     """
-    channel_id      :str
-    guild_id        :str
+    channel_id      :int
+    guild_id        :int
     line_ng_channel :bool
     ng_message_type :List[str]
     message_bot     :bool
-    ng_users        :List[str]
+    ng_users        :List[int]
 
 class GuildSetPermission(BaseModel):
     """
@@ -157,17 +157,17 @@ class GuildSetPermission(BaseModel):
     """
     guild_id                    :int
     line_permission             :int
-    line_user_id_permission     :List[str]
-    line_role_id_permission     :List[str]
+    line_user_id_permission     :List[int]
+    line_role_id_permission     :List[int]
     line_bot_permission         :int
-    line_bot_user_id_permission :List[str]
-    line_bot_role_id_permission :List[str]
+    line_bot_user_id_permission :List[int]
+    line_bot_role_id_permission :List[int]
     vc_permission               :int
-    vc_user_id_permission       :List[str]
-    vc_role_id_permission       :List[str]
+    vc_user_id_permission       :List[int]
+    vc_role_id_permission       :List[int]
     webhook_permission          :int
-    webhook_user_id_permission  :List[str]
-    webhook_role_id_permission  :List[str]
+    webhook_user_id_permission  :List[int]
+    webhook_role_id_permission  :List[int]
 
 class LineBotColunm(BaseModel):
     """
