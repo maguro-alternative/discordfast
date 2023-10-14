@@ -46,8 +46,8 @@ class WebhookSet(BaseModel):
     uuid                :Union[UUID,str]
     guild_id            :int
     webhook_id          :int
-    subscription_type   :int
-    subscription_id     :int
+    subscription_type   :str
+    subscription_id     :str
     mention_roles       :List[int]
     mention_members     :List[int]
     ng_or_word          :List[str]
