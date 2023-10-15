@@ -81,17 +81,17 @@ async def vc_pickle_table_create(
             table_colums = [key for key in table_columns_type.keys()]
 
             # テーブルの要素名か型が変更されていた場合、テーブルを削除し作成
-            if table_colums != guild_colums or unchanged:
+            if set(table_colums) != set(guild_colums) or unchanged:
                 await db.drop_table(table_name=table_name)
                 await db.create_table(
                     table_name=table_name,
                     columns=VC_COLUMNS
                 )
-                # まとめて作成(バッジ)
-                await db.batch_insert_row(
-                    table_name=table_name,
-                    row_values=table_fetch
-                )
+                for row in table_fetch:
+                    await db.insert_row(
+                        table_name=table_name,
+                        row_values=row
+                    )
 
             vc_table = [
                 GuildVcChannel(**row)
