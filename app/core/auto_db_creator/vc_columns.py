@@ -145,7 +145,7 @@ async def vc_pickle_table_create(
         guild_colums = [key for key in VC_COLUMNS.keys()]
         table_colums = [key for key in table_columns_type.keys()]
         # テーブルの要素名が変更されていた場合、テーブルを削除し作成
-        if table_colums != guild_colums:
+        if set(table_colums) != set(guild_colums):
             await db.drop_table(table_name=table_name)
             await db.create_table(
                 table_name=table_name,
