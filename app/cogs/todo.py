@@ -107,6 +107,7 @@ class Todo(commands.Cog):
 
             row_value = {
                 'task_title':title,
+                'guild_id':ctx.guild_id,
                 'time_limit':timelimit.strftime('%Y-%m-%d %H:%M'),
                 'task_channel':ctx.channel_id,
                 'alert_level':alert_level,
