@@ -1,13 +1,14 @@
 from discord import Guild
 
-from base.database import PostgresDB
+from pprint import pprint
 
+from pkg.db.database import PostgresDB
 from model_types.table_type import GuildLineChannel
 
-from core.pickes_save.bin.get_channel import get_discord_channel, get_discord_thread
-from core.pickes_save.bin.check_table import check_table_type
+from core.auto_db_creator.bin.get_channel import get_discord_channel, get_discord_thread
+from core.auto_db_creator.bin.check_table import check_table_type
 
-LINE_TABLE = 'guilds_line_channel_'
+LINE_TABLE = 'guilds_line_channel'
 LINE_COLUMNS = {
     'channel_id'        : 'NUMERIC PRIMARY KEY',
     'guild_id'          : 'NUMERIC',
@@ -41,7 +42,7 @@ async def line_pickle_table_create(
         Discordのサーバーインスタンス
     """
     # テーブル名を代入
-    table_name:str = f"{LINE_TABLE}{guild.id}"
+    table_name:str = LINE_TABLE
 
     if db.conn == None:
         await db.connect()
@@ -49,12 +50,14 @@ async def line_pickle_table_create(
     table_fetch = await db.select_rows(
         table_name=table_name,
         columns=[],
-        where_clause={}
+        where_clause={
+            'guild_id': guild.id
+        }
     )
 
     if len(table_fetch) > 0:
         # テーブルがない場合作成
-        if 'does not exist' in table_fetch:
+        if 'does not exist' in table_fetch[0]:
             await db.create_table(
                 table_name=table_name,
                 columns=LINE_COLUMNS
@@ -148,7 +151,6 @@ async def line_pickle_table_create(
             )
 
         threads = await get_discord_thread(guild=guild)
-        row_list = list()
 
         for channel in guild.channels:
             row_value = LINE_NEW_COLUMNS
@@ -156,7 +158,10 @@ async def line_pickle_table_create(
                 "channel_id":channel.id,
                 "guild_id":guild.id,
             })
-            row_list.append(row_value)
+            await db.insert_row(
+                table_name=table_name,
+                row_values=row_value
+            )
 
         for thread in threads:
             row_value = LINE_NEW_COLUMNS
@@ -164,10 +169,7 @@ async def line_pickle_table_create(
                 "channel_id":thread.id,
                 "guild_id":guild.id,
             })
-            row_list.append(row_value)
-
-        # まとめて作成(バッジ)
-        await db.batch_insert_row(
-            table_name=table_name,
-            row_values=row_list
-        )
+            await db.insert_row(
+                table_name=table_name,
+                row_values=row_value
+            )

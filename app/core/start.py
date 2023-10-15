@@ -5,10 +5,9 @@ import json
 import traceback
 import requests,json
 
-
 from model_types.environ_conf import EnvConf
 
-from core.db_pickle import db_pickle_save
+from core.db_create import db_auto_creator
 
 class DBot(discord.AutoShardedBot):
     def __init__(self, token:str, intents:Intents) -> None:
@@ -25,7 +24,7 @@ class DBot(discord.AutoShardedBot):
 
     async def db_get(self) -> None:
         # データベースへ接続
-        await db_pickle_save(guilds=self.guilds)
+        await db_auto_creator(guilds=self.guilds)
 
     # 起動用の補助関数です
     def run(self) -> None:

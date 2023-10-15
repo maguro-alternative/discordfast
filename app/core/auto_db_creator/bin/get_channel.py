@@ -5,7 +5,7 @@ from model_types.discord_type.discord_type import Threads,DiscordChannel
 from pkg.aio_req import aio_get_request
 from model_types.environ_conf import EnvConf
 
-from typing import List,Dict,Any
+from typing import List
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
@@ -92,7 +92,7 @@ async def get_discord_thread(
     Discordのサーバclass
 
     return:
-    all_thread          :List[Dict[Threads]
+    all_thread          :List[Threads]
     スレッド一覧
     """
     # サーバのチャンネル一覧を取得

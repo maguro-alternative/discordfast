@@ -17,15 +17,15 @@ from model_types.table_type import GuildSetPermission
 from model_types.post_json_type import LinePostSuccessJson
 from model_types.session_type import FastAPISession
 
-from core.pickes_save.line_columns import LINE_COLUMNS
+from core.auto_db_creator.line_columns import LINE_COLUMNS
 
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
@@ -61,7 +61,7 @@ class LinePostSuccess(commands.Cog):
             elif check_code == 400:
                 return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-            TABLE = f'guilds_line_channel_{form["guild_id"]}'
+            TABLE = f'guilds_line_channel'
 
             FORM_NAMES = (
                 "line_ng_channel_",
@@ -253,7 +253,7 @@ class LinePostSuccess(commands.Cog):
                         else:
                             return JSONResponse(content={'message':'access token Unauthorized'})
 
-                    TABLE = f'guilds_line_channel_{guild.id}'
+                    TABLE = f'guilds_line_channel'
 
                     for post_channel in line_post_json.channel_list:
                         row_value = {

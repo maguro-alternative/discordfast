@@ -3,12 +3,12 @@ import aiohttp
 try:
     from app.cogs.bin.tweetget import Twitter_Get_Tweet
     from app.cogs.bin.base_type.tweet_type import TwitterTweet
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
     from app.model_types.table_type import WebhookSet
 except ModuleNotFoundError:
     from cogs.bin.tweetget import Twitter_Get_Tweet
     from cogs.bin.base_type.tweet_type import TwitterTweet
-    from core.db_pickle import DB
+    from core.db_create import DB
     from model_types.table_type import WebhookSet
 
 from dotenv import load_dotenv

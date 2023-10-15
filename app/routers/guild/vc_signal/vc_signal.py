@@ -24,10 +24,10 @@ from discord.ext import commands
 from discord import ChannelType
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
@@ -60,7 +60,7 @@ class VcSignalView(commands.Cog):
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             # 使用するデータベースのテーブル名
-            TABLE = f'guilds_vc_signal_{guild_id}'
+            TABLE = f'guilds_vc_signal'
 
             # サーバのチャンネル一覧を取得
             all_channel = await aio_get_request(
@@ -79,7 +79,6 @@ class VcSignalView(commands.Cog):
                 if tmp['type'] == 2 or tmp['type'] == 4
             ]
 
-            # text_channel = list(chain.from_iterable(all_channels))
             text_channel_sort = [
                 tmp
                 for tmp in all_channel_sort
@@ -232,7 +231,9 @@ class VcSignalView(commands.Cog):
                 db_check_fetch = await DB.select_rows(
                     table_name=TABLE,
                     columns=[],
-                    where_clause={}
+                    where_clause={
+                        'guild_id':guild_id
+                    }
                 )
                 # データベースに登録されたが、削除されずに残っているチャンネルを削除
                 check = [int(c['vc_id']) for c in db_check_fetch]
@@ -298,12 +299,14 @@ class VcSignalView(commands.Cog):
                             guild=guild
                         )
                     # 使用するデータベースのテーブル名
-                    TABLE = f'guilds_vc_signal_{guild.id}'
+                    TABLE = f'guilds_vc_signal'
 
                     db_vc_channels:List[Dict] = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
-                        where_clause={}
+                        where_clause={
+                            'guild_id':guild_id
+                        }
                     )
 
                     # システムチャンネルがある場合代入
@@ -368,7 +371,9 @@ class VcSignalView(commands.Cog):
                         db_vc_channels:List[Dict] = await DB.select_rows(
                             table_name=TABLE,
                             columns=[],
-                            where_clause={}
+                            where_clause={
+                                'guild_id':guild_id
+                            }
                         )
 
                     db_vc_channels:List[GuildVcChannel] = [

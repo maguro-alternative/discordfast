@@ -17,13 +17,13 @@ try:
     from model_types.table_type import GuildLineChannel,LineBotColunm
     from model_types.environ_conf import EnvConf
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.model_types.line_type.line_message import LineBotAPI,VoiceFile
     from app.model_types.table_type import GuildLineChannel,LineBotColunm
     from app.model_types.environ_conf import EnvConf
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
@@ -36,7 +36,7 @@ class mst_line(commands.Cog):
     async def on_message(self, message:discord.Message):
 
         # 使用するデータベースのテーブル名
-        TABLE = f'guilds_line_channel_{message.guild.id}'
+        TABLE = f'guilds_line_channel'
 
         if DB.conn == None:
             await DB.connect()

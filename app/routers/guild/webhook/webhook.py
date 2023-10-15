@@ -27,10 +27,10 @@ from discord import Guild
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
@@ -70,7 +70,7 @@ class WebhookView(commands.Cog):
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             # Botが所属しているサーバを取得
-            TABLE = f'webhook_{guild_id}'
+            TABLE = f'webhook_set'
 
             # ログインユーザの情報を取得
             guild_user = await aio_get_request(
@@ -230,12 +230,14 @@ class WebhookView(commands.Cog):
                         )
 
                     # Botが所属しているサーバを取得
-                    TABLE = f'webhook_{guild.id}'
+                    TABLE = f'webhook_set'
 
                     db_webhooks:List[Dict] = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
-                        where_clause={}
+                        where_clause={
+                            'guild_id':guild_id
+                        }
                     )
 
                     db_webhooks:List[WebhookSet] = [

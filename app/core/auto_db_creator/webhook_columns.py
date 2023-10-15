@@ -1,12 +1,12 @@
 from discord import Guild
 
-from base.database import PostgresDB
+from pkg.db.database import PostgresDB
 
 from typing import List,Dict
 
-from core.pickes_save.bin.check_table import check_table_type
+from core.auto_db_creator.bin.check_table import check_table_type
 
-WEBHOOK_TABLE = 'webhook_'
+WEBHOOK_TABLE = 'webhook_set'
 WEBHOOK_COLUMNS = {
     'uuid'              : 'UUID PRIMARY KEY',
     'guild_id'          : 'NUMERIC',
@@ -54,7 +54,7 @@ async def webhook_pickle_table_create(
         Discordのサーバーインスタンス
     """
     # Webhookのテーブル
-    table_name = f"{WEBHOOK_TABLE}{guild.id}"
+    table_name = WEBHOOK_TABLE
 
     if db.conn == None:
         await db.connect()
@@ -62,12 +62,14 @@ async def webhook_pickle_table_create(
     table_fetch:List[Dict] = await db.select_rows(
         table_name=table_name,
         columns=[],
-        where_clause={}
+        where_clause={
+            'guild_id':guild.id
+        }
     )
 
     if len(table_fetch) > 0:
         # テーブルがない場合作成
-        if 'does not exist' in table_fetch:
+        if 'does not exist' in table_fetch[0]:
             await db.create_table(
                 table_name=table_name,
                 columns=WEBHOOK_COLUMNS

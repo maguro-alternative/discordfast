@@ -14,15 +14,15 @@ from model_types.post_json_type import VcSignalSuccessJson
 from model_types.session_type import FastAPISession
 from model_types.environ_conf import EnvConf
 
-from core.pickes_save.vc_columns import VC_COLUMNS
+from core.auto_db_creator.vc_columns import VC_COLUMNS
 
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
@@ -62,7 +62,7 @@ class VcSignalSuccess(commands.Cog):
                 return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
             # 使用するデータベースのテーブル名
-            TABLE = f'guilds_vc_signal_{form.get("guild_id")}'
+            TABLE = f'guilds_vc_signal'
 
             # "send_channel_id_"で始まるキーのみを抽出し、数字部分を取得する
             numbers = [
@@ -187,7 +187,7 @@ class VcSignalSuccess(commands.Cog):
                             return JSONResponse(content={'message':'access token Unauthorized'})
 
                     # 使用するデータベースのテーブル名
-                    TABLE = f'guilds_vc_signal_{guild.id}'
+                    TABLE = f'guilds_vc_signal'
 
                     for vc in vc_signal_json.vc_channel_list:
                         row_value = {

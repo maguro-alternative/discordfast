@@ -5,11 +5,11 @@ import discord
 try:
     # Botのみ起動の場合
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
     from app.model_types.environ_conf import EnvConf
 except ModuleNotFoundError:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
     from model_types.environ_conf import EnvConf
 
 from datetime import datetime
@@ -19,13 +19,14 @@ DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 TASK_COLUMN = {
-    'task_number':'BIGSERIAL PRIMARY KEY',
-    'task_title':'VARCHAR(50)',
-    'time_limit':'VARCHAR(50)',
-    'task_channel':'NUMERIC',
-    'alert_level':'SMALLINT',
-    'alert_role':'NUMERIC',
-    'alert_user':'NUMERIC'
+    'task_number'   :'BIGSERIAL PRIMARY KEY',
+    'guild_id'      :'NUMERIC',
+    'task_title'    :'VARCHAR(50)',
+    'time_limit'    :'VARCHAR(50)',
+    'task_channel'  :'NUMERIC',
+    'alert_level'   :'SMALLINT',
+    'alert_role'    :'NUMERIC',
+    'alert_user'    :'NUMERIC'
 }
 
 
@@ -86,12 +87,14 @@ class Todo(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            table_name = f"task_{ctx.guild_id}"
+            table_name = f"task_table"
 
             table_fetch = await DB.select_rows(
                 table_name=table_name,
                 columns=[],
-                where_clause={}
+                where_clause={
+                    'guild_id':ctx.guild_id
+                }
             )
 
             # テーブルがない場合、作成
@@ -104,6 +107,7 @@ class Todo(commands.Cog):
 
             row_value = {
                 'task_title':title,
+                'guild_id':ctx.guild_id,
                 'time_limit':timelimit.strftime('%Y-%m-%d %H:%M'),
                 'task_channel':ctx.channel_id,
                 'alert_level':alert_level,
@@ -119,7 +123,9 @@ class Todo(commands.Cog):
             table_fetch = await DB.select_rows(
                 table_name=table_name,
                 columns=[],
-                where_clause={}
+                where_clause={
+                    'guild_id':ctx.guild_id
+                }
             )
 
             task_number = table_fetch[-1]['task_number']
@@ -138,11 +144,9 @@ class Todo(commands.Cog):
         task_number: Option(int, required=True, description="タスク番号",),
         description: Option(str, required=False, description="備考"),
     ):
-        table_name = f"task_{ctx.guild_id}"
+        table_name = f"task_table"
 
         await ctx.respond("処理中...")
-
-        #await asyncio.sleep(2)
 
         # データベースに接続
         if DB.conn == None:
@@ -184,8 +188,6 @@ class Todo(commands.Cog):
             respond_text += f"<@{int(table_fetch[0].get('alert_user'))}>"
 
         respond_text += f"\n備考:{description}"
-
-        #await asyncio.sleep(5)
 
         await ctx.respond(respond_text)
 

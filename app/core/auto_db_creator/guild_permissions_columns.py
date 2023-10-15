@@ -1,9 +1,9 @@
 from discord import Guild
 
-from base.database import PostgresDB
+from pkg.db.database import PostgresDB
 
 from typing import List,Dict
-from core.pickes_save.bin.check_table import check_table_type
+from core.auto_db_creator.bin.check_table import check_table_type
 
 GUILD_SET_TABLE = 'guild_set_permissions'
 GUILD_SET_COLUMNS = {
@@ -64,7 +64,7 @@ async def guild_permissions_table_create(
 
     if len(table_fetch) > 0:
         # テーブルがない場合作成
-        if 'does not exist' in table_fetch:
+        if 'does not exist' in table_fetch[0]:
             await db.create_table(
                 table_name=table_name,
                 columns=GUILD_SET_COLUMNS

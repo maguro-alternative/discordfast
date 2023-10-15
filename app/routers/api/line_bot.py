@@ -25,10 +25,10 @@ from pkg.crypt import decrypt_password
 from discord.ext import commands
 try:
     from core.start import DBot
-    from core.db_pickle import DB
+    from core.db_create import DB
 except ModuleNotFoundError:
     from app.core.start import DBot
-    from app.core.db_pickle import DB
+    from app.core.db_create import DB
 
 from model_types.environ_conf import EnvConf
 

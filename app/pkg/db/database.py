@@ -2,24 +2,19 @@ import asyncpg
 from asyncpg.connection import Connection
 from asyncpg.exceptions import DuplicateTableError
 import asyncio
-import os
 
-from typing import List,Dict,Any,Union,Tuple
-
-from dotenv import load_dotenv
-load_dotenv()
-
+from typing import List,Dict,Any,Tuple
 
 class DataBaseNotConnect(Warning):...
 
 class PostgresDB:
     def __init__(
-            self,
-            user:str,
-            password:str,
-            database:str,
-            host:str,
-            max_connections: int = 1
+        self,
+        user:str,
+        password:str,
+        database:str,
+        host:str,
+        max_connections: int = 1
     ):
         """
         PostgreSQLのクラス
