@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Header
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse,JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -56,8 +56,8 @@ class GuildSetView(commands.Cog):
 
             # サーバの情報を取得
             guild = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -76,9 +76,11 @@ class GuildSetView(commands.Cog):
                 await DB.connect()
 
             tasks = await DB.select_rows(
-                table_name=f"task_{guild_id}",
+                table_name=f"task_table",
                 columns=[],
-                where_clause={}
+                where_clause={
+                    'guild_id':guild_id
+                }
             )
 
             return templates.TemplateResponse(
@@ -141,9 +143,11 @@ class GuildSetView(commands.Cog):
                         await DB.connect()
 
                     task_info:List[Dict] = await DB.select_rows(
-                        table_name=f"task_{guild.id}",
+                        table_name=f"task_table",
                         columns=[],
-                        where_clause={}
+                        where_clause={
+                            'guild_id':guild_id
+                        }
                     )
 
                     if len(task_info) == 0:

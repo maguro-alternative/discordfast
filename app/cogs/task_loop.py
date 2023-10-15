@@ -51,7 +51,7 @@ class Task_Loop(commands.Cog):
         try:
             for guild in self.bot.guilds:
                 webhook_table_name = f"webhook_set"
-                task_table_name = f"task_{guild.id}"
+                task_table_name = f"task_table"
 
                 if DB.conn == None:
                     await DB.connect()
@@ -112,7 +112,9 @@ class Task_Loop(commands.Cog):
                 table_fetch:List[Dict] = await DB.select_rows(
                     table_name=task_table_name,
                     columns=[],
-                    where_clause={}
+                    where_clause={
+                        'guild_id':guild.id
+                    }
                 )
 
                 if len(table_fetch) == 1:
@@ -146,7 +148,7 @@ class Task_Loop(commands.Cog):
                     limit_20_min:bool = limit_day_seconds > 1139 and limit_day_seconds < 1201
                     limit_10_min:bool = limit_day_seconds > 539 and limit_day_seconds < 601
 
-                    text = f"{task.get('task_title')}が未達成です。\n期日:{task.get('time_limit')}\n達成している場合は/todo_completionで完了報告してください。"
+                    text = f"{task.get('task_title')}が未達成です。\nタスクナンバー:{task.get('task_number')}\n期日:{task.get('time_limit')}\n達成している場合は/todo_completionで完了報告してください。"
 
                     if task.get('alert_role') != 0:
                         text = f"<@&{int(task.get('alert_role'))}> " + text
