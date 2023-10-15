@@ -105,7 +105,7 @@ async def line_bot_table_create(
         guild_colums = [key for key in LINE_BOT_COLUMNS.keys()]
         table_colums = [key for key in table_columns_type.keys()]
         # テーブルの要素名が変更されていた場合、テーブルを削除し作成
-        if table_colums != guild_colums:
+        if set(table_colums) != set(guild_colums):
             table_fetch = await table_row_inheritance(
                 db=db,
                 table_name=table_name,

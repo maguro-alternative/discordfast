@@ -88,17 +88,17 @@ async def guild_permissions_table_create(
             table_colums = [key for key in table_columns_type.keys()]
 
             # テーブルの要素名か型が変更されていた場合、テーブルを削除し作成
-            if table_colums != guild_colums or unchanged:
+            if set(table_colums) != set(guild_colums) or unchanged:
                 table_fetch = await table_row_inheritance(
                     db=db,
                     table_name=table_name,
                     table_columns_type=table_columns_type
                 )
-                # まとめて作成(バッジ)
-                await db.batch_insert_row(
-                    table_name=table_name,
-                    row_values=table_fetch
-                )
+                for row in table_fetch:
+                    await db.insert_row(
+                        table_name=table_name,
+                        row_values=row
+                    )
 
     # テーブルがあって、中身が空の場合
     if len(table_fetch) == 0:
