@@ -339,11 +339,11 @@ PostgreSQLを使用しています。
 データベースのテーブルは以下の通りです。
 ```bash
 ・guild_set_permissions
-・guilds_line_channel_{サーバーid}
-・guilds_vc_signal_{サーバーid}
+・guilds_line_channel
+・guilds_vc_signal
 ・line_bot
-・task_{サーバーid}
-・webhook_{サーバーid}
+・task_table
+・webhook_set
 ```
 
 <details>
@@ -372,7 +372,7 @@ PostgreSQLを使用しています。
 </details>
 
 <details>
-	<summary>guilds_line_channel_{サーバーid}</summary>
+	<summary>guilds_line_channel</summary>
 
 ```bash
 ・LINEとのメッセージ共有の設定を保存するテーブル
@@ -390,7 +390,7 @@ PostgreSQLを使用しています。
 </details>
 
 <details>
-	<summary>guilds_vc_signal_{サーバーid}</summary>
+	<summary>guilds_vc_signal</summary>
 
 ```bash
 ・ボイスチャンネルの入退室通知の設定を保存するテーブル
@@ -431,7 +431,7 @@ PostgreSQLを使用しています。
 </details>
 
 <details>
-	<summary>task_{サーバーid}</summary>
+	<summary>task_table</summary>
 
 ```bash
 ・各サーバのタスクを保存するテーブル
@@ -440,6 +440,7 @@ PostgreSQLを使用しています。
 |カラム名|型|説明|
 |---|---|---|
 |task_number|BIGSERIAL PRIMARY KEY|タスクの番号|
+|guild_id|NUMERIC|サーバーのID|
 |task_title|VARCHAR(50)|タスクのタイトル|
 |time_limit|VARCHAR(50)|タスクの期限|
 |task_channel|NUMERIC|タスクのチャンネルID|
@@ -450,7 +451,7 @@ PostgreSQLを使用しています。
 </details>
 
 <details>
-	<summary>webhook_{サーバーid}</summary>
+	<summary>webhook_set</summary>
 
 ```bash
 ・WebHookの設定を保存するテーブル

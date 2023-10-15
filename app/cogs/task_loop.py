@@ -232,7 +232,7 @@ class Task_Loop(commands.Cog):
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
-                            print(limit.seconds)
+                            print(f"{task.get('task_title')}終了まで残り{limit.seconds}秒")
         except Exception as e:
             if bool('webhook_url' in locals()):
                 if webhook_url == None:
