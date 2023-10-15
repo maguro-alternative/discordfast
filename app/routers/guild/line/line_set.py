@@ -375,7 +375,7 @@ class LineSetView(commands.Cog):
                         'lineGroupId'       :line_group_id[:3],
                         'lineClientId'      :line_client_id[:3],
                         'lineClientSecret'  :line_client_secret[:3],
-                        'defalutChannelId'  :line_bot.default_channel_id,
+                        'defalutChannelId'  :str(line_bot.default_channel_id),
                         'debugMode'         :line_bot.debug_mode
                     })
 

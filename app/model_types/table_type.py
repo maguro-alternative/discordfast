@@ -44,8 +44,8 @@ class WebhookSet(BaseModel):
         Wed Jun 14 00:01:27 +0000 2023
     """
     uuid                :Union[UUID,str]
-    guild_id            :int
-    webhook_id          :int
+    guild_id            :str
+    webhook_id          :str
     subscription_type   :str
     subscription_id     :str
     mention_roles       :List[int]
@@ -208,5 +208,5 @@ class LineBotColunm(BaseModel):
     line_group_id       :bytes
     line_client_id      :bytes
     line_client_secret  :bytes
-    default_channel_id  :str
+    default_channel_id  :int
     debug_mode          :bool

@@ -139,7 +139,6 @@ class LineGroup(commands.Cog):
                 for a_thead in archived_threads.get('threads'):
                     all_channel_sort.append(a_thead)
 
-
             return templates.TemplateResponse(
                 "linegroup.html",
                 {
@@ -306,7 +305,7 @@ class LineGroup(commands.Cog):
                         'categorys'         :category_list,
                         'channels'          :channels_dict,
                         'threads'           :threads,
-                        'defalutChannelId'  :default_channel_id,
+                        'defalutChannelId'  :str(default_channel_id),
                         'debugMode'         :line_bot_table.debug_mode
                     })
 
