@@ -35,7 +35,7 @@ class vc_count(commands.Cog):
             vc_channel_id = before.channel.id
 
         # 使用するデータベースのテーブル名
-        TABLE = f'guilds_vc_signal_{member.guild.id}'
+        TABLE = f'guilds_vc_signal'
 
         if DB.conn == None:
             await DB.connect()

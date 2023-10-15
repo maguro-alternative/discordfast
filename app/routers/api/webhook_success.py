@@ -67,7 +67,7 @@ class WebhookSuccess(commands.Cog):
             elif check_code == 400:
                 return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-            TABLE = f'webhook_{form.get("guild_id")}'
+            TABLE = f'webhook_set'
 
             if DB.conn == None:
                 await DB.connect()
@@ -169,7 +169,6 @@ class WebhookSuccess(commands.Cog):
                         row_name:row_list
                     })
 
-                    # print(row)
 
                 # 登録した時刻を登録
                 now_time = datetime.now(timezone.utc)
@@ -323,12 +322,14 @@ class WebhookSuccess(commands.Cog):
                         else:
                             return JSONResponse(content={'message':'access token Unauthorized'})
 
-                    TABLE = f'webhook_{guild.id}'
+                    TABLE = f'webhook_set'
 
                     db_webhook = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
-                        where_clause={}
+                        where_clause={
+                            'guild_id':guild.id
+                        }
                     )
 
                     db_webhook = [

@@ -6,7 +6,7 @@ from typing import List,Dict
 
 from core.auto_db_creator.bin.check_table import check_table_type
 
-WEBHOOK_TABLE = 'webhook_'
+WEBHOOK_TABLE = 'webhook_set'
 WEBHOOK_COLUMNS = {
     'uuid'              : 'UUID PRIMARY KEY',
     'guild_id'          : 'NUMERIC',
@@ -54,7 +54,7 @@ async def webhook_pickle_table_create(
         Discordのサーバーインスタンス
     """
     # Webhookのテーブル
-    table_name = f"{WEBHOOK_TABLE}{guild.id}"
+    table_name = WEBHOOK_TABLE
 
     if db.conn == None:
         await db.connect()
@@ -62,7 +62,9 @@ async def webhook_pickle_table_create(
     table_fetch:List[Dict] = await db.select_rows(
         table_name=table_name,
         columns=[],
-        where_clause={}
+        where_clause={
+            'guild_id':guild.id
+        }
     )
 
     if len(table_fetch) > 0:

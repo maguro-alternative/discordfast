@@ -36,7 +36,7 @@ class mst_line(commands.Cog):
     async def on_message(self, message:discord.Message):
 
         # 使用するデータベースのテーブル名
-        TABLE = f'guilds_line_channel_{message.guild.id}'
+        TABLE = f'guilds_line_channel'
 
         if DB.conn == None:
             await DB.connect()

@@ -50,7 +50,7 @@ class Task_Loop(commands.Cog):
         now_time = datetime.now()
         try:
             for guild in self.bot.guilds:
-                webhook_table_name = f"webhook_{guild.id}"
+                webhook_table_name = f"webhook_set"
                 task_table_name = f"task_{guild.id}"
 
                 if DB.conn == None:
@@ -65,7 +65,9 @@ class Task_Loop(commands.Cog):
                 webhook_table:List[Dict] = await DB.select_rows(
                     table_name=webhook_table_name,
                     columns=[],
-                    where_clause={}
+                    where_clause={
+                        'guild_id':guild.id
+                    }
                 )
                 webhook_fetch = [
                     WebhookSet(**w)

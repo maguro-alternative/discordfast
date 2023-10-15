@@ -61,7 +61,7 @@ class LinePostSuccess(commands.Cog):
             elif check_code == 400:
                 return JSONResponse(content={"message": "Fuck You. You are an idiot."})
 
-            TABLE = f'guilds_line_channel_{form["guild_id"]}'
+            TABLE = f'guilds_line_channel'
 
             FORM_NAMES = (
                 "line_ng_channel_",
@@ -253,7 +253,7 @@ class LinePostSuccess(commands.Cog):
                         else:
                             return JSONResponse(content={'message':'access token Unauthorized'})
 
-                    TABLE = f'guilds_line_channel_{guild.id}'
+                    TABLE = f'guilds_line_channel'
 
                     for post_channel in line_post_json.channel_list:
                         row_value = {

@@ -6,7 +6,7 @@ from model_types.table_type import GuildVcChannel
 
 from core.auto_db_creator.bin.get_channel import get_discord_channel
 from core.auto_db_creator.bin.check_table import check_table_type
-VC_TABLE = 'guilds_vc_signal_'
+VC_TABLE = 'guilds_vc_signal'
 VC_COLUMNS = {
     'vc_id'             : 'NUMERIC PRIMARY KEY',
     'guild_id'          : 'NUMERIC',
@@ -42,7 +42,7 @@ async def vc_pickle_table_create(
         Discordのサーバーインスタンス
     """
     # テーブル名を代入
-    table_name:str = f"{VC_TABLE}{guild.id}"
+    table_name:str = VC_TABLE
 
     if db.conn == None:
         await db.connect()
@@ -50,7 +50,9 @@ async def vc_pickle_table_create(
     table_fetch = await db.select_rows(
         table_name=table_name,
         columns=[],
-        where_clause={}
+        where_clause={
+            'guild_id':guild.id
+        }
     )
 
     if len(table_fetch) > 0:
@@ -116,7 +118,6 @@ async def vc_pickle_table_create(
                     )
                 # サーバーにあるが、データベースにないチャンネルを追加
                 add_vc_ids = list(set(guild_vc_ids) - set(db_vc_ids))
-                row_list = list()
                 system_channel_id = 0
 
                 # システムチャンネルがある場合代入
@@ -130,13 +131,9 @@ async def vc_pickle_table_create(
                         "guild_id"          :guild.id,
                         'send_channel_id'   :system_channel_id
                     })
-                    row_list.append(row_value)
-
-                if len(row_list) > 0:
-                    # まとめて作成(バッジ)
-                    await db.batch_insert_row(
+                    await db.insert_row(
                         table_name=table_name,
-                        row_values=row_list
+                        row_values=row_value
                     )
 
     # テーブルがあって、中身が空の場合

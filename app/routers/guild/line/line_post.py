@@ -74,7 +74,7 @@ class LinePostView(commands.Cog):
             else:
                 return RedirectResponse(url=DISCORD_REDIRECT_URL,status_code=302)
             # 使用するデータベースのテーブル名
-            TABLE = f'guilds_line_channel_{guild_id}'
+            TABLE = f'guilds_line_channel'
 
             # サーバのチャンネル一覧を取得
             all_channel = await aio_get_request(
@@ -297,7 +297,9 @@ class LinePostView(commands.Cog):
                 db_check_fetch = await DB.select_rows(
                     table_name=TABLE,
                     columns=[],
-                    where_clause={}
+                    where_clause={
+                        'guild_id':guild_id
+                    }
                 )
 
                 # データベースに登録されたが、削除されずに残っているチャンネルを削除
@@ -365,12 +367,14 @@ class LinePostView(commands.Cog):
                         )
 
                     # 使用するデータベースのテーブル名
-                    TABLE = f'guilds_line_channel_{guild.id}'
+                    TABLE = f'guilds_line_channel'
 
                     db_channels:List[Dict] = await DB.select_rows(
                         table_name=TABLE,
                         columns=[],
-                        where_clause={}
+                        where_clause={
+                            'guild_id':guild_id
+                        }
                     )
 
                     # データベース内のチャンネルとスレッドの一覧
@@ -427,7 +431,9 @@ class LinePostView(commands.Cog):
                         db_channels:List[Dict] = await DB.select_rows(
                             table_name=TABLE,
                             columns=[],
-                            where_clause={}
+                            where_clause={
+                                'guild_id':guild_id
+                            }
                         )
 
                     db_channels:List[GuildLineChannel] = [

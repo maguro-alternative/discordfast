@@ -60,7 +60,7 @@ async def line_bot_table_create(
 
     if len(table_fetch) > 0:
         # テーブルがない場合作成
-        if 'does not exist' in [0]:
+        if 'does not exist' in table_fetch[0]:
             await db.create_table(
                 table_name=table_name,
                 columns=LINE_BOT_COLUMNS
