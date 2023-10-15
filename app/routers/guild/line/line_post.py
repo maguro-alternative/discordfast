@@ -78,8 +78,8 @@ class LinePostView(commands.Cog):
 
             # サーバのチャンネル一覧を取得
             all_channel = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/channels',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/channels',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -88,8 +88,8 @@ class LinePostView(commands.Cog):
 
             # サーバのメンバー一覧を取得
             guild_members = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members?limit={limit}',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/members?limit={limit}',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -99,15 +99,15 @@ class LinePostView(commands.Cog):
 
             # サーバの情報を取得
             guild = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
 
             # ログインユーザの情報を取得
             guild_user = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{user_session.id}',
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/members/{user_session.id}',
                 headers = {
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
@@ -115,8 +115,8 @@ class LinePostView(commands.Cog):
 
             # アクティブスレッドを取得
             active_threads = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/threads/active',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/threads/active',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -137,8 +137,8 @@ class LinePostView(commands.Cog):
                 thread_id = thread.get('id')
                 # アーカイブスレッドを取得
                 archived_threads = await aio_get_request(
-                    url = DISCORD_BASE_URL + f'/channels/{thread_id}/threads/archived/public',
-                    headers = {
+                    url=f'{DISCORD_BASE_URL}/channels/{thread_id}/threads/archived/public',
+                    headers={
                         'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                     }
                 )
@@ -473,7 +473,10 @@ class LinePostView(commands.Cog):
                                 'lineNgChannel' :db_channels[i].line_ng_channel,
                                 'ngMessageType' :db_channels[i].ng_message_type,
                                 'messageBot'    :db_channels[i].message_bot,
-                                'ngUsers'       :db_channels[i].ng_users
+                                'ngUsers'       :[
+                                    user_id
+                                    for user_id in db_channels[i].ng_users
+                                ]
                             }
                             for chan,i in zip(category_dict.get(category_id),index_list)
                         ]
@@ -501,7 +504,10 @@ class LinePostView(commands.Cog):
                                 'lineNgChannel' :db_channels[i].line_ng_channel,
                                 'ngMessageType' :db_channels[i].ng_message_type,
                                 'messageBot'    :db_channels[i].message_bot,
-                                'ngUsers'       :db_channels[i].ng_users
+                                'ngUsers'       :[
+                                    user_id
+                                    for user_id in db_channels[i].ng_users
+                                ]
                             }
                             for none_channel,i in zip(category_dict.get('None'),index_list)
                         ]
@@ -524,7 +530,10 @@ class LinePostView(commands.Cog):
                             'lineNgChannel' :db_channels[i].line_ng_channel,
                             'ngMessageType' :db_channels[i].ng_message_type,
                             'messageBot'    :db_channels[i].message_bot,
-                            'ngUsers'       :db_channels[i].ng_users
+                            'ngUsers'       :[
+                                user_id
+                                for user_id in db_channels[i].ng_users
+                            ]
                         }
                         for thread,i in zip(guild.threads,index_list)
                     ]
@@ -565,7 +574,10 @@ class LinePostView(commands.Cog):
                                 'lineNgChannel' :db_channels[i].line_ng_channel,
                                 'ngMessageType' :db_channels[i].ng_message_type,
                                 'messageBot'    :db_channels[i].message_bot,
-                                'ngUsers'       :db_channels[i].ng_users
+                                'ngUsers'       :[
+                                    user_id
+                                    for user_id in db_channels[i].ng_users
+                                ]
                             }
                             for thread,i in zip(arc_threads,index_list)
                         ]

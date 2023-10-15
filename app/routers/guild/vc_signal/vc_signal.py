@@ -64,8 +64,8 @@ class VcSignalView(commands.Cog):
 
             # サーバのチャンネル一覧を取得
             all_channel = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/channels',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/channels',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -88,16 +88,16 @@ class VcSignalView(commands.Cog):
 
             # サーバの情報を取得
             guild = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
 
             # ログインユーザの情報を取得
             guild_user = await aio_get_request(
-                url = DISCORD_BASE_URL + f'/guilds/{guild_id}/members/{user_session.id}',
-                headers = {
+                url=f'{DISCORD_BASE_URL}/guilds/{guild_id}/members/{user_session.id}',
+                headers={
                     'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
                 }
             )
@@ -412,10 +412,13 @@ class VcSignalView(commands.Cog):
                                 'id'                :str(chan.id),
                                 'name'              :chan.name,
                                 'sendSignal'        :db_vc_channels[i].send_signal,
-                                'sendChannelId'     :db_vc_channels[i].send_channel_id,
+                                'sendChannelId'     :str(db_vc_channels[i].send_channel_id),
                                 'joinBot'           :db_vc_channels[i].join_bot,
                                 'everyoneMention'   :db_vc_channels[i].everyone_mention,
-                                'mentionRoleId'     :db_vc_channels[i].mention_role_id
+                                'mentionRoleId'     :[
+                                    str(role_id)
+                                    for role_id in db_vc_channels[i].mention_role_id
+                                ]
                             }
                             for chan,i in zip(vc_list,index_list)
                         ]
@@ -465,10 +468,13 @@ class VcSignalView(commands.Cog):
                                 'id'                :str(none_channel.id),
                                 'name'              :none_channel.name,
                                 'sendSignal'        :db_vc_channels[i].send_signal,
-                                'sendChannelId'     :db_vc_channels[i].send_channel_id,
+                                'sendChannelId'     :str(db_vc_channels[i].send_channel_id),
                                 'joinBot'           :db_vc_channels[i].join_bot,
                                 'everyoneMention'   :db_vc_channels[i].everyone_mention,
-                                'mentionRoleId'     :db_vc_channels[i].mention_role_id
+                                'mentionRoleId'     :[
+                                    str(role_id)
+                                    for role_id in db_vc_channels[i].mention_role_id
+                                ]
                             }
                             for none_channel,i in zip(vc_list,index_list)
                         ]
