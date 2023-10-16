@@ -48,8 +48,8 @@ class WebhookSet(BaseModel):
     webhook_id          :str
     subscription_type   :str
     subscription_id     :str
-    mention_roles       :List[int]
-    mention_members     :List[int]
+    mention_roles       :List[str]
+    mention_members     :List[str]
     ng_or_word          :List[str]
     ng_and_word         :List[str]
     search_or_word      :List[str]
