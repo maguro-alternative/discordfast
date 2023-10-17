@@ -1,5 +1,5 @@
 from pydantic import BaseModel,validator
-from typing import List,Optional,Union,Any
+from typing import List,Union
 from uuid import UUID
 
 class WebhookSet(BaseModel):
