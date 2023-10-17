@@ -120,7 +120,7 @@ class GuildLineChannel(BaseModel):
     line_ng_channel :bool
     ng_message_type :List[str]
     message_bot     :bool
-    ng_users        :List[int]
+    ng_users        :List[str]
 
 class GuildSetPermission(BaseModel):
     """
@@ -157,17 +157,17 @@ class GuildSetPermission(BaseModel):
     """
     guild_id                    :int
     line_permission             :int
-    line_user_id_permission     :List[int]
-    line_role_id_permission     :List[int]
+    line_user_id_permission     :List[str]
+    line_role_id_permission     :List[str]
     line_bot_permission         :int
-    line_bot_user_id_permission :List[int]
-    line_bot_role_id_permission :List[int]
+    line_bot_user_id_permission :List[str]
+    line_bot_role_id_permission :List[str]
     vc_permission               :int
-    vc_user_id_permission       :List[int]
-    vc_role_id_permission       :List[int]
+    vc_user_id_permission       :List[str]
+    vc_role_id_permission       :List[str]
     webhook_permission          :int
-    webhook_user_id_permission  :List[int]
-    webhook_role_id_permission  :List[int]
+    webhook_user_id_permission  :List[str]
+    webhook_role_id_permission  :List[str]
 
 class LineBotColunm(BaseModel):
     """
