@@ -391,6 +391,25 @@ class LinePostView(commands.Cog):
                     for thread in guild.threads:
                         guild_id_list.append(thread.id)
 
+                    # フォーラムチャンネルがあるか調べる
+                    threads_list = [
+                        t.id
+                        for t in guild.channels
+                        if t.type == ChannelType.forum
+                    ]
+
+                    for thread_id in threads_list:
+                        # アーカイブスレッドを取得
+                        archived_threads = await aio_get_request(
+                            url=f'{DISCORD_BASE_URL}/channels/{thread_id}/threads/archived/public',
+                            headers={
+                                'Authorization': f'Bot {DISCORD_BOT_TOKEN}'
+                            }
+                        )
+                        for a_thead in archived_threads.get('threads'):
+                            arc_thread = Threads(**a_thead)
+                            guild_id_list.append(arc_thread.id)
+
                     # 新しくチャンネルが作成された場合
                     if set(guild_db_list_id) != set(guild_id_list):
                         # 新しく作られたチャンネルを抜き出す
