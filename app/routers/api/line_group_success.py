@@ -217,7 +217,7 @@ class LineGroupSuccess(commands.Cog):
                             }
                         )
 
-                    if line_group_json.change_alert:
+                    if line_group_json.chenge_alert:
                         # 変更URL
                         change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel_or_thread(line_group_json.default_channel_id).name}」に変更されました。"
 
