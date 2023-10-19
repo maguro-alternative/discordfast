@@ -150,13 +150,13 @@ class LineGroupSuccessJson(BaseModel):
         Discordサーバのid
     default_channel_id  :int
         Discordに送信するチャンネルのid
-    change_alert        :bool
+    chenge_alert        :bool
         変更の旨をDiscordとLINEに通知するかどうか
         Trueだと送信
     """
     guild_id            :int
     default_channel_id  :int
-    change_alert        :bool
+    chenge_alert        :bool
 
 class LinePostSuccessJson(BaseModel):
     """
