@@ -166,7 +166,6 @@ class LineGroup(commands.Cog):
                     'expires_in':100
                 }
             else:
-                line_user = LineTokenVerify(**line_user)
                 # アクセストークンの復号化
                 access_token:str = session.line_oauth_data.access_token
                 user_sub:str = session.line_user.sub
