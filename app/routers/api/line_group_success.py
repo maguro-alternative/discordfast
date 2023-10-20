@@ -151,7 +151,6 @@ class LineGroupSuccess(commands.Cog):
                     'expires_in':100
                 }
             else:
-                line_user = LineTokenVerify(**line_user)
                 # アクセストークンの復号化
                 access_token:str = session.line_oauth_data.access_token
                 # LINEのユーザ情報を取得
@@ -218,7 +217,7 @@ class LineGroupSuccess(commands.Cog):
                             }
                         )
 
-                    if line_group_json.change_alert:
+                    if line_group_json.chenge_alert:
                         # 変更URL
                         change_text = f"{line_group_profile.displayName}によりDiscordへの送信先が「{guild.get_channel_or_thread(line_group_json.default_channel_id).name}」に変更されました。"
 
