@@ -14,10 +14,10 @@ import asyncio
 import uvicorn
 
 from routers.index import Index
-from routers.login import Login
-from routers.callback import CallBack
+from routers.auth.login import Login
+from routers.auth.callback import CallBack
 from routers.guilds import GuildsView
-from routers.logout import Logout
+from routers.auth.logout import Logout
 from routers.line_group import LineGroup
 
 from routers.guild.guild import GuildSetView
