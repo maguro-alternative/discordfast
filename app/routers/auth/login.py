@@ -1,5 +1,5 @@
 from fastapi import APIRouter,Request
-from fastapi.responses import RedirectResponse,JSONResponse
+from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -11,7 +11,6 @@ import urllib.parse
 import secrets
 from typing import Dict,List
 from model_types.table_type import LineBotColunm
-from model_types.line_type.line_type import LineBotInfo
 from model_types.environ_conf import EnvConf
 from discord.ext import commands
 try:
@@ -124,67 +123,6 @@ class Login(commands.Cog):
                     "title": "LINEログイン選択"
                 }
             )
-
-
-        @self.router.get("/line-login/view")
-        async def line_login_select(request: Request):
-            if DB.conn == None:
-                await DB.connect()
-
-            # line_botテーブルをロード
-            line_bot_table:List[Dict] = await DB.select_rows(
-                table_name="line_bot",
-                columns=[],
-                where_clause={}
-            )
-
-            # Botが所属しているサーバidを取得
-            bot_guild_ids:List[int] = [
-                bot_guild.id
-                for bot_guild in self.bot.guilds
-            ]
-
-            # Botが所属しているサーバからLINEの認証情報があるところ
-            line_login_bots:List[LineBotColunm] = [
-                LineBotColunm(**guild)
-                for guild in line_bot_table
-                if (len(guild.get('line_client_id')) > 0 and
-                    len(guild.get('line_client_secret')) > 0 and
-                    len(guild.get('line_bot_token')) > 0 and
-                    int(guild.get('guild_id')) in bot_guild_ids
-                    )
-            ]
-
-            bot_profiles = list()
-
-            # ログインできるBotをListに並べる
-            for line in line_login_bots:
-                # トークンを復号
-                line_bot_token:str = await decrypt_password(encrypted_password=line.line_bot_token)
-                line_clinet_id:str = await decrypt_password(encrypted_password=line.line_client_id)
-
-                # LINEのcallbackurlをエンコードする
-                redirect_uri = EnvConf.LINE_CALLBACK_URL
-                redirect_encode_uri:str = urllib.parse.quote(redirect_uri)
-                # LINEBotの情報を取得
-                bot_profile_tmp:Dict = await aio_get_request(
-                    url=f"{LINE_BASE_URL}/v2/bot/info",
-                    headers={
-                        'Authorization' : f'Bearer {line_bot_token}'
-                    }
-                )
-                bot_profile:LineBotInfo = LineBotInfo(**bot_profile_tmp)
-                # 識別のためDiscordサーバーのidを追加
-                bot_profiles.append({
-                    'pictureUrl'            :bot_profile.pictureUrl,
-                    'displayName'           :bot_profile.displayName,
-                    'clientId'              :line_clinet_id,
-                    'redirectEncodeUri'     :redirect_encode_uri,
-                    'guildId'               :str(line.guild_id)
-                })
-
-            return JSONResponse(content=bot_profiles)
-
 
         @self.router.get("/line-login/{guild_id}")
         async def line_login(
