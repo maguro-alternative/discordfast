@@ -14,10 +14,11 @@ import asyncio
 import uvicorn
 
 from routers.index import Index
-from routers.login import Login
-from routers.callback import CallBack
+from routers.auth.auth import Auth
+from routers.auth.login import Login
+from routers.auth.callback import CallBack
 from routers.guilds import GuildsView
-from routers.logout import Logout
+from routers.auth.logout import Logout
 from routers.line_group import LineGroup
 
 from routers.guild.guild import GuildSetView
@@ -112,6 +113,7 @@ class ReadyLoad(commands.Cog):
         self.app.include_router(router=Index(bot=self.bot).router)
         self.app.include_router(router=LineBotWebhook(bot=self.bot).router)
 
+        self.app.include_router(router=Auth(bot=self.bot).router)
         self.app.include_router(router=Login(bot=self.bot).router)
         self.app.include_router(router=Logout(bot=self.bot).router)
         self.app.include_router(router=CallBack(bot=self.bot).router)

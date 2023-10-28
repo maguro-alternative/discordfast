@@ -170,7 +170,6 @@ class CallBack(commands.Cog):
 
             request.session.pop("state")
             request.session.pop("nonce")
-            #request.session.pop('guild_id')
 
             # idトークンが正しくない場合
             if line_id_token.get('error_description') != None:
@@ -185,54 +184,3 @@ class CallBack(commands.Cog):
             else:
                 # ホームページにリダイレクトする
                 return RedirectResponse(url=f"/group/{guild_id}")
-
-        @self.router.get('/oauth_save_state/{state}')
-        async def oauth_save_state(
-            state:str,
-            request:Request
-        ):
-            """
-            stateをセッションに保存する
-            DiscordやLINEの認証の際に使用する
-
-            param:
-            state:str
-                保存するstate
-            """
-            request.session['state'] = state
-            request.session['discord_react'] = True
-            return {'message':'ok'}
-
-        @self.router.get('/oauth_save_nonce/{nonce}')
-        async def oauth_save_nonce(
-            nonce:str,
-            request:Request
-        ):
-            """
-            nonceをセッションに保存する
-            LINEの認証の際に使用する
-
-            param:
-            nonce:str
-                保存するnonce
-            """
-            request.session['nonce'] = nonce
-            request.session['line_react'] = True
-            return {'message':'ok'}
-
-        @self.router.get('/oauth_save_guild_id/{guild_id}')
-        async def oauth_save_guild_id(
-            guild_id:str,
-            request:Request
-        ):
-            """
-            guild_idをセッションに保存する
-            LINEの認証の際に使用する
-
-            param:
-            guild_id:str
-                保存するguild_id
-            """
-            request.session['guild_id'] = guild_id
-            request.session['line_react'] = True
-            return {'message':'ok'}
