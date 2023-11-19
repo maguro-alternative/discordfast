@@ -23,9 +23,6 @@ except ModuleNotFoundError:
     from app.core.start import DBot
     from app.core.db_create import DB
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
@@ -110,30 +107,24 @@ class GuildSetView(commands.Cog):
                 JSONResponse: _description_
             """
             session = FastAPISession(**request.session)
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE:
-                        permission_code = 0
-                    else:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            user_id=discord_user.id,
-                            guild=guild
-                        )
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        user_id=discord_user.id,
+                        guild=guild
+                    )
 
-                        permission_code = await permission.get_permission_code()
+                    permission_code = await permission.get_permission_code()
                     if guild.icon == None:
                         guild_icon_url = ''
                     else:

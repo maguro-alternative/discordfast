@@ -27,8 +27,7 @@ templates = Jinja2Templates(directory="templates")
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
+
 class Index(commands.Cog):
     def __init__(self, bot: DBot):
         self.bot = bot
@@ -64,73 +63,69 @@ class Index(commands.Cog):
         @self.router.get("/index-discord")
         async def index_discord(request: Request):
             session = FastAPISession(**request.session)
-            # デバッグモード
-            if DEBUG_MODE == False:
-                if session.discord_oauth_data != None:
-                    access_token = session.discord_oauth_data.access_token
-                    if not await discord_oauth_check(access_token=access_token):
-                        request.session.pop('discord_oauth_data')
-                        request.session.pop('discord_user')
-                        return JSONResponse(
-                            status_code=401,
-                            content={
-                                'message':'認証情報が無効です'
-                            }
-                        )
-                    else:
-                        json_content = {
-                            "id":str(session.discord_user.id),
-                            "username":session.discord_user.username,
-                            "avatar":session.discord_user.avatar
-                        }
-                        return JSONResponse(
-                            status_code=200,
-                            content=json_content
-                        )
-                else:
+            if session.discord_oauth_data != None:
+                access_token = session.discord_oauth_data.access_token
+                if not await discord_oauth_check(access_token=access_token):
+                    request.session.pop('discord_oauth_data')
+                    request.session.pop('discord_user')
                     return JSONResponse(
                         status_code=401,
                         content={
                             'message':'認証情報が無効です'
                         }
                     )
+                else:
+                    json_content = {
+                        "id":str(session.discord_user.id),
+                        "username":session.discord_user.username,
+                        "avatar":session.discord_user.avatar
+                    }
+                    return JSONResponse(
+                        status_code=200,
+                        content=json_content
+                    )
+            else:
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        'message':'認証情報が無効です'
+                    }
+                )
 
         @self.router.get("/index-line")
         async def index_line(request: Request):
             session = FastAPISession(**request.session)
-            # デバッグモード
-            if DEBUG_MODE == False:
-                if session.line_oauth_data != None:
-                    access_token = session.line_oauth_data.access_token
-                    if not await line_oauth_check(access_token=access_token):
-                        request.session.pop('line_oauth_data')
-                        request.session.pop('line_user')
-                        return JSONResponse(
-                            status_code=401,
-                            content={
-                                'message':'認証情報が無効です'
-                            }
-                        )
-                    else:
-                        guild_id = request.session.get('guild_id')
-                        if guild_id == None:
-                            guild_id = str()
-                        else:
-                            guild_id = str(guild_id)
-                        json_content = {
-                            "id":session.line_user.sub,
-                            "username":session.line_user.name,
-                            "avatar":session.line_user.picture,
-                            "guildId":guild_id
-                        }
-                        return JSONResponse(
-                            status_code=200,
-                            content=json_content
-                        )
-                else:
+            if session.line_oauth_data != None:
+                access_token = session.line_oauth_data.access_token
+                if not await line_oauth_check(access_token=access_token):
+                    request.session.pop('line_oauth_data')
+                    request.session.pop('line_user')
                     return JSONResponse(
                         status_code=401,
                         content={
                             'message':'認証情報が無効です'
                         }
                     )
+                else:
+                    guild_id = request.session.get('guild_id')
+                    if guild_id == None:
+                        guild_id = str()
+                    else:
+                        guild_id = str(guild_id)
+                    json_content = {
+                        "id":session.line_user.sub,
+                        "username":session.line_user.name,
+                        "avatar":session.line_user.picture,
+                        "guildId":guild_id
+                    }
+                    return JSONResponse(
+                        status_code=200,
+                        content=json_content
+                    )
+            else:
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        'message':'認証情報が無効です'
+                    }
+                )

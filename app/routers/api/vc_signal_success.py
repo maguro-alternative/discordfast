@@ -28,9 +28,6 @@ DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
@@ -138,53 +135,49 @@ class VcSignalSuccess(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token:str = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token:str = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
                 if vc_signal_json.guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            user_id=discord_user.id,
-                            guild=[
-                                guild
-                                for guild in self.bot.guilds
-                                if guild.id == vc_signal_json.guild_id
-                            ][0]
-                        )
-                        per = await DB.select_rows(
-                            table_name=ADMIN_TABLE,
-                            columns=[],
-                            where_clause={
-                                'guild_id':guild.id
-                            }
-                        )
-                        member_roles = [
-                            role.id
-                            for role in guild.get_member(discord_user.id).roles
-                        ]
-                        vc_signal_per = GuildSetPermission(**per[0])
-                        permission_code = await permission.get_permission_code()
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        user_id=discord_user.id,
+                        guild=[
+                            guild
+                            for guild in self.bot.guilds
+                            if guild.id == vc_signal_json.guild_id
+                        ][0]
+                    )
+                    per = await DB.select_rows(
+                        table_name=ADMIN_TABLE,
+                        columns=[],
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
+                    member_roles = [
+                        role.id
+                        for role in guild.get_member(discord_user.id).roles
+                    ]
+                    vc_signal_per = GuildSetPermission(**per[0])
+                    permission_code = await permission.get_permission_code()
 
-                        # 編集可能かどうか
-                        if((vc_signal_per.vc_permission & permission_code) or
-                        discord_user.id in vc_signal_per.line_user_id_permission or
-                        len(set(member_roles) & set(vc_signal_per.line_role_id_permission))):
-                            pass
-                        else:
-                            return JSONResponse(content={'message':'access token Unauthorized'})
+                    # 編集可能かどうか
+                    if((vc_signal_per.vc_permission & permission_code) or
+                    discord_user.id in vc_signal_per.line_user_id_permission or
+                    len(set(member_roles) & set(vc_signal_per.line_role_id_permission))):
+                        pass
+                    else:
+                        return JSONResponse(content={'message':'access token Unauthorized'})
 
                     # 使用するデータベースのテーブル名
                     TABLE = f'guilds_vc_signal'
@@ -197,18 +190,13 @@ class VcSignalSuccess(commands.Cog):
                             'everyone_mention'  :vc.everyone_mention,
                             'mention_role_id'   :vc.mention_role_id
                         }
-                        # デバッグモード
-                        if DEBUG_MODE == False:
-                            await DB.update_row(
-                                table_name=TABLE,
-                                row_values=row_value,
-                                where_clause={
-                                    'vc_id':vc.vc_id
-                                }
-                            )
-                        else:
-                            import pprint
-                            pprint.pprint(row_value)
+                        await DB.update_row(
+                            table_name=TABLE,
+                            row_values=row_value,
+                            where_clause={
+                                'vc_id':vc.vc_id
+                            }
+                        )
 
                     return JSONResponse(content={'message':'success!!'})
 

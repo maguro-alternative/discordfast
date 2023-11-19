@@ -36,9 +36,6 @@ ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 class LineGroupSuccess(commands.Cog):
     def __init__(self, bot: DBot):
         self.bot = bot
@@ -143,26 +140,19 @@ class LineGroupSuccess(commands.Cog):
             session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
-            # デバッグモード
-            if DEBUG_MODE:
-                line_user = {
-                    'scope'     :'profile%20openid%20email',
-                    'client_id' :'0',
-                    'expires_in':100
-                }
-            else:
-                # アクセストークンの復号化
-                access_token:str = session.line_oauth_data.access_token
-                # LINEのユーザ情報を取得
-                line_user = await aio_get_request(
-                    url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
-                    headers={}
-                )
-                line_user = LineTokenVerify(**line_user)
 
-                # トークンが無効
-                if line_user.error != None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # アクセストークンの復号化
+            access_token:str = session.line_oauth_data.access_token
+            # LINEのユーザ情報を取得
+            line_user = await aio_get_request(
+                url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
+                headers={}
+            )
+            line_user = LineTokenVerify(**line_user)
+
+            # トークンが無効
+            if line_user.error != None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             TABLE = "line_bot"
 
@@ -182,40 +172,30 @@ class LineGroupSuccess(commands.Cog):
                     line_group_id:str = await decrypt_password(encrypted_password=bytes(line_bot_table.line_group_id))
                     line_bot_token:str = await decrypt_password(encrypted_password=bytes(line_bot_table.line_bot_token))
                     line_notify_token:str = await decrypt_password(encrypted_password=bytes(line_bot_table.line_notify_token))
-                    # デバッグモード
-                    if DEBUG_MODE:
-                        r = {
-                            'displayName'   :'test',
-                            'userId'        :'aaa',
-                            'pictureUrl'    :'png'
+
+                    # グループIDが有効かどうか判断
+                    r = await aio_get_request(
+                        url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{session.line_user.sub}",
+                        headers={
+                            'Authorization': f'Bearer {line_bot_token}'
                         }
-                        line_group_profile = LineProfile(**r)
-                    else:
-                        # グループIDが有効かどうか判断
-                        r = await aio_get_request(
-                            url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{session.line_user.sub}",
-                            headers={
-                                'Authorization': f'Bearer {line_bot_token}'
-                            }
-                        )
-                        line_group_profile = LineProfile(**r)
-                        # グループIDが無効の場合、友達から判断
-                        if line_group_profile.message != None:
-                            raise HTTPException(status_code=400, detail="認証失敗")
+                    )
+                    line_group_profile = LineProfile(**r)
+                    # グループIDが無効の場合、友達から判断
+                    if line_group_profile.message != None:
+                        raise HTTPException(status_code=400, detail="認証失敗")
 
                     row_value = {
                         'default_channel_id':line_bot_table.default_channel_id
                     }
 
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        await DB.update_row(
-                            table_name=TABLE,
-                            row_values=row_value,
-                            where_clause={
-                                'guild_id':guild.id
-                            }
-                        )
+                    await DB.update_row(
+                        table_name=TABLE,
+                        row_values=row_value,
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
 
                     if line_group_json.chenge_alert:
                         # 変更URL
