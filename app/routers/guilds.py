@@ -23,9 +23,6 @@ except ModuleNotFoundError:
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 # new テンプレート関連の設定 (jinja2)
@@ -93,31 +90,17 @@ class GuildsView(commands.Cog):
                 _type_: サーバー一覧
             """
             session = FastAPISession(**request.session)
-            # デバッグモード
-            if DEBUG_MODE:
-                user_in_guild_get:List[Dict] = [
-                    {
-                        'id'                :bot_guild.id,
-                        'name'              :bot_guild.name,
-                        'icon'              :bot_guild._icon,
-                        'permissions'       :bot_guild.premium_tier,
-                        'features'          :bot_guild.features,
-                        'permissions_new'   :bot_guild.premium_tier
+            if session.discord_oauth_data:
+                access_token = session.discord_oauth_data.access_token
+                # ログインユーザが所属しているサーバを取得
+                user_in_guild_get:List[Dict] = await aio_get_request(
+                    url=f'{DISCORD_BASE_URL}/users/@me/guilds',
+                    headers={
+                        'Authorization': f'Bearer {access_token}'
                     }
-                    for bot_guild in self.bot.guilds
-                ]
+                )
             else:
-                if session.discord_oauth_data:
-                    access_token = session.discord_oauth_data.access_token
-                    # ログインユーザが所属しているサーバを取得
-                    user_in_guild_get:List[Dict] = await aio_get_request(
-                        url=f'{DISCORD_BASE_URL}/users/@me/guilds',
-                        headers={
-                            'Authorization': f'Bearer {access_token}'
-                        }
-                    )
-                else:
-                    user_in_guild_get = list()
+                user_in_guild_get = list()
             user_guild_id = [
                 bot_guild.id
                 for bot_guild in self.bot.guilds
@@ -172,13 +155,11 @@ async def search_guild(
             for guild_id,guild in zip(bot_guild_id,bot_in_guild_get)
             if guild_id in user_guild_id
         ]
-
     else:
         match_guild = [
             guild
             for guild_id,guild in zip(user_guild_id,user_in_guild_get)
             if guild_id in bot_guild_id
         ]
-
 
     return match_guild

@@ -28,9 +28,6 @@ DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
@@ -110,53 +107,49 @@ class LineSetSuccess(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token:str = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token:str = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
                 if line_set_json.guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            user_id=discord_user.id,
-                            guild=[
-                                guild
-                                for guild in self.bot.guilds
-                                if guild.id == line_set_json.guild_id
-                            ][0]
-                        )
-                        per = await DB.select_rows(
-                            table_name=ADMIN_TABLE,
-                            columns=[],
-                            where_clause={
-                                'guild_id':guild.id
-                            }
-                        )
-                        member_roles = [
-                            role.id
-                            for role in guild.get_member(discord_user.id).roles
-                        ]
-                        line_bot_per = GuildSetPermission(**per[0])
-                        permission_code = await permission.get_permission_code()
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        user_id=discord_user.id,
+                        guild=[
+                            guild
+                            for guild in self.bot.guilds
+                            if guild.id == line_set_json.guild_id
+                        ][0]
+                    )
+                    per = await DB.select_rows(
+                        table_name=ADMIN_TABLE,
+                        columns=[],
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
+                    member_roles = [
+                        role.id
+                        for role in guild.get_member(discord_user.id).roles
+                    ]
+                    line_bot_per = GuildSetPermission(**per[0])
+                    permission_code = await permission.get_permission_code()
 
-                        # 編集可能かどうか
-                        if((line_bot_per.line_bot_permission & permission_code) or
-                        discord_user.id in line_bot_per.line_bot_user_id_permission or
-                        len(set(member_roles) & set(line_bot_per.line_bot_role_id_permission))):
-                            pass
-                        else:
-                            return JSONResponse(content={'message':'access token Unauthorized'})
+                    # 編集可能かどうか
+                    if((line_bot_per.line_bot_permission & permission_code) or
+                    discord_user.id in line_bot_per.line_bot_user_id_permission or
+                    len(set(member_roles) & set(line_bot_per.line_bot_role_id_permission))):
+                        pass
+                    else:
+                        return JSONResponse(content={'message':'access token Unauthorized'})
 
                     TABLE = 'line_bot'
 
@@ -200,14 +193,12 @@ class LineSetSuccess(commands.Cog):
                     if line_set_json.line_client_secret_del_flag:
                         row_value.update({'line_client_secret':b''})
 
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        await DB.update_row(
-                            table_name=TABLE,
-                            row_values=row_value,
-                            where_clause={
-                                'guild_id':guild.id
-                            }
-                        )
+                    await DB.update_row(
+                        table_name=TABLE,
+                        row_values=row_value,
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
 
                     return JSONResponse(content={'message':'success!!'})

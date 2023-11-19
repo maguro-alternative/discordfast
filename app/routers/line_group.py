@@ -30,9 +30,6 @@ LINE_BOT_URL = EnvConf.LINE_BOT_URL
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 # new テンプレート関連の設定 (jinja2)
@@ -158,27 +155,20 @@ class LineGroup(commands.Cog):
             session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
-            # デバッグモード
-            if DEBUG_MODE:
-                line_user = {
-                    'scope'     :'profile%20openid%20email',
-                    'client_id' :'0',
-                    'expires_in':100
-                }
-            else:
-                # アクセストークンの復号化
-                access_token:str = session.line_oauth_data.access_token
-                user_sub:str = session.line_user.sub
-                # LINEのユーザ情報を取得
-                line_user = await aio_get_request(
-                    url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
-                    headers={}
-                )
-                line_user = LineTokenVerify(**line_user)
 
-                # トークンが無効
-                if line_user.error != None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # アクセストークンの復号化
+            access_token:str = session.line_oauth_data.access_token
+            user_sub:str = session.line_user.sub
+            # LINEのユーザ情報を取得
+            line_user = await aio_get_request(
+                url=f"{LINE_OAUTH_BASE_URL}/verify?access_token={access_token}",
+                headers={}
+            )
+            line_user = LineTokenVerify(**line_user)
+
+            # トークンが無効
+            if line_user.error != None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             TABLE = 'line_bot'
 
@@ -201,26 +191,17 @@ class LineGroup(commands.Cog):
                     # LINE→Discordへの送信先チャンネルid
                     default_channel_id = line_bot_table.default_channel_id
 
-                    # デバッグモード
-                    if DEBUG_MODE:
-                        r = {
-                            'displayName'   :'test',
-                            'userId'        :'aaa',
-                            'pictureUrl'    :'png'
+                    # グループIDが有効かどうか判断
+                    r = await aio_get_request(
+                        url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{user_sub}",
+                        headers={
+                            'Authorization': f'Bearer {line_bot_token}'
                         }
-                        line_group_profile = LineProfile(**r)
-                    else:
-                        # グループIDが有効かどうか判断
-                        r = await aio_get_request(
-                            url=f"{LINE_BOT_URL}/group/{line_group_id}/member/{user_sub}",
-                            headers={
-                                'Authorization': f'Bearer {line_bot_token}'
-                            }
-                        )
-                        line_group_profile = LineProfile(**r)
-                        # グループIDが無効の場合、友達から判断
-                        if line_group_profile.message != None:
-                            raise HTTPException(status_code=400, detail="認証失敗")
+                    )
+                    line_group_profile = LineProfile(**r)
+                    # グループIDが無効の場合、友達から判断
+                    if line_group_profile.message != None:
+                        raise HTTPException(status_code=400, detail="認証失敗")
 
                     # カテゴリーごとにチャンネルをソート
                     category_dict,category_index = await sort_channels(channels=guild.channels)

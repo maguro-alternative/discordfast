@@ -26,12 +26,9 @@ except ModuleNotFoundError:
     from app.model_types.environ_conf import EnvConf
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
-DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
 LINE_REDIRECT_URI = EnvConf.LINE_CALLBACK_URL
 LINE_OAUTH_BASE_URL = EnvConf.LINE_OAUTH_BASE_URL
-
-ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")

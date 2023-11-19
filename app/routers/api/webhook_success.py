@@ -34,9 +34,6 @@ DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
@@ -274,53 +271,49 @@ class WebhookSuccess(commands.Cog):
             if DB.conn == None:
                 await DB.connect()
 
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token:str = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token:str = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             ADMIN_TABLE = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
                 if webhook_json.guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE == False:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            user_id=discord_user.id,
-                            guild=[
-                                guild
-                                for guild in self.bot.guilds
-                                if guild.id == webhook_json.guild_id
-                            ][0]
-                        )
-                        per = await DB.select_rows(
-                            table_name=ADMIN_TABLE,
-                            columns=[],
-                            where_clause={
-                                'guild_id':guild.id
-                            }
-                        )
-                        member_roles = [
-                            role.id
-                            for role in guild.get_member(discord_user.id).roles
-                        ]
-                        webhook_per = GuildSetPermission(**per[0])
-                        permission_code = await permission.get_permission_code()
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        user_id=discord_user.id,
+                        guild=[
+                            guild
+                            for guild in self.bot.guilds
+                            if guild.id == webhook_json.guild_id
+                        ][0]
+                    )
+                    per = await DB.select_rows(
+                        table_name=ADMIN_TABLE,
+                        columns=[],
+                        where_clause={
+                            'guild_id':guild.id
+                        }
+                    )
+                    member_roles = [
+                        role.id
+                        for role in guild.get_member(discord_user.id).roles
+                    ]
+                    webhook_per = GuildSetPermission(**per[0])
+                    permission_code = await permission.get_permission_code()
 
-                        # 編集可能かどうか
-                        if((webhook_per.webhook_permission & permission_code) or
-                        discord_user.id in webhook_per.line_user_id_permission or
-                        len(set(member_roles) & set(webhook_per.line_role_id_permission))):
-                            pass
-                        else:
-                            return JSONResponse(content={'message':'access token Unauthorized'})
+                    # 編集可能かどうか
+                    if((webhook_per.webhook_permission & permission_code) or
+                    discord_user.id in webhook_per.line_user_id_permission or
+                    len(set(member_roles) & set(webhook_per.line_role_id_permission))):
+                        pass
+                    else:
+                        return JSONResponse(content={'message':'access token Unauthorized'})
 
                     TABLE = f'webhook_set'
 
@@ -362,15 +355,13 @@ class WebhookSuccess(commands.Cog):
                         }
                         # 更新
                         if str(webhook.uuid) in db_webhook_id_list:
-                            # デバッグモード
-                            if DEBUG_MODE == False:
-                                await DB.update_row(
-                                    table_name=TABLE,
-                                    row_values=row_value,
-                                    where_clause={
-                                        'uuid':webhook.uuid
-                                    }
-                                )
+                            await DB.update_row(
+                                table_name=TABLE,
+                                row_values=row_value,
+                                where_clause={
+                                    'uuid':webhook.uuid
+                                }
+                            )
 
                         # 削除
                         elif webhook.delete_flag:
@@ -388,11 +379,9 @@ class WebhookSuccess(commands.Cog):
                                 'guild_id'  :guild.id,
                                 'created_at':now_str
                             })
-                            # デバッグモード
-                            if DEBUG_MODE == False:
-                                await DB.insert_row(
-                                    table_name=TABLE,
-                                    row_values=row_value
-                                )
+                            await DB.insert_row(
+                                table_name=TABLE,
+                                row_values=row_value
+                            )
 
                     return JSONResponse(content={'message':'success!!'})

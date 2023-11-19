@@ -29,9 +29,6 @@ DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
@@ -127,31 +124,23 @@ class AdminView(commands.Cog):
             session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
             TABLE_NAME = 'guild_set_permissions'
 
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE:
-                        from model_types.discord_type.guild_permission import Permission
-                        permission = Permission()
-                        permission.administrator = True
-                    else:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            user_id=discord_user.id,
-                            guild=guild
-                        )
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        user_id=discord_user.id,
+                        guild=guild
+                    )
                     guild_members = [
                         {
                             'userId'            :str(member.id),

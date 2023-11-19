@@ -27,9 +27,6 @@ DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
 
@@ -155,34 +152,26 @@ class AdminSuccess(commands.Cog):
             session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token:str = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token:str = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             TABLE = 'guild_set_permissions'
 
-            # デバッグモード
-            if DEBUG_MODE:
-                from model_types.discord_type.guild_permission import Permission
-                permission = Permission()
-                permission.administrator = True
-            else:
-                # サーバの権限を取得
-                permission = await return_permission(
-                    user_id=discord_user.id,
-                    guild=[
-                        guild
-                        for guild in self.bot.guilds
-                        if guild.id == admin_json.guild_id
-                    ][0]
-                )
+            # サーバの権限を取得
+            permission = await return_permission(
+                user_id=discord_user.id,
+                guild=[
+                    guild
+                    for guild in self.bot.guilds
+                    if guild.id == admin_json.guild_id
+                ][0]
+            )
 
             # 管理者ではない場合
             if permission.administrator == False:
@@ -203,25 +192,12 @@ class AdminSuccess(commands.Cog):
                 'webhook_role_id_permission'    :admin_json.webhook_role_id_permission
             }
 
-            # デバッグモード
-            if DEBUG_MODE == False:
-                import pprint
-                pprint.pprint(row_value)
-                await DB.update_row(
-                    table_name=TABLE,
-                    row_values=row_value,
-                    where_clause={
-                        'guild_id':admin_json.guild_id
-                    }
-                )
-                pprint.pprint(
-                    await DB.select_rows(
-                        table_name=TABLE,
-                        columns=[],
-                        where_clause={
-                            'guild_id':admin_json.guild_id
-                        }
-                    )
-                )
+            await DB.update_row(
+                table_name=TABLE,
+                row_values=row_value,
+                where_clause={
+                    'guild_id':admin_json.guild_id
+                }
+            )
 
             return JSONResponse(content={'message':'success!!'})

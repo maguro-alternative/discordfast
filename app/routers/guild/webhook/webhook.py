@@ -37,9 +37,6 @@ DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
 
-# デバッグモード
-DEBUG_MODE = EnvConf.DEBUG_MODE
-
 GuildChannel = Union[
     VoiceChannel,
     StageChannel,
@@ -199,35 +196,29 @@ class WebhookView(commands.Cog):
             session = FastAPISession(**request.session)
             if DB.conn == None:
                 await DB.connect()
-            # デバッグモード
-            if DEBUG_MODE == False:
-                # アクセストークンの復号化
-                access_token = session.discord_oauth_data.access_token
-                # Discordのユーザ情報を取得
-                discord_user = await discord_get_profile(access_token=access_token)
+            # アクセストークンの復号化
+            access_token = session.discord_oauth_data.access_token
+            # Discordのユーザ情報を取得
+            discord_user = await discord_get_profile(access_token=access_token)
 
-                # トークンが無効
-                if discord_user == None:
-                    return JSONResponse(content={'message':'access token Unauthorized'})
+            # トークンが無効
+            if discord_user == None:
+                return JSONResponse(content={'message':'access token Unauthorized'})
 
             for guild in self.bot.guilds:
                 if guild_id == guild.id:
-                    # デバッグモード
-                    if DEBUG_MODE:
-                        chenge_permission = False
-                    else:
-                        # サーバの権限を取得
-                        permission = await return_permission(
-                            user_id=discord_user.id,
-                            guild=guild
-                        )
+                    # サーバの権限を取得
+                    permission = await return_permission(
+                        user_id=discord_user.id,
+                        guild=guild
+                    )
 
-                        # 編集可能かどうか
-                        chenge_permission = await chenge_permission_check(
-                            user_id=discord_user.id,
-                            permission=permission,
-                            guild=guild
-                        )
+                    # 編集可能かどうか
+                    chenge_permission = await chenge_permission_check(
+                        user_id=discord_user.id,
+                        permission=permission,
+                        guild=guild
+                    )
 
                     # Botが所属しているサーバを取得
                     TABLE = f'webhook_set'
