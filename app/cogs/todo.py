@@ -14,6 +14,7 @@ except ModuleNotFoundError:
 
 from datetime import datetime
 from typing import Dict,List
+import traceback
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_BOT_TOKEN = EnvConf.DISCORD_BOT_TOKEN
@@ -38,7 +39,7 @@ class Todo(commands.Cog):
     async def todo_register(
         self,
         ctx:discord.ApplicationContext,
-        title: Option(str, required=True, description="タスク名",),
+        title:Option(str, required=True, description="タスク名",),
         timelimit_year:Option(int, required=True, description="期日(年)",),
         timelimit_month:Option(int, required=True, description="期日(月)",),
         timelimit_day:Option(int, required=True, description="期日(日)",),
@@ -83,7 +84,6 @@ class Todo(commands.Cog):
         await ctx.respond(respond_text)
 
         try:
-            #await asyncio.sleep(5)
             if DB.conn == None:
                 await DB.connect()
 
@@ -134,8 +134,8 @@ class Todo(commands.Cog):
 
             await ctx.respond(f"番号は**{task_number}**です。\n一覧はこちら:{url}")
 
-        except:
-            await ctx.respond("登録がうまくいきませんでした。もう一度やり直してください。")
+        except Exception as e:
+            await ctx.respond(f"登録がうまくいきませんでした。もう一度やり直してください。\n```{e}\n{traceback.format_exc()}```")
 
     @commands.slash_command(description="タスク完了")
     async def todo_completion(
