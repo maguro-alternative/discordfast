@@ -56,7 +56,7 @@ class Task_Loop(commands.Cog):
                 if DB.conn == None:
                     await DB.connect()
 
-                discord_bor_api = ReqestDiscord(
+                discord_bot_api = ReqestDiscord(
                     guild_id=guild.id,
                     limit=100,
                     token=DISCORD_BOT_TOKEN
@@ -132,22 +132,6 @@ class Task_Loop(commands.Cog):
                     # 日付は秒数に含まれないため含める
                     limit_day_seconds = limit.seconds + limit.days * 86400
 
-                    limit_five_day:bool = limit_day_seconds > 431939 and limit_day_seconds < 432001
-                    limit_four_day:bool = limit_day_seconds > 345539 and limit_day_seconds < 345601
-                    limit_tree_day:bool = limit_day_seconds > 259139 and limit_day_seconds < 259201
-                    limit_two_day:bool = limit_day_seconds > 172739 and limit_day_seconds < 172801
-                    limit_one_day:bool = limit_day_seconds > 86339 and limit_day_seconds < 86461
-                    limit_half_day:bool = limit_day_seconds > 43169 and limit_day_seconds < 43231
-                    limit_six_hour:bool = limit_day_seconds > 21554 and limit_day_seconds < 21616
-                    limit_tree_hour:bool = limit_day_seconds > 10747 and limit_day_seconds < 10808
-                    limit_two_hour:bool = limit_day_seconds > 7139 and limit_day_seconds < 7201
-                    limit_one_hour:bool = limit_day_seconds > 3539 and limit_day_seconds < 3601
-                    limit_50_min:bool = limit_day_seconds > 2939 and limit_day_seconds < 3001
-                    limit_40_min:bool = limit_day_seconds > 2339 and limit_day_seconds < 2401
-                    limit_30_min:bool = limit_day_seconds > 1739 and limit_day_seconds < 1801
-                    limit_20_min:bool = limit_day_seconds > 1139 and limit_day_seconds < 1201
-                    limit_10_min:bool = limit_day_seconds > 539 and limit_day_seconds < 601
-
                     text = f"{task.get('task_title')}が未達成です。\nタスクナンバー:{task.get('task_number')}\n期日:{task.get('time_limit')}\n達成している場合は/todo_completionで完了報告してください。"
 
                     if task.get('alert_role') != 0:
@@ -155,80 +139,16 @@ class Task_Loop(commands.Cog):
                     if task.get('alert_user') != 0:
                         text = f"<@&{int(task.get('alert_user'))}> " + text
 
-                    if limit.days >= 0:
-                        if task.get('alert_level') == 1:
-                            # 残り1日の場合
-                            if (limit_one_day or limit_half_day or
-                                limit_six_hour or limit_one_hour or
-                                limit_30_min or limit_10_min
-                                ):
-                                await discord_bor_api.send_discord(
-                                    channel_id=int(task.get('task_channel')),
-                                    message=text
-                                )
-                                print(f"level 1:{limit_day_seconds}")
+                    if limit.days >= 0 and limit_day_seconds % 86400 < 60:
+                        await discord_bot_api.send_discord(
+                            channel_id=int(task.get('task_channel')),
+                            message=text
+                        )
+                        print(f"level :{limit_day_seconds}")
 
-                        if task.get('alert_level') == 2:
-                            # 残り2日の場合
-                            if (limit_two_day or limit_one_day or limit_half_day or
-                                limit_six_hour or limit_tree_hour or limit_one_hour or
-                                limit_50_min or limit_30_min or limit_10_min
-                                ):
-                                await discord_bor_api.send_discord(
-                                    channel_id=int(task.get('task_channel')),
-                                    message=text
-                                )
-                                print(f"level 2:{limit_day_seconds}")
-
-                        if task.get('alert_level') == 3:
-                            # 残り3日の場合
-                            if (limit_tree_day or limit_two_day or
-                                limit_one_day or limit_half_day or
-                                limit_six_hour or limit_tree_hour or
-                                limit_two_hour or limit_one_hour or
-                                limit_50_min or limit_40_min or
-                                limit_30_min or limit_10_min
-                                ):
-                                await discord_bor_api.send_discord(
-                                    channel_id=int(task.get('task_channel')),
-                                    message=text
-                                )
-                                print(f"level 3:{limit_day_seconds}")
-
-                        if task.get('alert_level') == 4:
-                            # 残り4日の場合
-                            if (limit_four_day or limit_tree_day or limit_two_day or
-                                limit_one_day or limit_half_day or
-                                limit_six_hour or limit_tree_hour or
-                                limit_two_hour or limit_one_hour or
-                                limit_50_min or limit_40_min or
-                                limit_30_min or limit_10_min
-                                ):
-                                await discord_bor_api.send_discord(
-                                    channel_id=int(task.get('task_channel')),
-                                    message=text
-                                )
-                                print(f"level 4:{limit_day_seconds}")
-
-                        if task.get('alert_level') == 5:
-                            # 残り5日の場合
-                            if (limit_five_day or limit_four_day or
-                                limit_tree_day or limit_two_day or
-                                limit_one_day or limit_half_day or
-                                limit_six_hour or limit_tree_hour or
-                                limit_two_hour or limit_one_hour or
-                                limit_50_min or limit_40_min or
-                                limit_30_min or limit_20_min or limit_10_min
-                                ):
-                                await discord_bor_api.send_discord(
-                                    channel_id=int(task.get('task_channel')),
-                                    message=text
-                                )
-                                print(f"level 5:{limit_day_seconds}")
-
-                        # 10分前ならレベル関係なくアラートを出す
-                        if limit_day_seconds < 600:
-                            await discord_bor_api.send_discord(
+                        # 1分前ならレベル関係なくアラートを出す
+                        if limit_day_seconds < 60:
+                            await discord_bot_api.send_discord(
                                 channel_id=int(task.get('task_channel')),
                                 message=text
                             )
