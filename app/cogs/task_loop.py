@@ -5,7 +5,6 @@ try:
     # Botのみ起動の場合
     from app.core.start import DBot
     from app.core.db_create import DB
-    from app.cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from app.cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from app.cogs.bin.webhook_sub.youtube_sub import youtube_subsc
     from app.model_types.discord_type.message_creater import ReqestDiscord
@@ -14,7 +13,6 @@ try:
 except ModuleNotFoundError:
     from core.start import DBot
     from core.db_create import DB
-    from cogs.bin.webhook_sub.twitter_sub import twitter_subsc
     from cogs.bin.webhook_sub.niconico_sub import niconico_subsc
     from cogs.bin.webhook_sub.youtube_sub import youtube_subsc
     from model_types.discord_type.message_creater import ReqestDiscord
@@ -84,14 +82,6 @@ class Task_Loop(commands.Cog):
 
                     if not bool('webhook_url' in locals()):
                         break
-
-                    # twitterの場合
-                    if webhook.subscription_type == 'twitter':
-                        await twitter_subsc(
-                            webhook=webhook,
-                            webhook_url=webhook_url,
-                            table_name=webhook_table_name
-                        )
 
                     # niconicoの場合
                     if webhook.subscription_type == 'niconico':
