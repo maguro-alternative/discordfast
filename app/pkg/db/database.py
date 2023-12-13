@@ -148,6 +148,7 @@ class PostgresDB:
                 return [f"{table_name} does not exist"]
             except asyncpg.exceptions._base.InterfaceError:
                 await self.connect()
+                return await self.conn.fetch(sql, *where_clause_values)
 
     async def insert_row(
         self,
