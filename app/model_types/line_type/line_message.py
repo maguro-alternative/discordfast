@@ -9,28 +9,16 @@ import asyncio
 import aiohttp
 from typing import List,Dict
 
-try:
-    from model_types.youtube_upload import YouTubeUpload
-    from model_types.file_type import ImageFiles,AudioFiles
-    from model_types.line_type.line_type import (
-        LineBotConsumption,
-        LineGroupCount,
-        LineBotFriend,
-        LineBotQuota,
-        LineBotInfo
-    )
-    from model_types.line_type.line_oauth import LineProfile
-except ModuleNotFoundError:
-    from app.model_types.youtube_upload import YouTubeUpload
-    from app.model_types.file_type import ImageFiles,AudioFiles
-    from app.model_types.line_type.line_type import (
-        LineBotConsumption,
-        LineGroupCount,
-        LineBotFriend,
-        LineBotQuota,
-        LineBotInfo
-    )
-    from app.model_types.line_type.line_oauth import LineProfile
+from model_types.youtube_upload import YouTubeUpload
+from model_types.file_type import ImageFiles,AudioFiles
+from model_types.line_type.line_type import (
+    LineBotConsumption,
+    LineGroupCount,
+    LineBotFriend,
+    LineBotQuota,
+    LineBotInfo
+)
+from model_types.line_type.line_oauth import LineProfile
 
 NOTIFY_URL = 'https://notify-api.line.me/api/notify'
 NOTIFY_STATUS_URL = 'https://notify-api.line.me/api/status'

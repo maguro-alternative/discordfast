@@ -12,18 +12,13 @@ import asyncio
 import aiofiles
 
 from pkg.crypt import decrypt_password
-try:
-    from model_types.line_type.line_message import LineBotAPI,VoiceFile
-    from model_types.table_type import GuildLineChannel,LineBotColunm
-    from model_types.environ_conf import EnvConf
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.model_types.line_type.line_message import LineBotAPI,VoiceFile
-    from app.model_types.table_type import GuildLineChannel,LineBotColunm
-    from app.model_types.environ_conf import EnvConf
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from model_types.line_type.line_message import LineBotAPI,VoiceFile
+from model_types.table_type import GuildLineChannel,LineBotColunm
+from model_types.environ_conf import EnvConf
+from core.start import DBot
+from core.db_create import DB
+
 
 ENCRYPTED_KEY = EnvConf.ENCRYPTED_KEY
 

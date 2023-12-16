@@ -5,12 +5,9 @@ from starlette.requests import Request
 import uuid
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.model_types.environ_conf import EnvConf
+
+from core.start import DBot
+from model_types.environ_conf import EnvConf
 
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 

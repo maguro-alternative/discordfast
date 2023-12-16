@@ -5,7 +5,6 @@ Discordの多機能Botです。
 - ボイスチャンネルの入退室通知
 - Web版VOICEVOXによる読み上げ機能
 - カラオケ(動作不安定)
-- ~~ChatGPTへの質問~~(現在使用不可)
 - ~~Twitter~~,niconico,YouTubeの通知
 - PostgreSQLを使用したLINEと入退室の管理
 
@@ -59,14 +58,6 @@ LINE側でメンションも可能です。
 
 # WebHookの投稿機能
 ![](img/webhooktwitter.png)
-
-# chatgtp(使用不可)
-AIに質問できます。API更新前なので現在使用できるかわかりません。
-```
-/chatgtp
-    AIに質問できます。
-```
-![chat](img/172655.png)
 
 # Postgresqlを使用したカスタマイズ機能
 ![](img/psqlwebhook.png)

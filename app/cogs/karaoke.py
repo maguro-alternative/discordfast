@@ -6,14 +6,9 @@ import asyncio
 import os
 from pydub import AudioSegment
 
-try:
-    from app.cogs.bin.rank import WavKaraoke
-    from app.core.start import DBot
-    from app.model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from cogs.bin.rank import WavKaraoke
-    from core.start import DBot
-    from model_types.environ_conf import EnvConf
+from cogs.bin.rank import WavKaraoke
+from core.start import DBot
+from model_types.environ_conf import EnvConf
 
 # カラオケ機能
 class karaoke(commands.Cog):

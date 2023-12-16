@@ -12,18 +12,12 @@ from pkg.aio_req import (
 from pkg.crypt import decrypt_password
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-    from model_types.table_type import LineBotColunm
-    from model_types.line_type.line_oauth import LineOAuthData
-    from model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
-    from app.model_types.table_type import LineBotColunm
-    from app.model_types.line_type.line_oauth import LineOAuthData
-    from app.model_types.environ_conf import EnvConf
+
+from core.start import DBot
+from core.db_create import DB
+from model_types.table_type import LineBotColunm
+from model_types.line_type.line_oauth import LineOAuthData
+from model_types.environ_conf import EnvConf
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 

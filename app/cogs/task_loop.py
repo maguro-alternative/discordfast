@@ -1,23 +1,13 @@
 from discord.ext import commands,tasks
 import aiohttp
 
-try:
-    # Botのみ起動の場合
-    from app.core.start import DBot
-    from app.core.db_create import DB
-    from app.cogs.bin.webhook_sub.niconico_sub import niconico_subsc
-    from app.cogs.bin.webhook_sub.youtube_sub import youtube_subsc
-    from app.model_types.discord_type.message_creater import ReqestDiscord
-    from app.model_types.table_type import WebhookSet
-    from app.model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from core.start import DBot
-    from core.db_create import DB
-    from cogs.bin.webhook_sub.niconico_sub import niconico_subsc
-    from cogs.bin.webhook_sub.youtube_sub import youtube_subsc
-    from model_types.discord_type.message_creater import ReqestDiscord
-    from model_types.table_type import WebhookSet
-    from model_types.environ_conf import EnvConf
+from core.start import DBot
+from core.db_create import DB
+from cogs.bin.webhook_sub.niconico_sub import niconico_subsc
+from cogs.bin.webhook_sub.youtube_sub import youtube_subsc
+from model_types.discord_type.message_creater import ReqestDiscord
+from model_types.table_type import WebhookSet
+from model_types.environ_conf import EnvConf
 
 from typing import Dict,List
 from datetime import datetime

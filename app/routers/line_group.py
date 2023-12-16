@@ -17,12 +17,9 @@ from model_types.environ_conf import EnvConf
 
 from discord import ChannelType
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from core.start import DBot
+from core.db_create import DB
 
 LINE_OAUTH_BASE_URL = EnvConf.LINE_OAUTH_BASE_URL
 LINE_BOT_URL = EnvConf.LINE_BOT_URL

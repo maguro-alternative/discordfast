@@ -6,12 +6,9 @@ import aiofiles
 
 import aiohttp
 import asyncio
-try:
-    from app.core.start import DBot
-    from app.model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from core.start import DBot
-    from model_types.environ_conf import EnvConf
+
+from core.start import DBot
+from model_types.environ_conf import EnvConf
 
 Speaker = [ '四国めたん', '四国めたんあまあま', '四国めたんツンツン', '四国めたんセクシー',
             'ずんだもん', 'ずんだもんあまあま', 'ずんだもんツンツン', 'ずんだもんセクシー','ずんだもんささやき',

@@ -9,12 +9,9 @@ from pkg.aio_req import aio_get_request
 from pkg.oauth_check import line_oauth_check
 from pkg.crypt import decrypt_password
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from core.start import DBot
+from core.db_create import DB
 
 from model_types.line_type.line_message import LineBotAPI
 from model_types.discord_type.message_creater import ReqestDiscord
