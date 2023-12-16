@@ -22,12 +22,9 @@ from model_types.session_type import FastAPISession
 from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from core.start import DBot
+from core.db_create import DB
 
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 
@@ -246,12 +243,6 @@ class WebhookSuccess(commands.Cog):
                         'uuid':form.get(f'uuid_{del_num}')
                     }
                 )
-
-            table_fetch = await DB.select_rows(
-                table_name=TABLE,
-                columns=[],
-                where_clause={}
-            )
 
             return templates.TemplateResponse(
                 'api/webhooksuccess.html',

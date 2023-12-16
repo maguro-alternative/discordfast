@@ -6,16 +6,10 @@ import base64
 import hashlib
 import hmac
 
-try:
-    from model_types.line_type.line_event import Line_Responses
-    from model_types.discord_type.message_creater import ReqestDiscord
-    from model_types.line_type.line_message import LineBotAPI
-    from model_types.table_type import LineBotColunm
-except ModuleNotFoundError:
-    from app.model_types.line_type.line_event import Line_Responses
-    from app.model_types.discord_type.message_creater import ReqestDiscord
-    from app.model_types.line_type.line_message import LineBotAPI
-    from app.model_types.table_type import LineBotColunm
+from model_types.line_type.line_event import Line_Responses
+from model_types.discord_type.message_creater import ReqestDiscord
+from model_types.line_type.line_message import LineBotAPI
+from model_types.table_type import LineBotColunm
 # ./venv/Scripts/activate.bat
 
 from typing import List
@@ -23,12 +17,9 @@ from typing import List
 from pkg.crypt import decrypt_password
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from core.start import DBot
+from core.db_create import DB
 
 from model_types.environ_conf import EnvConf
 

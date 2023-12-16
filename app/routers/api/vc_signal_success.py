@@ -17,12 +17,9 @@ from model_types.environ_conf import EnvConf
 from core.auto_db_creator.vc_columns import VC_COLUMNS
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from core.start import DBot
+from core.db_create import DB
 
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
@@ -105,8 +102,6 @@ class VcSignalSuccess(commands.Cog):
                     'where_clause':where_clause,
                     'row_values':row_values
                 })
-
-            #print(row_list)
 
             if DB.conn == None:
                 await DB.connect()

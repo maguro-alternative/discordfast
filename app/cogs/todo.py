@@ -2,15 +2,9 @@ from discord.ext import commands
 from discord import Option
 import discord
 
-try:
-    # Botのみ起動の場合
-    from app.core.start import DBot
-    from app.core.db_create import DB
-    from app.model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from core.start import DBot
-    from core.db_create import DB
-    from model_types.environ_conf import EnvConf
+from core.start import DBot
+from core.db_create import DB
+from model_types.environ_conf import EnvConf
 
 from datetime import datetime
 from typing import Dict,List

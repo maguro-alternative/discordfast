@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
-import os
 from typing import Dict
 
 from pkg.aio_req import aio_get_request
@@ -14,12 +13,9 @@ from model_types.discord_type.discord_type import DiscordUser
 from model_types.session_type import FastAPISession
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from model_types.environ_conf import EnvConf
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.model_types.environ_conf import EnvConf
+
+from core.start import DBot
+from model_types.environ_conf import EnvConf
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")

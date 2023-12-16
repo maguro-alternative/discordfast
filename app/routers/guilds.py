@@ -15,10 +15,8 @@ from model_types.session_type import FastAPISession
 from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-except ModuleNotFoundError:
-    from app.core.start import DBot
+
+from core.start import DBot
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL

@@ -9,20 +9,14 @@ from pkg.permission import return_permission
 from typing import List,Dict,Any
 from model_types.discord_type.discord_user_session import DiscordOAuthData
 from model_types.discord_type.discord_type import DiscordUser
-
 from model_types.session_type import FastAPISession
-
 from model_types.table_type import GuildSetPermission
-
 from model_types.environ_conf import EnvConf
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-    from core.db_create import DB
-except ModuleNotFoundError:
-    from app.core.start import DBot
-    from app.core.db_create import DB
+
+from core.start import DBot
+from core.db_create import DB
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL

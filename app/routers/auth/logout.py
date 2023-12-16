@@ -4,16 +4,12 @@ from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 
 from discord.ext import commands
-try:
-    from core.start import DBot
-except ModuleNotFoundError:
-    from app.core.start import DBot
 
+from core.start import DBot
 from model_types.environ_conf import EnvConf
 
 # new テンプレート関連の設定 (jinja2)
 templates = Jinja2Templates(directory="templates")
-
 
 DISCORD_BASE_URL = EnvConf.DISCORD_BASE_URL
 DISCORD_REDIRECT_URL = EnvConf.DISCORD_REDIRECT_URL
