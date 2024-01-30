@@ -5,6 +5,8 @@ import asyncio
 
 from typing import List,Dict,Any,Tuple
 
+from model_types.environ_conf import EnvConf
+
 class DataBaseNotConnect(Warning):...
 
 class PostgresDB:
@@ -36,7 +38,7 @@ class PostgresDB:
         self.host = host
         self.conn:Connection = None
         self.semaphore = asyncio.Semaphore(max_connections)  # 同時に実行できる操作数の制限
-        self.dburl = f'{database}://{host}:5432/postgres?user={user}&password={password}'
+        self.dburl = EnvConf.DATABASE_URL
 
         # 排他制御用のロック
         self.lock = asyncio.Lock()
@@ -46,10 +48,7 @@ class PostgresDB:
         PostgreSQLへ接続
         """
         self.conn = await asyncpg.connect(
-            user=self.user,
-            password=self.password,
-            database=self.database,
-            host=self.host
+            dsn=self.dburl
         )
         print('connect')
 

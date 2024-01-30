@@ -13,6 +13,8 @@ class EnvConf:
     DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
     DISCORD_SCOPE = os.getenv("DISCORD_SCOPE")
     DISCORD_REDIRECT_URL = f"https://discord.com/api/oauth2/authorize?response_type=code&client_id={os.getenv('DISCORD_CLIENT_ID')}&scope={os.getenv('DISCORD_SCOPE')}&redirect_uri={os.getenv('DISCORD_CALLBACK_URL')}&prompt=consent"
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    DATABASE_PRIVATE_URL = os.getenv("DATABASE_PRIVATE_URL")
     ENCRYPTED_KEY = os.getenv("ENCRYPTED_KEY")
     GAME_NAME = os.getenv("GAME_NAME")
     LINE_CALLBACK_URL = os.getenv("LINE_CALLBACK_URL")
