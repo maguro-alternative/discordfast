@@ -1,3 +1,9 @@
+# 2024/07/07追記
+**本Botは2024/07/06をもって以下のリポジトリにリプレイスしました。**  
+今後こちらのリポジトリは更新されません。  
+
+https://github.com/maguro-alternative/remake_bot
+
 # これは何？？
 Discordの多機能Botです。
 # 機能は？
